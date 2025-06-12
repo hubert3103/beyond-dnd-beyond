@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { Filter } from 'lucide-react';
 import ProfileMenu from './ProfileMenu';
 import { TabType } from '../pages/PlayerDashboard';
 
@@ -49,12 +48,26 @@ const Header = ({ activeTab }: HeaderProps) => {
             onClick={() => setShowProfileMenu(true)}
             className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center"
           >
-            <span className="text-white text-lg">👤</span>
+            <img 
+              src="/avatarPlaceholder.svg" 
+              alt="Profile"
+              className="w-6 h-6"
+              style={{
+                filter: 'invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)'
+              }}
+            />
           </button>
           <h1 className="text-white font-bold text-lg">{getTabTitle()}</h1>
           {(activeTab === 'spells' || activeTab === 'items') && (
             <button className="text-white">
-              <Filter size={24} />
+              <img 
+                src="/filterIcon.svg" 
+                alt="Filter"
+                className="w-6 h-6"
+                style={{
+                  filter: 'invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)'
+                }}
+              />
             </button>
           )}
           {activeTab === 'characters' || activeTab === 'manuals' ? (
@@ -69,7 +82,14 @@ const Header = ({ activeTab }: HeaderProps) => {
             className="w-full bg-gray-200 rounded-lg px-4 py-3 pl-10 text-gray-900"
           />
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-            🔍
+            <img 
+              src="/searchIcon.svg" 
+              alt="Search"
+              className="w-4 h-4"
+              style={{
+                filter: 'invert(50%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)'
+              }}
+            />
           </div>
         </div>
       </header>

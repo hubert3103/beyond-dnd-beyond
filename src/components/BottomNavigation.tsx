@@ -8,10 +8,10 @@ interface BottomNavigationProps {
 
 const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => {
   const tabs = [
-    { id: 'characters' as TabType, label: 'Characters', icon: '👤' },
-    { id: 'spells' as TabType, label: 'Spells', icon: '🪄' },
-    { id: 'items' as TabType, label: 'Items', icon: '🎒' },
-    { id: 'manuals' as TabType, label: 'Manuals', icon: '📚' },
+    { id: 'characters' as TabType, label: 'Characters', icon: '/characterIcon.svg' },
+    { id: 'spells' as TabType, label: 'Spells', icon: '/spellsIcon.svg' },
+    { id: 'items' as TabType, label: 'Items', icon: '/d20Icon.svg' },
+    { id: 'manuals' as TabType, label: 'Manuals', icon: '/manualsIcon.svg' },
   ];
 
   return (
@@ -25,7 +25,18 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
               activeTab === tab.id ? 'text-red-500' : 'text-gray-400'
             }`}
           >
-            <span className="text-xl mb-1">{tab.icon}</span>
+            <img 
+              src={tab.icon} 
+              alt={tab.label}
+              className={`w-6 h-6 mb-1 ${
+                activeTab === tab.id ? 'filter brightness-0 saturate-100' : 'filter brightness-0 saturate-100 opacity-60'
+              }`}
+              style={{
+                filter: activeTab === tab.id 
+                  ? 'invert(27%) sepia(95%) saturate(6456%) hue-rotate(356deg) brightness(98%) contrast(93%)'
+                  : 'invert(75%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)'
+              }}
+            />
             <span className="text-xs font-medium">{tab.label}</span>
           </button>
         ))}

@@ -19,7 +19,14 @@ const RoleSelection = () => {
         className="w-full max-w-sm bg-red-600 hover:bg-red-700 text-white font-bold py-8 rounded-lg flex flex-col items-center space-y-2"
       >
         <div className="w-12 h-12 border-2 border-white rounded-full flex items-center justify-center mb-2">
-          <span className="text-lg">⚀</span>
+          <img 
+            src="/d20Icon.svg" 
+            alt="Player"
+            className="w-8 h-8"
+            style={{
+              filter: 'invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)'
+            }}
+          />
         </div>
         <span className="text-xl">PLAYER</span>
       </Button>
@@ -29,7 +36,14 @@ const RoleSelection = () => {
         className="w-full max-w-sm bg-red-600 hover:bg-red-700 text-white font-bold py-8 rounded-lg flex flex-col items-center space-y-2"
       >
         <div className="w-12 h-12 border-2 border-white rounded flex items-center justify-center mb-2">
-          <span className="text-lg">📋</span>
+          <img 
+            src="/dmScreenicon.svg" 
+            alt="DM"
+            className="w-8 h-8"
+            style={{
+              filter: 'invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)'
+            }}
+          />
         </div>
         <span className="text-xl">DM</span>
       </Button>

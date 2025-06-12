@@ -16,21 +16,21 @@ const ManualsTab = () => {
       title: "Player's Handbook",
       description: "The Player's Handbook covers the basic rules of the 5e system, the base classes and races, and character customization options.",
       category: 'core',
-      cover: '📖'
+      cover: '/manualsIcon.svg'
     },
     {
       id: '2',
       title: "Dungeon Master's Guide",
       description: "The Dungeon Master's Guide equips DMs with world-building advice, encounter design and balancing, optional rules, treasure and magic item tables, NPC and faction guidelines, and tools to customize and expand 5e.",
       category: 'core',
-      cover: '📚'
+      cover: '/dmScreenicon.svg'
     },
     {
       id: '3',
       title: "Monster Manual",
       description: "The Monster Manual compiles 5e's creature bestiaries with stat blocks, lore and ecology guides, challenge ratings, variant traits, lair actions and legendary actions—providing DMs with the tools to bring encounters to life.",
       category: 'core',
-      cover: '👹'
+      cover: '/characterIcon.svg'
     }
   ]);
 
@@ -49,8 +49,15 @@ const ManualsTab = () => {
               className="bg-white rounded-lg p-4 flex space-x-4 cursor-pointer hover:bg-gray-50"
               onClick={() => setSelectedManual(manual)}
             >
-              <div className="w-16 h-20 bg-gradient-to-b from-orange-400 to-red-600 rounded flex items-center justify-center text-2xl">
-                {manual.cover}
+              <div className="w-16 h-20 bg-gradient-to-b from-orange-400 to-red-600 rounded flex items-center justify-center">
+                <img 
+                  src={manual.cover} 
+                  alt={manual.title}
+                  className="w-10 h-10"
+                  style={{
+                    filter: 'invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)'
+                  }}
+                />
               </div>
               <div className="flex-1">
                 <h4 className="font-bold text-gray-900 mb-2">{manual.title}</h4>
@@ -65,8 +72,15 @@ const ManualsTab = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg w-full max-w-md p-6">
             <h3 className="text-xl font-bold text-gray-900 mb-4">{selectedManual.title}</h3>
-            <div className="w-32 h-40 bg-gradient-to-b from-orange-400 to-red-600 rounded mx-auto mb-4 flex items-center justify-center text-4xl">
-              {selectedManual.cover}
+            <div className="w-32 h-40 bg-gradient-to-b from-orange-400 to-red-600 rounded mx-auto mb-4 flex items-center justify-center">
+              <img 
+                src={selectedManual.cover} 
+                alt={selectedManual.title}
+                className="w-16 h-16"
+                style={{
+                  filter: 'invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)'
+                }}
+              />
             </div>
             <p className="text-gray-600 mb-6">{selectedManual.description}</p>
             <div className="space-y-3">

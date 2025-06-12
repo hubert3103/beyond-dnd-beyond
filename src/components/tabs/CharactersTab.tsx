@@ -19,7 +19,7 @@ const CharactersTab = () => {
       level: 10,
       class: 'Druid',
       race: 'Wood elf',
-      avatar: '👤'
+      avatar: '/avatarPlaceholder.svg'
     },
     {
       id: '2',
@@ -27,7 +27,7 @@ const CharactersTab = () => {
       level: 4,
       class: 'Paladin',
       race: 'Mountain dwarf',
-      avatar: '👤'
+      avatar: '/avatarPlaceholder.svg'
     },
     {
       id: '3',
@@ -35,7 +35,7 @@ const CharactersTab = () => {
       level: 8,
       class: 'Warlock',
       race: 'Tiefling',
-      avatar: '👤'
+      avatar: '/avatarPlaceholder.svg'
     }
   ]);
 
@@ -52,8 +52,15 @@ const CharactersTab = () => {
       {characters.map((character) => (
         <div key={character.id} className="bg-white rounded-lg p-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center text-2xl">
-              {character.avatar}
+            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+              <img 
+                src={character.avatar} 
+                alt="Character avatar"
+                className="w-8 h-8"
+                style={{
+                  filter: 'invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)'
+                }}
+              />
             </div>
             <div>
               <h3 className="font-bold text-gray-900">{character.name}</h3>
