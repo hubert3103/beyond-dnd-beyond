@@ -3,11 +3,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface Character {
   id: string;
@@ -81,21 +81,21 @@ const CharactersTab = () => {
             </div>
           </div>
           
-          <ContextMenu>
-            <ContextMenuTrigger asChild>
-              <button className="text-gray-400 hover:text-gray-600">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="text-gray-400 hover:text-gray-600 p-2">
                 ⋮
               </button>
-            </ContextMenuTrigger>
-            <ContextMenuContent>
-              <ContextMenuItem onClick={handleEditCharacter}>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={handleEditCharacter}>
                 Edit Character
-              </ContextMenuItem>
-              <ContextMenuItem onClick={() => setShowDeleteDialog(character.id)}>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowDeleteDialog(character.id)}>
                 Delete Character
-              </ContextMenuItem>
-            </ContextMenuContent>
-          </ContextMenu>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ))}
       
