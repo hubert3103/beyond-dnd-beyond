@@ -1,6 +1,13 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 
 interface Character {
   id: string;
@@ -12,6 +19,7 @@ interface Character {
 }
 
 const CharactersTab = () => {
+  const navigate = useNavigate();
   const [characters] = useState<Character[]>([
     {
       id: '1',
@@ -47,6 +55,10 @@ const CharactersTab = () => {
     console.log('Deleting character:', id);
   };
 
+  const handleEditCharacter = () => {
+    navigate('/dm');
+  };
+
   return (
     <div className="p-4 space-y-4">
       {characters.map((character) => (
@@ -68,12 +80,22 @@ const CharactersTab = () => {
               <p className="text-sm text-gray-600">{character.race}</p>
             </div>
           </div>
-          <button
-            onClick={() => setShowDeleteDialog(character.id)}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            ⋮
-          </button>
+          
+          <ContextMenu>
+            <ContextMenuTrigger asChild>
+              <button className="text-gray-400 hover:text-gray-600">
+                ⋮
+              </button>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuItem onClick={handleEditCharacter}>
+                Edit Character
+              </ContextMenuItem>
+              <ContextMenuItem onClick={() => setShowDeleteDialog(character.id)}>
+                Delete Character
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
         </div>
       ))}
       
