@@ -56,7 +56,7 @@ const CharactersTab = () => {
   };
 
   const handleEditCharacter = () => {
-    navigate('/dm');
+    navigate('/under-construction');
   };
 
   return (

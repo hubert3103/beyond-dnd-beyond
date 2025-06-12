@@ -53,10 +53,7 @@ const ManualsTab = () => {
                 <img 
                   src={manual.cover} 
                   alt={manual.title}
-                  className="w-10 h-10"
-                  style={{
-                    filter: 'invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)'
-                  }}
+                  className="w-14 h-18 object-cover rounded"
                 />
               </div>
               <div className="flex-1">
@@ -76,10 +73,7 @@ const ManualsTab = () => {
               <img 
                 src={selectedManual.cover} 
                 alt={selectedManual.title}
-                className="w-16 h-16"
-                style={{
-                  filter: 'invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)'
-                }}
+                className="w-28 h-36 object-cover rounded"
               />
             </div>
             <p className="text-gray-600 mb-6">{selectedManual.description}</p>
