@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -43,8 +42,8 @@ const LanguageSelector = () => {
           onClick={() => handleLanguageSelect('en')}
           className="w-full bg-white rounded-lg p-4 flex items-center space-x-4 hover:bg-gray-100 transition-colors"
         >
-          <div className="w-12 h-8 bg-gradient-to-r from-blue-800 via-white to-red-600 rounded border border-gray-300 flex items-center justify-center">
-            🇺🇸
+          <div className="w-12 h-8 rounded border border-gray-300 flex items-center justify-center overflow-hidden">
+            <img src="/eng.png" alt="English flag" className="w-full h-full object-cover" />
           </div>
           <span className="text-lg font-medium text-gray-900">English</span>
         </button>
@@ -53,8 +52,8 @@ const LanguageSelector = () => {
           onClick={() => handleLanguageSelect('nl')}
           className="w-full bg-white rounded-lg p-4 flex items-center space-x-4 hover:bg-gray-100 transition-colors"
         >
-          <div className="w-12 h-8 bg-gradient-to-b from-red-600 via-white to-blue-600 rounded border border-gray-300 flex items-center justify-center">
-            🇳🇱
+          <div className="w-12 h-8 rounded border border-gray-300 flex items-center justify-center overflow-hidden">
+            <img src="/dutch.png" alt="Dutch flag" className="w-full h-full object-cover" />
           </div>
           <span className="text-lg font-medium text-gray-900">Nederlands</span>
         </button>
@@ -63,8 +62,8 @@ const LanguageSelector = () => {
           onClick={() => handleLanguageSelect('pl')}
           className="w-full bg-white rounded-lg p-4 flex items-center space-x-4 hover:bg-gray-100 transition-colors"
         >
-          <div className="w-12 h-8 bg-gradient-to-b from-white via-red-600 to-white rounded border border-gray-300 flex items-center justify-center">
-            🇵🇱
+          <div className="w-12 h-8 rounded border border-gray-300 flex items-center justify-center overflow-hidden">
+            <img src="/polish.png" alt="Polish flag" className="w-full h-full object-cover" />
           </div>
           <span className="text-lg font-medium text-gray-900">Polski</span>
         </button>
