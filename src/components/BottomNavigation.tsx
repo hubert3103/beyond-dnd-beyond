@@ -10,7 +10,7 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
   const tabs = [
     { id: 'characters' as TabType, label: 'Characters', icon: '/characterIcon.svg' },
     { id: 'spells' as TabType, label: 'Spells', icon: '/spellsIcon.svg' },
-    { id: 'items' as TabType, label: 'Items', icon: '/d20Icon.svg' },
+    { id: 'items' as TabType, label: 'Items', icon: '/itemIcon.svg' },
     { id: 'manuals' as TabType, label: 'Manuals', icon: '/manualsIcon.svg' },
   ];
 
