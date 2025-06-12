@@ -16,21 +16,21 @@ const ManualsTab = () => {
       title: "Player's Handbook",
       description: "The Player's Handbook covers the basic rules of the 5e system, the base classes and races, and character customization options.",
       category: 'core',
-      cover: '/manualsIcon.svg'
+      cover: '/phb5e.webp'
     },
     {
       id: '2',
       title: "Dungeon Master's Guide",
       description: "The Dungeon Master's Guide equips DMs with world-building advice, encounter design and balancing, optional rules, treasure and magic item tables, NPC and faction guidelines, and tools to customize and expand 5e.",
       category: 'core',
-      cover: '/dmScreenicon.svg'
+      cover: '/dmguide.webp'
     },
     {
       id: '3',
       title: "Monster Manual",
       description: "The Monster Manual compiles 5e's creature bestiaries with stat blocks, lore and ecology guides, challenge ratings, variant traits, lair actions and legendary actions—providing DMs with the tools to bring encounters to life.",
       category: 'core',
-      cover: '/characterIcon.svg'
+      cover: '/MonsterManual5e.webp'
     }
   ]);
 
