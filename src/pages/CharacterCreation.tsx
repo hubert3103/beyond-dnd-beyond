@@ -1,6 +1,8 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BottomNavigation from '../components/BottomNavigation';
+import { TabType } from './PlayerDashboard';
 import SetupScreen from '../components/character-creation/SetupScreen';
 import SpeciesScreen from '../components/character-creation/SpeciesScreen';
 import ClassScreen from '../components/character-creation/ClassScreen';
@@ -67,6 +69,15 @@ const CharacterCreation = () => {
     setCharacterData(prev => ({ ...prev, ...updates }));
   };
 
+  const handleTabChange = (tab: TabType) => {
+    if (tab === 'characters') {
+      navigate('/player');
+    } else {
+      // For other tabs, just navigate back to player dashboard and let it handle the tab
+      navigate('/player');
+    }
+  };
+
   const renderCurrentScreen = () => {
     switch (currentStep) {
       case 'setup':
@@ -94,7 +105,7 @@ const CharacterCreation = () => {
           onClick={() => navigate('/player')}
           className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center mr-3"
         >
-          <span className="text-white font-bold text-sm">&</span>
+          <span className="text-white font-bold text-sm">&larr;</span>
         </button>
         <h1 className="text-white text-lg font-medium flex-1 text-center pr-11">Character Creation</h1>
       </header>
@@ -130,7 +141,7 @@ const CharacterCreation = () => {
       </main>
 
       {/* Navigation Controls */}
-      <div className="fixed bottom-16 left-0 right-0 bg-[#4a4a4a] px-4 py-2 flex justify-between">
+      <div className="bg-[#4a4a4a] px-4 py-2 flex justify-between">
         <button
           onClick={goToPreviousStep}
           disabled={currentStepIndex === 0}
@@ -146,25 +157,8 @@ const CharacterCreation = () => {
         </button>
       </div>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-        <div className="flex">
-          {[
-            { id: 'characters', label: 'Characters', icon: '/characterIcon.svg' },
-            { id: 'spells', label: 'Spells', icon: '/spellsIcon.svg' },
-            { id: 'items', label: 'Items', icon: '/itemsIcon.svg' },
-            { id: 'manuals', label: 'Manuals', icon: '/manualsIcon.svg' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              className="flex-1 flex flex-col items-center py-3 px-2 text-gray-400"
-            >
-              <img src={tab.icon} alt={tab.label} className="w-6 h-6 mb-1 opacity-60" />
-              <span className="text-xs font-medium">{tab.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      {/* Bottom Navigation - Same as main app */}
+      <BottomNavigation activeTab="characters" onTabChange={handleTabChange} />
     </div>
   );
 };
