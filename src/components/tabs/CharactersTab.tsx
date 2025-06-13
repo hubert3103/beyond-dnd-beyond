@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -59,6 +58,10 @@ const CharactersTab = () => {
     navigate('/under-construction');
   };
 
+  const handleNewCharacter = () => {
+    navigate('/character-creation');
+  };
+
   return (
     <div className="p-4 space-y-4">
       {characters.map((character) => (
@@ -99,7 +102,10 @@ const CharactersTab = () => {
         </div>
       ))}
       
-      <Button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg">
+      <Button 
+        onClick={handleNewCharacter}
+        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg"
+      >
         New Character
       </Button>
 

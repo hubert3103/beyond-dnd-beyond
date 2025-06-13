@@ -10,6 +10,7 @@ import LanguageSelector from "./pages/LanguageSelector";
 import Login from "./pages/Login";
 import RoleSelection from "./pages/RoleSelection";
 import PlayerDashboard from "./pages/PlayerDashboard";
+import CharacterCreation from "./pages/CharacterCreation";
 import UnderConstruction from "./pages/UnderConstruction";
 import NotFound from "./pages/NotFound";
 
@@ -28,7 +29,9 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/role-selection" element={<RoleSelection />} />
               <Route path="/player" element={<PlayerDashboard />} />
+              <Route path="/character-creation" element={<CharacterCreation />} />
               <Route path="/dm" element={<UnderConstruction />} />
+              <Route path="/under-construction" element={<UnderConstruction />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
