@@ -1,5 +1,5 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import BottomNavigation from '../components/BottomNavigation';
 import Header from '../components/Header';
 import CharactersTab from '../components/tabs/CharactersTab';
@@ -11,6 +11,14 @@ export type TabType = 'characters' | 'spells' | 'items' | 'manuals';
 
 const PlayerDashboard = () => {
   const [activeTab, setActiveTab] = useState<TabType>('characters');
+  const location = useLocation();
+
+  // Handle navigation from other pages with tab state
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+  }, [location.state]);
 
   const renderActiveTab = () => {
     switch (activeTab) {

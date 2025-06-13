@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavigation from '../components/BottomNavigation';
@@ -70,12 +69,8 @@ const CharacterCreation = () => {
   };
 
   const handleTabChange = (tab: TabType) => {
-    if (tab === 'characters') {
-      navigate('/player');
-    } else {
-      // For other tabs, just navigate back to player dashboard and let it handle the tab
-      navigate('/player');
-    }
+    // Navigate to player dashboard with state to set the active tab
+    navigate('/player', { state: { activeTab: tab } });
   };
 
   const renderCurrentScreen = () => {
