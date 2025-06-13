@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -62,11 +63,18 @@ const CharactersTab = () => {
     navigate('/character-creation');
   };
 
+  const handleCharacterTap = (character: Character) => {
+    navigate(`/character/${character.id}`);
+  };
+
   return (
     <div className="p-4 space-y-4">
       {characters.map((character) => (
         <div key={character.id} className="bg-white rounded-lg p-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <div 
+            className="flex items-center space-x-3 flex-1 cursor-pointer"
+            onClick={() => handleCharacterTap(character)}
+          >
             <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
               <img 
                 src={character.avatar} 
