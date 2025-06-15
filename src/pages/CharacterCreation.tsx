@@ -9,8 +9,9 @@ import ClassScreen from '../components/character-creation/ClassScreen';
 import AbilitiesScreen from '../components/character-creation/AbilitiesScreen';
 import BackgroundScreen from '../components/character-creation/BackgroundScreen';
 import EquipmentScreen from '../components/character-creation/EquipmentScreen';
+import SummaryScreen from '../components/character-creation/SummaryScreen';
 
-export type CreationStep = 'setup' | 'species' | 'class' | 'abilities' | 'background' | 'equipment' | 'character-sheet';
+export type CreationStep = 'setup' | 'species' | 'class' | 'abilities' | 'background' | 'equipment' | 'summary';
 
 const CharacterCreation = () => {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ const CharacterCreation = () => {
     { id: 'abilities', label: 'Abilities' },
     { id: 'background', label: 'Background' },
     { id: 'equipment', label: 'Equipment' },
-    { id: 'character-sheet', label: 'Character Sheet' }
+    { id: 'summary', label: 'Summary' }
   ];
 
   const currentStepIndex = steps.findIndex(step => step.id === currentStep);
@@ -90,6 +91,8 @@ const CharacterCreation = () => {
         return <BackgroundScreen data={characterData} onUpdate={updateCharacterData} />;
       case 'equipment':
         return <EquipmentScreen data={characterData} onUpdate={updateCharacterData} />;
+      case 'summary':
+        return <SummaryScreen data={characterData} onUpdate={updateCharacterData} />;
       default:
         return <SetupScreen data={characterData} onUpdate={updateCharacterData} />;
     }
@@ -152,7 +155,7 @@ const CharacterCreation = () => {
             onClick={goToNextStep}
             className="text-white px-4 py-2 font-medium"
           >
-            {currentStepIndex === steps.length - 1 ? 'Finish' : 'Next >'}
+            {currentStepIndex === steps.length - 1 ? 'Create Character' : 'Next >'}
           </button>
         </div>
       </div>
