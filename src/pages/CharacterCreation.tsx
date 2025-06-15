@@ -137,20 +137,22 @@ const CharacterCreation = () => {
       </main>
 
       {/* Navigation Controls - Fixed above bottom navigation */}
-      <div className="fixed bottom-16 left-0 right-0 bg-[#4a4a4a] px-4 py-3 flex justify-between border-t border-gray-600 z-10">
-        <button
-          onClick={goToPreviousStep}
-          disabled={currentStepIndex === 0}
-          className="text-white px-4 py-2 disabled:text-gray-500 font-medium"
-        >
-          &lt; Prev
-        </button>
-        <button
-          onClick={goToNextStep}
-          className="text-white px-4 py-2 font-medium"
-        >
-          {currentStepIndex === steps.length - 1 ? 'Finish' : 'Next >'}
-        </button>
+      <div className="fixed bottom-16 left-0 right-0 bg-[#4a4a4a] px-4 py-3 flex justify-end border-t border-gray-600 z-10">
+        <div className="flex space-x-2">
+          <button
+            onClick={goToPreviousStep}
+            disabled={currentStepIndex === 0}
+            className="text-white px-4 py-2 disabled:text-gray-500 font-medium"
+          >
+            &lt; Prev
+          </button>
+          <button
+            onClick={goToNextStep}
+            className="text-white px-4 py-2 font-medium"
+          >
+            {currentStepIndex === steps.length - 1 ? 'Finish' : 'Next >'}
+          </button>
+        </div>
       </div>
 
       {/* Bottom Navigation - Same as main app */}
