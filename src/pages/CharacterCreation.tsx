@@ -60,8 +60,10 @@ const CharacterCreation = () => {
     if (currentStepIndex < steps.length - 1) {
       setCurrentStep(steps[currentStepIndex + 1].id);
     } else {
-      // Save character and go back to characters list
-      navigate('/player');
+      // Save character and navigate to character sheet
+      // Generate a temporary ID for the new character
+      const newCharacterId = Date.now().toString();
+      navigate(`/character/${newCharacterId}`);
     }
   };
 
