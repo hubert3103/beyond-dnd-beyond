@@ -128,154 +128,160 @@ const ItemsTab = () => {
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-white mb-2">Equipment & Items</h1>
-        <p className="text-gray-300">Browse equipment from D&D 5e sources</p>
+    <div className="flex flex-col h-full">
+      {/* Sticky Header with search and filter */}
+      <div className="sticky top-0 z-10 bg-[#4a4a4a] p-4 border-b border-gray-600">
+        <div className="text-center mb-4">
+          <h1 className="text-2xl font-bold text-white mb-2">Equipment & Items</h1>
+          <p className="text-gray-300">Browse equipment from D&D 5e sources</p>
+        </div>
+
+        {/* Search and Filter Controls */}
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search equipment..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2"
+            >
+              <Filter className="h-4 w-4" />
+              Filters
+            </Button>
+            
+            <Select value={sortBy} onValueChange={(value: 'name' | 'rarity' | 'type') => setSortBy(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="rarity">Rarity</SelectItem>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="type">Type</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Filter Panel */}
+          {showFilters && (
+            <Card className="p-4">
+              <h3 className="font-semibold mb-3 text-gray-900">Filter by Source</h3>
+              {availableSources.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    {availableSources.map(source => (
+                      <label key={source} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedSources.includes(source)}
+                          onChange={(e) => handleSourceFilterChange(source, e.target.checked)}
+                          className="rounded"
+                        />
+                        <span className="text-sm text-gray-700">{getSourceDisplayName(source)}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedSources(availableSources)}
+                    >
+                      Select All
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedSources([])}
+                    >
+                      Clear All
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-gray-500">No filter options available</p>
+              )}
+            </Card>
+          )}
+        </div>
+
+        {/* Results Summary */}
+        <div className="text-sm text-gray-300 mt-4">
+          Showing {filteredEquipment.length} of {equipment.length} items
+        </div>
       </div>
 
-      {/* Search and Filter Controls */}
-      <div className="space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search equipment..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {/* Equipment List */}
+        <div className="space-y-2">
+          {filteredEquipment.map((item) => (
+            <Card 
+              key={item.slug}
+              className="cursor-pointer transition-colors hover:bg-gray-50"
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div 
+                    className="flex-1 cursor-pointer"
+                    onClick={() => setSelectedItem(item)}
+                  >
+                    <h4 className="font-bold text-gray-900">{item.name}</h4>
+                    <p className="text-sm text-gray-600">{item.type}</p>
+                    <p className="text-sm text-gray-600 capitalize">{item.rarity}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      {item.cost && (
+                        <span className="text-xs text-gray-500">
+                          Cost: {item.cost.quantity} {item.cost.unit}
+                        </span>
+                      )}
+                      {item.weight && (
+                        <span className="text-xs text-gray-500">Weight: {item.weight} lb</span>
+                      )}
+                      {item.requires_attunement && (
+                        <span className="text-xs text-blue-600">Requires Attunement</span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowCharacterSelect(true)}
+                    className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                  >
+                    +
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2"
-          >
-            <Filter className="h-4 w-4" />
-            Filters
-          </Button>
-          
-          <Select value={sortBy} onValueChange={(value: 'name' | 'rarity' | 'type') => setSortBy(value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="rarity">Rarity</SelectItem>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="type">Type</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {filteredEquipment.length === 0 && equipment.length > 0 && (
+          <div className="text-center py-8">
+            <p className="text-white">No equipment found matching your search.</p>
+            <p className="text-xs text-gray-400 mt-2">
+              Try adjusting your search terms or filter settings.
+            </p>
+          </div>
+        )}
 
-        {/* Filter Panel */}
-        {showFilters && (
-          <Card className="p-4">
-            <h3 className="font-semibold mb-3 text-gray-900">Filter by Source</h3>
-            {availableSources.length > 0 ? (
-              <>
-                <div className="grid grid-cols-2 gap-2">
-                  {availableSources.map(source => (
-                    <label key={source} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedSources.includes(source)}
-                        onChange={(e) => handleSourceFilterChange(source, e.target.checked)}
-                        className="rounded"
-                      />
-                      <span className="text-sm text-gray-700">{getSourceDisplayName(source)}</span>
-                    </label>
-                  ))}
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedSources(availableSources)}
-                  >
-                    Select All
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedSources([])}
-                  >
-                    Clear All
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <p className="text-gray-500">No filter options available</p>
-            )}
-          </Card>
+        {equipment.length === 0 && !isLoading && (
+          <div className="text-center py-8">
+            <p className="text-white">No equipment data available.</p>
+            <p className="text-xs text-gray-400 mt-2">
+              Equipment data may still be loading or there was an error fetching it.
+            </p>
+          </div>
         )}
       </div>
-
-      {/* Results Summary */}
-      <div className="text-sm text-gray-300">
-        Showing {filteredEquipment.length} of {equipment.length} items
-      </div>
-
-      {/* Equipment List */}
-      <div className="space-y-2">
-        {filteredEquipment.map((item) => (
-          <Card 
-            key={item.slug}
-            className="cursor-pointer transition-colors hover:bg-gray-50"
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div 
-                  className="flex-1 cursor-pointer"
-                  onClick={() => setSelectedItem(item)}
-                >
-                  <h4 className="font-bold text-gray-900">{item.name}</h4>
-                  <p className="text-sm text-gray-600">{item.type}</p>
-                  <p className="text-sm text-gray-600 capitalize">{item.rarity}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    {item.cost && (
-                      <span className="text-xs text-gray-500">
-                        Cost: {item.cost.quantity} {item.cost.unit}
-                      </span>
-                    )}
-                    {item.weight && (
-                      <span className="text-xs text-gray-500">Weight: {item.weight} lb</span>
-                    )}
-                    {item.requires_attunement && (
-                      <span className="text-xs text-blue-600">Requires Attunement</span>
-                    )}
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowCharacterSelect(true)}
-                  className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                >
-                  +
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredEquipment.length === 0 && equipment.length > 0 && (
-        <div className="text-center py-8">
-          <p className="text-white">No equipment found matching your search.</p>
-          <p className="text-xs text-gray-400 mt-2">
-            Try adjusting your search terms or filter settings.
-          </p>
-        </div>
-      )}
-
-      {equipment.length === 0 && !isLoading && (
-        <div className="text-center py-8">
-          <p className="text-white">No equipment data available.</p>
-          <p className="text-xs text-gray-400 mt-2">
-            Equipment data may still be loading or there was an error fetching it.
-          </p>
-        </div>
-      )}
 
       {/* Item Detail Modal */}
       {selectedItem && (

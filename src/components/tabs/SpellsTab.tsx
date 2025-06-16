@@ -124,144 +124,154 @@ const SpellsTab = () => {
   }
 
   return (
-    <div className="p-4">
-      {/* Header with search and filter */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search spells..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-white"
-          />
+    <div className="flex flex-col h-full">
+      {/* Sticky Header with search and filter */}
+      <div className="sticky top-0 z-10 bg-[#4a4a4a] p-4 border-b border-gray-600">
+        <div className="text-center mb-4">
+          <h1 className="text-2xl font-bold text-white mb-2">Spells & Magic</h1>
+          <p className="text-gray-300">Browse spells from D&D 5e sources</p>
         </div>
         
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="bg-white border-gray-300">
-              <Filter className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-80">
-            <SheetHeader>
-              <SheetTitle>Filter Spells</SheetTitle>
-            </SheetHeader>
-            
-            <div className="space-y-6 mt-6">
-              <Button onClick={clearFilters} variant="outline" className="w-full">
-                Clear All Filters
-              </Button>
-
-              {/* Level Filter */}
-              <div>
-                <h3 className="font-medium mb-3">Spell Level</h3>
-                <div className="space-y-2">
-                  {filterOptions.levels.map(level => (
-                    <div key={level} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`level-${level}`}
-                        checked={filters.levels.includes(level)}
-                        onCheckedChange={(checked) => 
-                          handleFilterChange('levels', level, checked as boolean)
-                        }
-                      />
-                      <label htmlFor={`level-${level}`} className="text-sm">
-                        {level === '0' ? 'Cantrip' : `Level ${level}`}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* School Filter */}
-              <div>
-                <h3 className="font-medium mb-3">School</h3>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {filterOptions.schools.map(school => (
-                    <div key={school} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`school-${school}`}
-                        checked={filters.schools.includes(school)}
-                        onCheckedChange={(checked) => 
-                          handleFilterChange('schools', school, checked as boolean)
-                        }
-                      />
-                      <label htmlFor={`school-${school}`} className="text-sm">
-                        {school}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Class Filter */}
-              <div>
-                <h3 className="font-medium mb-3">Classes</h3>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {filterOptions.classes.map(cls => (
-                    <div key={cls} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`class-${cls}`}
-                        checked={filters.classes.includes(cls)}
-                        onCheckedChange={(checked) => 
-                          handleFilterChange('classes', cls, checked as boolean)
-                        }
-                      />
-                      <label htmlFor={`class-${cls}`} className="text-sm">
-                        {cls}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
-
-      <div className="flex justify-between items-center mb-4">
-        <span className="text-white font-medium">
-          Spells: {filteredAndSortedSpells.length}
-          {filteredAndSortedSpells.length !== spells.length && ` of ${spells.length}`}
-        </span>
-      </div>
-
-      {Object.entries(groupedSpells).map(([level, levelSpells]) => (
-        <div key={level} className="mb-6">
-          <h3 className="text-white font-bold mb-3">{level}</h3>
-          <div className="space-y-2">
-            {levelSpells.map((spell, index) => (
-              <Card key={`${spell.slug}-${index}`} className="bg-white rounded-lg">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div 
-                    className="flex-1 cursor-pointer"
-                    onClick={() => setSelectedSpell(spell)}
-                  >
-                    <h4 className="font-bold text-gray-900">{spell.name}</h4>
-                    <p className="text-sm text-gray-600">{spell.school}</p>
-                    <p className="text-sm text-gray-600">
-                      {spell.casting_time} • {spell.range} • {getSpellComponents(spell)}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setShowCharacterSelect(true)}
-                    className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                  >
-                    +
-                  </button>
-                </CardContent>
-              </Card>
-            ))}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search spells..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-white"
+            />
           </div>
-        </div>
-      ))}
+          
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="bg-white border-gray-300">
+                <Filter className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-80">
+              <SheetHeader>
+                <SheetTitle>Filter Spells</SheetTitle>
+              </SheetHeader>
+              
+              <div className="space-y-6 mt-6">
+                <Button onClick={clearFilters} variant="outline" className="w-full">
+                  Clear All Filters
+                </Button>
 
-      {filteredAndSortedSpells.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-300">No spells found matching your criteria.</p>
+                {/* Level Filter */}
+                <div>
+                  <h3 className="font-medium mb-3">Spell Level</h3>
+                  <div className="space-y-2">
+                    {filterOptions.levels.map(level => (
+                      <div key={level} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`level-${level}`}
+                          checked={filters.levels.includes(level)}
+                          onCheckedChange={(checked) => 
+                            handleFilterChange('levels', level, checked as boolean)
+                          }
+                        />
+                        <label htmlFor={`level-${level}`} className="text-sm">
+                          {level === '0' ? 'Cantrip' : `Level ${level}`}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* School Filter */}
+                <div>
+                  <h3 className="font-medium mb-3">School</h3>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {filterOptions.schools.map(school => (
+                      <div key={school} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`school-${school}`}
+                          checked={filters.schools.includes(school)}
+                          onCheckedChange={(checked) => 
+                            handleFilterChange('schools', school, checked as boolean)
+                          }
+                        />
+                        <label htmlFor={`school-${school}`} className="text-sm">
+                          {school}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Class Filter */}
+                <div>
+                  <h3 className="font-medium mb-3">Classes</h3>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {filterOptions.classes.map(cls => (
+                      <div key={cls} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`class-${cls}`}
+                          checked={filters.classes.includes(cls)}
+                          onCheckedChange={(checked) => 
+                            handleFilterChange('classes', cls, checked as boolean)
+                          }
+                        />
+                        <label htmlFor={`class-${cls}`} className="text-sm">
+                          {cls}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
-      )}
+
+        <div className="flex justify-between items-center mt-4">
+          <span className="text-white font-medium">
+            Spells: {filteredAndSortedSpells.length}
+            {filteredAndSortedSpells.length !== spells.length && ` of ${spells.length}`}
+          </span>
+        </div>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {Object.entries(groupedSpells).map(([level, levelSpells]) => (
+          <div key={level} className="mb-6">
+            <h3 className="text-white font-bold mb-3">{level}</h3>
+            <div className="space-y-2">
+              {levelSpells.map((spell, index) => (
+                <Card key={`${spell.slug}-${index}`} className="bg-white rounded-lg">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div 
+                      className="flex-1 cursor-pointer"
+                      onClick={() => setSelectedSpell(spell)}
+                    >
+                      <h4 className="font-bold text-gray-900">{spell.name}</h4>
+                      <p className="text-sm text-gray-600">{spell.school}</p>
+                      <p className="text-sm text-gray-600">
+                        {spell.casting_time} • {spell.range} • {getSpellComponents(spell)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowCharacterSelect(true)}
+                      className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                    >
+                      +
+                    </button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {filteredAndSortedSpells.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-300">No spells found matching your criteria.</p>
+          </div>
+        )}
+      </div>
 
       {/* Spell Detail Modal */}
       {selectedSpell && (
