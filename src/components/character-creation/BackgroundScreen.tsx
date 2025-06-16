@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,7 +38,9 @@ const BackgroundScreen = ({ data, onUpdate }: BackgroundScreenProps) => {
     ideals: data.background?.ideals || '',
     bonds: data.background?.bonds || '',
     flaws: data.background?.flaws || '',
-    notes: data.background?.notes || ''
+    notes: data.background?.notes || '',
+    customName: data.background?.customName || '',
+    customDescription: data.background?.customDescription || ''
   });
 
   // Common D&D 5e backgrounds and their skill options
@@ -92,6 +95,9 @@ const BackgroundScreen = ({ data, onUpdate }: BackgroundScreenProps) => {
       if (backgroundName !== 'Custom Background') {
         updateBackgroundData('name', backgroundName);
         updateBackgroundData('selectedSkills', selectedBackground.skills);
+        // Clear custom fields when switching to predefined background
+        updateBackgroundData('customName', '');
+        updateBackgroundData('customDescription', '');
       } else {
         updateBackgroundData('name', backgroundName);
         updateBackgroundData('selectedSkills', []);
@@ -104,6 +110,7 @@ const BackgroundScreen = ({ data, onUpdate }: BackgroundScreenProps) => {
   };
 
   const selectedBackground = backgroundOptions.find(bg => bg.name === backgroundData.name);
+  const isCustomBackground = backgroundData.name === 'Custom Background';
 
   return (
     <div className="p-4 space-y-4">
@@ -140,6 +147,31 @@ const BackgroundScreen = ({ data, onUpdate }: BackgroundScreenProps) => {
                 </Select>
               </div>
 
+              {/* Custom Background Name and Description */}
+              {isCustomBackground && (
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm text-gray-600">Custom Background Name</Label>
+                    <Input
+                      value={backgroundData.customName}
+                      onChange={(e) => updateBackgroundData('customName', e.target.value)}
+                      placeholder="Enter your custom background name"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-600">Background Description</Label>
+                    <Textarea
+                      value={backgroundData.customDescription}
+                      onChange={(e) => updateBackgroundData('customDescription', e.target.value)}
+                      placeholder="Describe your character's background..."
+                      className="mt-1"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Background Skills */}
               {selectedBackground && (
                 <Card>
@@ -147,7 +179,7 @@ const BackgroundScreen = ({ data, onUpdate }: BackgroundScreenProps) => {
                     <CardTitle className="text-base">Background Skills</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {selectedBackground.name === 'Custom Background' ? (
+                    {isCustomBackground ? (
                       <SkillSelector
                         availableSkills={allSkills}
                         maxSelections={selectedBackground.count}

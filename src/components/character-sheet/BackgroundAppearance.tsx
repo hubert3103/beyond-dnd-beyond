@@ -1,7 +1,8 @@
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, User, Eye, Palette, Users } from 'lucide-react';
+import { ChevronDown, ChevronRight, User, Eye, Palette, Users, Edit3, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Collapsible,
   CollapsibleContent,
@@ -10,13 +11,17 @@ import {
 
 interface BackgroundAppearanceProps {
   character: any;
+  setCharacter?: (character: any) => void;
 }
 
-const BackgroundAppearance = ({ character }: BackgroundAppearanceProps) => {
+const BackgroundAppearance = ({ character, setCharacter }: BackgroundAppearanceProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [editedDescription, setEditedDescription] = useState('');
 
   const backgroundData = character?.background_data || {};
   const backgroundName = character?.background_name || 'Unknown Background';
+  const isCustomBackground = backgroundName === 'Custom Background';
 
   // Extract appearance data
   const appearance = {
@@ -37,6 +42,30 @@ const BackgroundAppearance = ({ character }: BackgroundAppearanceProps) => {
     flaws: backgroundData.flaws || 'Unknown',
     faith: backgroundData.faith || 'Unknown',
     lifestyle: backgroundData.lifestyle || 'Unknown'
+  };
+
+  const handleEditDescription = () => {
+    setEditedDescription(backgroundData.customDescription || '');
+    setIsEditingDescription(true);
+  };
+
+  const handleSaveDescription = () => {
+    if (setCharacter) {
+      const updatedCharacter = {
+        ...character,
+        background_data: {
+          ...backgroundData,
+          customDescription: editedDescription
+        }
+      };
+      setCharacter(updatedCharacter);
+    }
+    setIsEditingDescription(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingDescription(false);
+    setEditedDescription('');
   };
 
   const InfoItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => (
@@ -73,8 +102,55 @@ const BackgroundAppearance = ({ character }: BackgroundAppearanceProps) => {
             </div>
             
             <div className="bg-purple-50 p-3 rounded-lg">
-              <div className="text-sm font-medium text-purple-800">{backgroundName}</div>
-              {backgroundData.feature_desc && (
+              <div className="text-sm font-medium text-purple-800">
+                {isCustomBackground && backgroundData.customName 
+                  ? backgroundData.customName 
+                  : backgroundName}
+              </div>
+              
+              {/* Custom background description with edit functionality */}
+              {isCustomBackground && (
+                <div className="mt-2">
+                  {isEditingDescription ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={editedDescription}
+                        onChange={(e) => setEditedDescription(e.target.value)}
+                        placeholder="Describe your character's background..."
+                        className="text-sm"
+                        rows={3}
+                      />
+                      <div className="flex space-x-2">
+                        <Button size="sm" onClick={handleSaveDescription} className="h-7">
+                          <Check className="h-3 w-3" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={handleCancelEdit} className="h-7">
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between">
+                      <div className="text-sm text-purple-700 flex-1">
+                        {backgroundData.customDescription || 'No description provided'}
+                      </div>
+                      {setCharacter && (
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={handleEditDescription}
+                          className="h-6 w-6 p-0 ml-2"
+                        >
+                          <Edit3 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Standard background feature description */}
+              {!isCustomBackground && backgroundData.feature_desc && (
                 <div className="text-sm text-purple-700 mt-1">{backgroundData.feature_desc}</div>
               )}
             </div>
