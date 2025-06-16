@@ -48,14 +48,14 @@ const ItemsTab = () => {
     
     let filtered = equipment;
     
-    // Apply source filter - only if sources are explicitly selected
+    // Apply source filter - ONLY if sources are explicitly selected
     if (selectedSources.length > 0) {
       filtered = filtered.filter(item => selectedSources.includes(item.document__slug));
       console.log('Filtered by source:', filtered.length);
     }
     
     // Apply search filter
-    if (searchTerm) {
+    if (searchTerm.trim()) {
       filtered = filtered.filter(item => 
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.equipment_category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -85,16 +85,19 @@ const ItemsTab = () => {
       }
     });
     
+    console.log('Final filtered equipment:', filtered.length);
     return filtered;
   }, [equipment, selectedSources, searchTerm, sortBy]);
 
   const availableSources = useMemo(() => {
-    return open5eApi.getAvailableSources(equipment);
+    const sources = open5eApi.getAvailableSources(equipment);
+    console.log('Available sources:', sources);
+    return sources;
   }, [equipment]);
 
   const getSourceDisplayName = (source: string) => {
     switch (source) {
-      case '5esrd': return 'Core Rules (SRD)';
+      case 'wotc-srd': return 'Core Rules (SRD)';
       case 'cc': return 'Core Rules (CC)';
       case 'kp': return 'Kobold Press';
       case 'xge': return "Xanathar's Guide";
@@ -126,6 +129,15 @@ const ItemsTab = () => {
       <div className="text-center">
         <h1 className="text-2xl font-bold text-white mb-2">Equipment & Items</h1>
         <p className="text-gray-300">Browse equipment from D&D 5e sources</p>
+      </div>
+
+      {/* Debug info */}
+      <div className="text-sm text-gray-300 bg-gray-700 p-2 rounded">
+        Debug: {equipment.length} total equipment, {filteredEquipment.length} after filtering
+        <br />
+        Available sources: {availableSources.join(', ')}
+        <br />
+        Selected sources: {selectedSources.join(', ') || 'none'}
       </div>
 
       {/* Search and Filter Controls */}
@@ -167,35 +179,41 @@ const ItemsTab = () => {
         {showFilters && (
           <Card className="p-4">
             <h3 className="font-semibold mb-3 text-gray-900">Filter by Source</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {availableSources.map(source => (
-                <label key={source} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedSources.includes(source)}
-                    onChange={(e) => handleSourceFilterChange(source, e.target.checked)}
-                    className="rounded"
-                  />
-                  <span className="text-sm text-gray-700">{getSourceDisplayName(source)}</span>
-                </label>
-              ))}
-            </div>
-            <div className="mt-3 flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedSources(availableSources)}
-              >
-                Select All
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedSources([])}
-              >
-                Clear All
-              </Button>
-            </div>
+            {availableSources.length > 0 ? (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  {availableSources.map(source => (
+                    <label key={source} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedSources.includes(source)}
+                        onChange={(e) => handleSourceFilterChange(source, e.target.checked)}
+                        className="rounded"
+                      />
+                      <span className="text-sm text-gray-700">{getSourceDisplayName(source)}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedSources(availableSources)}
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedSources([])}
+                  >
+                    Clear All
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <p className="text-gray-500">No filter options available</p>
+            )}
           </Card>
         )}
       </div>
@@ -240,11 +258,20 @@ const ItemsTab = () => {
         ))}
       </div>
 
-      {filteredEquipment.length === 0 && (
+      {filteredEquipment.length === 0 && equipment.length > 0 && (
         <div className="text-center py-8">
           <p className="text-white">No equipment found matching your search.</p>
           <p className="text-xs text-gray-400 mt-2">
             Try adjusting your search terms or filter settings.
+          </p>
+        </div>
+      )}
+
+      {equipment.length === 0 && !isLoading && (
+        <div className="text-center py-8">
+          <p className="text-white">No equipment data available.</p>
+          <p className="text-xs text-gray-400 mt-2">
+            Equipment data may still be loading or there was an error fetching it.
           </p>
         </div>
       )}
