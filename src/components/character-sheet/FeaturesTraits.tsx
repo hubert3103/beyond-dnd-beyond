@@ -26,64 +26,97 @@ const FeaturesTraits = ({ character }: FeaturesTraitsProps) => {
     console.log('Background data:', character.background_data);
 
     // Add species traits
-    if (character.species_data) {
+    if (character.species_data || character.species) {
       console.log('Processing species data...');
       
-      // Check for traits in different possible locations
-      const traits = character.species_data.traits || 
-                    character.species_data.apiData?.traits ||
-                    (character.species_data.features ? Object.values(character.species_data.features) : []);
+      // Get traits from multiple possible locations
+      const traitsText = character.species_data?.traits || 
+                        character.species_data?.apiData?.traits ||
+                        character.species?.apiData?.traits ||
+                        character.species?.traits;
       
-      console.log('Found species traits:', traits);
+      console.log('Found species traits text:', traitsText);
       
-      if (Array.isArray(traits)) {
-        traits.forEach((trait: any) => {
+      if (traitsText) {
+        // Parse the traits text which contains multiple traits separated by markdown headers
+        const parsedTraits = parseTraitsFromText(traitsText);
+        parsedTraits.forEach((trait, index) => {
           features.push({
-            id: trait.name || trait.index || `species-trait-${features.length}`,
-            name: trait.name || 'Unnamed Trait',
-            source: character.species_name || 'Species',
-            description: trait.desc || trait.description || 'No description available.',
+            id: `species-trait-${index}`,
+            name: trait.name,
+            source: character.species_name || character.species?.name || 'Species',
+            description: trait.description,
             type: 'species'
           });
         });
       }
 
-      // Add speed as a feature if available
-      if (character.species_data.speed || character.speed) {
-        const speed = character.species_data.speed || character.speed;
+      // Add ability score increases
+      const asi = character.species_data?.asi || character.species?.apiData?.asi || character.species?.abilityScoreIncrease;
+      if (asi && Array.isArray(asi)) {
+        const asiDescription = asi.map(increase => 
+          `+${increase.value} to ${increase.attributes?.join(', ') || 'abilities'}`
+        ).join(', ');
+        
         features.push({
-          id: 'species-speed',
-          name: 'Speed',
-          source: character.species_name || 'Species',
-          description: `Your base walking speed is ${speed} feet.`,
+          id: 'species-asi',
+          name: 'Ability Score Increase',
+          source: character.species_name || character.species?.name || 'Species',
+          description: asiDescription,
+          type: 'species'
+        });
+      }
+
+      // Add speed as a feature if available
+      const speedData = character.species_data?.speed || 
+                       character.species?.apiData?.speed || 
+                       character.species?.speed || 
+                       character.speed;
+      
+      if (speedData) {
+        let speedDescription = '';
+        if (typeof speedData === 'object' && speedData.walk) {
+          speedDescription = `Your base walking speed is ${speedData.walk} feet.`;
+        } else if (typeof speedData === 'number') {
+          speedDescription = `Your base walking speed is ${speedData} feet.`;
+        }
+        
+        if (speedDescription) {
+          features.push({
+            id: 'species-speed',
+            name: 'Speed',
+            source: character.species_name || character.species?.name || 'Species',
+            description: speedDescription,
+            type: 'species'
+          });
+        }
+      }
+
+      // Add size
+      const size = character.species_data?.size || character.species?.apiData?.size || character.species?.size;
+      if (size) {
+        features.push({
+          id: 'species-size',
+          name: 'Size',
+          source: character.species_name || character.species?.name || 'Species',
+          description: `You are ${size.toLowerCase()} size.`,
           type: 'species'
         });
       }
 
       // Add languages if available
-      const languages = character.species_data.languages || 
-                       character.species_data.apiData?.languages ||
-                       character.species_data.starting_proficiencies?.languages;
+      const languages = character.species_data?.languages || 
+                       character.species?.apiData?.languages ||
+                       character.species?.languages;
       
       if (languages) {
-        let languageDesc = '';
-        if (typeof languages === 'string') {
-          languageDesc = languages;
-        } else if (Array.isArray(languages)) {
-          languageDesc = languages.join(', ');
-        } else if (languages.choose || languages.from) {
-          languageDesc = `Choose ${languages.choose || 'some'} from: ${(languages.from || []).join(', ')}`;
-        }
-        
-        if (languageDesc) {
-          features.push({
-            id: 'species-languages',
-            name: 'Languages',
-            source: character.species_name || 'Species',
-            description: languageDesc,
-            type: 'species'
-          });
-        }
+        features.push({
+          id: 'species-languages',
+          name: 'Languages',
+          source: character.species_name || character.species?.name || 'Species',
+          description: languages,
+          type: 'species'
+        });
       }
     }
 
@@ -91,20 +124,15 @@ const FeaturesTraits = ({ character }: FeaturesTraitsProps) => {
     if (character.class_data) {
       console.log('Processing class data...');
       
-      // Check for features in different possible locations
-      const classFeatures = character.class_data.features || 
-                           character.class_data.apiData?.features ||
-                           [];
-      
-      console.log('Found class features:', classFeatures);
-      
-      if (Array.isArray(classFeatures)) {
-        classFeatures.forEach((feature: any) => {
+      // Add class description which contains the features
+      if (character.class_data.description) {
+        const classFeatures = parseClassFeaturesFromDescription(character.class_data.description);
+        classFeatures.forEach((feature, index) => {
           features.push({
-            id: feature.name || feature.index || `class-feature-${features.length}`,
-            name: feature.name || 'Unnamed Feature',
+            id: `class-feature-${index}`,
+            name: feature.name,
             source: character.class_name || 'Class',
-            description: feature.desc || feature.description || 'No description available.',
+            description: feature.description,
             type: 'class'
           });
         });
@@ -122,31 +150,24 @@ const FeaturesTraits = ({ character }: FeaturesTraitsProps) => {
       }
 
       // Add proficiencies
-      const proficiencies = [];
-      if (character.class_data.prof_armor) {
-        proficiencies.push(`Armor: ${character.class_data.prof_armor}`);
-      }
-      if (character.class_data.prof_weapons) {
-        proficiencies.push(`Weapons: ${character.class_data.prof_weapons}`);
-      }
-      if (character.class_data.prof_tools) {
-        proficiencies.push(`Tools: ${character.class_data.prof_tools}`);
-      }
-      if (character.class_data.prof_saving_throws) {
-        proficiencies.push(`Saving Throws: ${character.class_data.prof_saving_throws}`);
-      }
-      if (character.class_data.prof_skills) {
-        proficiencies.push(`Skills: ${character.class_data.prof_skills}`);
-      }
+      const proficiencies = character.class_data.proficiencies;
+      if (proficiencies) {
+        const profList = [];
+        if (proficiencies.armor) profList.push(`Armor: ${proficiencies.armor}`);
+        if (proficiencies.weapons) profList.push(`Weapons: ${proficiencies.weapons}`);
+        if (proficiencies.tools) profList.push(`Tools: ${proficiencies.tools}`);
+        if (proficiencies.savingThrows) profList.push(`Saving Throws: ${proficiencies.savingThrows}`);
+        if (proficiencies.skills) profList.push(`Skills: ${proficiencies.skills}`);
 
-      if (proficiencies.length > 0) {
-        features.push({
-          id: 'class-proficiencies',
-          name: 'Proficiencies',
-          source: character.class_name || 'Class',
-          description: proficiencies.join('. '),
-          type: 'class'
-        });
+        if (profList.length > 0) {
+          features.push({
+            id: 'class-proficiencies',
+            name: 'Proficiencies',
+            source: character.class_name || 'Class',
+            description: profList.join('. '),
+            type: 'class'
+          });
+        }
       }
     }
 
@@ -154,14 +175,13 @@ const FeaturesTraits = ({ character }: FeaturesTraitsProps) => {
     if (character.background_data) {
       console.log('Processing background data...');
       
-      const bgFeature = character.background_data.feature || character.background_data.apiData?.feature;
-      
-      if (bgFeature) {
+      // Add background feature
+      if (character.background_data.feature || character.background_data.feature_desc) {
         features.push({
-          id: bgFeature.name || 'background-feature',
-          name: bgFeature.name || 'Background Feature',
+          id: 'background-feature',
+          name: 'Background Feature',
           source: character.background_name || 'Background',
-          description: bgFeature.desc || bgFeature.description || bgFeature.feature_desc || 'No description available.',
+          description: character.background_data.feature_desc || character.background_data.feature || 'Background feature',
           type: 'background'
         });
       }
@@ -191,6 +211,50 @@ const FeaturesTraits = ({ character }: FeaturesTraitsProps) => {
 
     console.log('Final features array:', features);
     console.log('=== End Features Debug ===');
+    
+    return features;
+  };
+
+  // Parse traits from formatted text (markdown style)
+  const parseTraitsFromText = (traitsText: string) => {
+    const traits = [];
+    
+    // Split by markdown bold headers like **_Name._**
+    const traitSections = traitsText.split(/\*\*_([^_]+)\._\*\*/);
+    
+    for (let i = 1; i < traitSections.length; i += 2) {
+      const name = traitSections[i];
+      const description = traitSections[i + 1]?.trim() || '';
+      
+      if (name && description) {
+        traits.push({
+          name: name,
+          description: description.replace(/^\s*\*\s*/, '').trim() // Remove leading asterisk
+        });
+      }
+    }
+    
+    return traits;
+  };
+
+  // Parse class features from description text
+  const parseClassFeaturesFromDescription = (description: string) => {
+    const features = [];
+    
+    // Split by markdown headers (### Feature Name)
+    const sections = description.split(/### ([^\n]+)/);
+    
+    for (let i = 1; i < sections.length; i += 2) {
+      const name = sections[i]?.trim();
+      const desc = sections[i + 1]?.trim();
+      
+      if (name && desc) {
+        features.push({
+          name: name,
+          description: desc.replace(/\n\n/g, '\n').trim()
+        });
+      }
+    }
     
     return features;
   };
@@ -263,7 +327,7 @@ const FeaturesTraits = ({ character }: FeaturesTraitsProps) => {
                     </div>
                   </div>
                   
-                  <p className="text-sm text-gray-700 leading-relaxed ml-7">
+                  <p className="text-sm text-gray-700 leading-relaxed ml-7 whitespace-pre-line">
                     {feature.description}
                   </p>
                 </div>
