@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { useOpen5eData } from '../../hooks/useOpen5eData';
 import { Open5eSpell } from '../../services/open5eApi';
@@ -44,11 +43,23 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
 
   // Filter spells for the character's class
   const availableSpells = useMemo(() => {
-    if (!data.class || !spells.length) return [];
+    if (!data.class || !spells.length) {
+      console.log('No class or no spells:', { class: data.class, spellsLength: spells.length });
+      return [];
+    }
     
     const className = data.class.name.toLowerCase();
+    console.log('Filtering spells for class:', className);
+    console.log('Total spells available:', spells.length);
     
-    return spells.filter(spell => {
+    // Sample a few spells to see their structure
+    console.log('Sample spell structure:', spells.slice(0, 3).map(s => ({
+      name: s.name,
+      classes: s.classes,
+      level: s.level
+    })));
+    
+    const filtered = spells.filter(spell => {
       // Check if spell is available to this class
       const spellClasses = spell.classes?.map(c => c.name?.toLowerCase()) || [];
       const isAvailableToClass = spellClasses.includes(className);
@@ -59,8 +70,26 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
       // Filter by level (only show cantrips and 1st level spells for level 1 characters)
       const appropriateLevel = spell.level === '0' || (spellcastingInfo && parseInt(spell.level) <= spellcastingInfo.maxLevel);
       
+      if (spell.name.toLowerCase().includes('fire') || spell.name.toLowerCase().includes('magic')) {
+        console.log('Sample spell check:', {
+          name: spell.name,
+          spellClasses,
+          isAvailableToClass,
+          matchesSearch,
+          appropriateLevel,
+          level: spell.level
+        });
+      }
+      
       return isAvailableToClass && matchesSearch && appropriateLevel;
     });
+    
+    console.log('Filtered spells count:', filtered.length);
+    if (filtered.length > 0) {
+      console.log('First few filtered spells:', filtered.slice(0, 5).map(s => s.name));
+    }
+    
+    return filtered;
   }, [spells, data.class, searchTerm, spellcastingInfo]);
 
   // Group spells by level
@@ -178,6 +207,15 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
         />
       </div>
 
+      {/* Debug Info */}
+      <Card className="bg-yellow-50 border-yellow-200">
+        <CardContent className="p-4">
+          <p className="text-sm text-gray-600">
+            Debug: Found {availableSpells.length} spells for {data.class.name}
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Selected Spells Summary */}
       {selectedSpells.length > 0 && (
         <Card>
@@ -258,6 +296,7 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
       {availableSpells.length === 0 && (
         <div className="text-center py-8">
           <p className="text-gray-500">No spells found matching your criteria.</p>
+          <p className="text-xs text-gray-400 mt-2">Check console for debugging information</p>
         </div>
       )}
     </div>

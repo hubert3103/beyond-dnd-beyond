@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavigation from '../components/BottomNavigation';
@@ -47,25 +46,26 @@ const CharacterCreation = () => {
 
   // Get steps based on whether character is a spellcaster
   const getSteps = () => {
-    const baseSteps = [
+    const steps = [
       { id: 'setup' as CreationStep, label: 'Setup' },
       { id: 'species' as CreationStep, label: 'Species' },
       { id: 'class' as CreationStep, label: 'Class' },
-      { id: 'abilities' as CreationStep, label: 'Abilities' },
-      { id: 'background' as CreationStep, label: 'Background' },
     ];
 
-    // Add spells step only for spellcasters
+    // Add spells step right after class for spellcasters
     if (isSpellcaster()) {
-      baseSteps.push({ id: 'spells' as CreationStep, label: 'Spells' });
+      steps.push({ id: 'spells' as CreationStep, label: 'Spells' });
     }
 
-    baseSteps.push(
+    // Add remaining steps
+    steps.push(
+      { id: 'abilities' as CreationStep, label: 'Abilities' },
+      { id: 'background' as CreationStep, label: 'Background' },
       { id: 'equipment' as CreationStep, label: 'Equipment' },
       { id: 'summary' as CreationStep, label: 'Summary' }
     );
 
-    return baseSteps;
+    return steps;
   };
 
   const steps = getSteps();
