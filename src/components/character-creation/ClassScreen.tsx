@@ -9,6 +9,7 @@ import { open5eApi, Open5eClass } from '../../services/open5eApi';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import ClassDetailModal from './ClassDetailModal';
+import SkillSelector from './SkillSelector';
 
 interface ClassScreenProps {
   data: any;
@@ -22,6 +23,49 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
   const [selectedClass, setSelectedClass] = useState<Open5eClass | null>(data.class);
   const [detailModalClass, setDetailModalClass] = useState<Open5eClass | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>(data.class?.selectedSkills || []);
+
+  // All D&D 5e skills with their associated abilities
+  const allSkills = [
+    { name: 'Acrobatics', ability: 'dexterity' },
+    { name: 'Animal Handling', ability: 'wisdom' },
+    { name: 'Arcana', ability: 'intelligence' },
+    { name: 'Athletics', ability: 'strength' },
+    { name: 'Deception', ability: 'charisma' },
+    { name: 'History', ability: 'intelligence' },
+    { name: 'Insight', ability: 'wisdom' },
+    { name: 'Intimidation', ability: 'charisma' },
+    { name: 'Investigation', ability: 'intelligence' },
+    { name: 'Medicine', ability: 'wisdom' },
+    { name: 'Nature', ability: 'intelligence' },
+    { name: 'Perception', ability: 'wisdom' },
+    { name: 'Performance', ability: 'charisma' },
+    { name: 'Persuasion', ability: 'charisma' },
+    { name: 'Religion', ability: 'intelligence' },
+    { name: 'Sleight of Hand', ability: 'dexterity' },
+    { name: 'Stealth', ability: 'dexterity' },
+    { name: 'Survival', ability: 'wisdom' }
+  ];
+
+  // Get class skill options and count based on class
+  const getClassSkillInfo = (className: string) => {
+    const classSkillMap: Record<string, { skills: string[], count: number }> = {
+      'Barbarian': { skills: ['Animal Handling', 'Athletics', 'Intimidation', 'Nature', 'Perception', 'Survival'], count: 2 },
+      'Bard': { skills: allSkills.map(s => s.name), count: 3 },
+      'Cleric': { skills: ['History', 'Insight', 'Medicine', 'Persuasion', 'Religion'], count: 2 },
+      'Druid': { skills: ['Arcana', 'Animal Handling', 'Insight', 'Medicine', 'Nature', 'Perception', 'Religion', 'Survival'], count: 2 },
+      'Fighter': { skills: ['Acrobatics', 'Animal Handling', 'Athletics', 'History', 'Intimidation', 'Perception', 'Survival'], count: 2 },
+      'Monk': { skills: ['Acrobatics', 'Athletics', 'History', 'Insight', 'Religion', 'Stealth'], count: 2 },
+      'Paladin': { skills: ['Athletics', 'Insight', 'Intimidation', 'Medicine', 'Persuasion', 'Religion'], count: 2 },
+      'Ranger': { skills: ['Animal Handling', 'Athletics', 'Insight', 'Investigation', 'Nature', 'Perception', 'Stealth', 'Survival'], count: 3 },
+      'Rogue': { skills: ['Acrobatics', 'Athletics', 'Deception', 'Insight', 'Intimidation', 'Investigation', 'Perception', 'Performance', 'Persuasion', 'Sleight of Hand', 'Stealth'], count: 4 },
+      'Sorcerer': { skills: ['Arcana', 'Deception', 'Insight', 'Intimidation', 'Persuasion', 'Religion'], count: 2 },
+      'Warlock': { skills: ['Arcana', 'Deception', 'History', 'Intimidation', 'Investigation', 'Nature', 'Religion'], count: 2 },
+      'Wizard': { skills: ['Arcana', 'History', 'Insight', 'Investigation', 'Medicine', 'Religion'], count: 2 }
+    };
+
+    return classSkillMap[className] || { skills: [], count: 0 };
+  };
 
   const filteredClasses = useMemo(() => {
     console.log('All classes:', classes.length);
@@ -128,6 +172,8 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
 
   const handleSelectClass = (cls: Open5eClass, subclass?: string) => {
     setSelectedClass(cls);
+    // Reset skills when changing class
+    setSelectedSkills([]);
     onUpdate({ 
       class: {
         name: cls.name,
@@ -144,9 +190,22 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
         equipment: cls.equipment,
         spellcastingAbility: cls.spellcasting_ability,
         source: cls.document__slug,
-        features: [] // Will be populated with level 1 features
+        features: [],
+        selectedSkills: []
       }
     });
+  };
+
+  const handleSkillsChange = (skills: string[]) => {
+    setSelectedSkills(skills);
+    if (selectedClass) {
+      onUpdate({
+        class: {
+          ...data.class,
+          selectedSkills: skills
+        }
+      });
+    }
   };
 
   if (isLoading) {
@@ -263,6 +322,38 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
           </Collapsible>
         ))}
       </div>
+
+      {/* Skill Selection */}
+      {selectedClass && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Class Skills</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const skillInfo = getClassSkillInfo(selectedClass.name);
+              if (skillInfo.count === 0) {
+                return <p className="text-gray-600">This class does not grant skill proficiencies.</p>;
+              }
+              
+              const availableSkills = allSkills.filter(skill => 
+                skillInfo.skills.includes(skill.name)
+              );
+              
+              return (
+                <SkillSelector
+                  availableSkills={availableSkills}
+                  maxSelections={skillInfo.count}
+                  selectedSkills={selectedSkills}
+                  onSkillsChange={handleSkillsChange}
+                  title="Class Skill Proficiencies"
+                  source={`your ${selectedClass.name} class`}
+                />
+              );
+            })()}
+          </CardContent>
+        </Card>
+      )}
 
       {filteredClasses.length === 0 && (
         <div className="text-center py-8">

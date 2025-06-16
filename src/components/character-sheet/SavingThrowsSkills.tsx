@@ -56,26 +56,14 @@ const SavingThrowsSkills = ({ character }: SavingThrowsSkillsProps) => {
   const getCharacterSkills = () => {
     const skills = [];
     
-    // Add background skills
-    if (character.background_data?.skills) {
-      character.background_data.skills.forEach((skill: any) => {
-        skills.push({
-          name: skill.name,
-          ability: skill.ability_score,
-          proficient: true,
-          source: 'Background'
-        });
-      });
-    }
-
-    // Add class skills (if any were chosen during creation)
-    if (character.class_data?.skills) {
-      character.class_data.skills.forEach((skill: any) => {
-        const existing = skills.find(s => s.name === skill.name);
-        if (!existing) {
+    // Add class skills from character creation
+    if (character.class_data?.selectedSkills) {
+      character.class_data.selectedSkills.forEach((skillName: string) => {
+        const skillData = getSkillData(skillName);
+        if (skillData) {
           skills.push({
-            name: skill.name,
-            ability: skill.ability_score,
+            name: skillName,
+            ability: skillData.ability,
             proficient: true,
             source: 'Class'
           });
@@ -83,7 +71,25 @@ const SavingThrowsSkills = ({ character }: SavingThrowsSkillsProps) => {
       });
     }
 
-    // Add species skills
+    // Add background skills from character creation
+    if (character.background_data?.selectedSkills) {
+      character.background_data.selectedSkills.forEach((skillName: string) => {
+        const existing = skills.find(s => s.name === skillName);
+        if (!existing) {
+          const skillData = getSkillData(skillName);
+          if (skillData) {
+            skills.push({
+              name: skillName,
+              ability: skillData.ability,
+              proficient: true,
+              source: 'Background'
+            });
+          }
+        }
+      });
+    }
+
+    // Add species skills if any
     if (character.species_data?.skills) {
       character.species_data.skills.forEach((skill: any) => {
         const existing = skills.find(s => s.name === skill.name);
@@ -99,40 +105,55 @@ const SavingThrowsSkills = ({ character }: SavingThrowsSkillsProps) => {
     }
 
     // Fill in all other skills as non-proficient
-    const allSkills = [
-      { name: 'Acrobatics', ability: 'dexterity' },
-      { name: 'Animal Handling', ability: 'wisdom' },
-      { name: 'Arcana', ability: 'intelligence' },
-      { name: 'Athletics', ability: 'strength' },
-      { name: 'Deception', ability: 'charisma' },
-      { name: 'History', ability: 'intelligence' },
-      { name: 'Insight', ability: 'wisdom' },
-      { name: 'Intimidation', ability: 'charisma' },
-      { name: 'Investigation', ability: 'intelligence' },
-      { name: 'Medicine', ability: 'wisdom' },
-      { name: 'Nature', ability: 'intelligence' },
-      { name: 'Perception', ability: 'wisdom' },
-      { name: 'Performance', ability: 'charisma' },
-      { name: 'Persuasion', ability: 'charisma' },
-      { name: 'Religion', ability: 'intelligence' },
-      { name: 'Sleight of Hand', ability: 'dexterity' },
-      { name: 'Stealth', ability: 'dexterity' },
-      { name: 'Survival', ability: 'wisdom' }
+    const allSkillNames = [
+      'Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception',
+      'History', 'Insight', 'Intimidation', 'Investigation', 'Medicine',
+      'Nature', 'Perception', 'Performance', 'Persuasion', 'Religion',
+      'Sleight of Hand', 'Stealth', 'Survival'
     ];
 
-    allSkills.forEach(skill => {
-      const existing = skills.find(s => s.name === skill.name);
+    allSkillNames.forEach(skillName => {
+      const existing = skills.find(s => s.name === skillName);
       if (!existing) {
-        skills.push({
-          name: skill.name,
-          ability: skill.ability,
-          proficient: false,
-          source: null
-        });
+        const skillData = getSkillData(skillName);
+        if (skillData) {
+          skills.push({
+            name: skillName,
+            ability: skillData.ability,
+            proficient: false,
+            source: null
+          });
+        }
       }
     });
 
     return skills.sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  // Helper function to get skill data
+  const getSkillData = (skillName: string) => {
+    const skillMap: Record<string, { ability: string }> = {
+      'Acrobatics': { ability: 'dexterity' },
+      'Animal Handling': { ability: 'wisdom' },
+      'Arcana': { ability: 'intelligence' },
+      'Athletics': { ability: 'strength' },
+      'Deception': { ability: 'charisma' },
+      'History': { ability: 'intelligence' },
+      'Insight': { ability: 'wisdom' },
+      'Intimidation': { ability: 'charisma' },
+      'Investigation': { ability: 'intelligence' },
+      'Medicine': { ability: 'wisdom' },
+      'Nature': { ability: 'intelligence' },
+      'Perception': { ability: 'wisdom' },
+      'Performance': { ability: 'charisma' },
+      'Persuasion': { ability: 'charisma' },
+      'Religion': { ability: 'intelligence' },
+      'Sleight of Hand': { ability: 'dexterity' },
+      'Stealth': { ability: 'dexterity' },
+      'Survival': { ability: 'wisdom' }
+    };
+
+    return skillMap[skillName];
   };
 
   const getSkillModifier = (skill: any) => {

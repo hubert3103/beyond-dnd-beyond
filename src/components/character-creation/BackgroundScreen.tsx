@@ -1,10 +1,11 @@
-
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import SkillSelector from './SkillSelector';
 
 interface BackgroundScreenProps {
   data: any;
@@ -13,6 +14,7 @@ interface BackgroundScreenProps {
 
 const BackgroundScreen = ({ data, onUpdate }: BackgroundScreenProps) => {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    backgroundChoice: true,
     characterDetails: false,
     physicalCharacteristics: false,
     personalCharacteristics: false,
@@ -20,21 +22,55 @@ const BackgroundScreen = ({ data, onUpdate }: BackgroundScreenProps) => {
   });
 
   const [backgroundData, setBackgroundData] = useState({
-    alignment: '',
-    faith: '',
-    lifestyle: '',
-    hair: '',
-    skin: '',
-    eyes: '',
-    height: '',
-    weight: '',
-    age: '',
-    gender: '',
-    ideals: '',
-    bonds: '',
-    flaws: '',
-    notes: ''
+    name: data.background?.name || '',
+    selectedSkills: data.background?.selectedSkills || [],
+    alignment: data.background?.alignment || '',
+    faith: data.background?.faith || '',
+    lifestyle: data.background?.lifestyle || '',
+    hair: data.background?.hair || '',
+    skin: data.background?.skin || '',
+    eyes: data.background?.eyes || '',
+    height: data.background?.height || '',
+    weight: data.background?.weight || '',
+    age: data.background?.age || '',
+    gender: data.background?.gender || '',
+    ideals: data.background?.ideals || '',
+    bonds: data.background?.bonds || '',
+    flaws: data.background?.flaws || '',
+    notes: data.background?.notes || ''
   });
+
+  // Common D&D 5e backgrounds and their skill options
+  const backgroundOptions = [
+    { name: 'Acolyte', skills: ['Insight', 'Religion'], count: 2 },
+    { name: 'Criminal', skills: ['Deception', 'Stealth'], count: 2 },
+    { name: 'Folk Hero', skills: ['Animal Handling', 'Survival'], count: 2 },
+    { name: 'Noble', skills: ['History', 'Persuasion'], count: 2 },
+    { name: 'Sage', skills: ['Arcana', 'History'], count: 2 },
+    { name: 'Soldier', skills: ['Athletics', 'Intimidation'], count: 2 },
+    { name: 'Custom Background', skills: ['Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception', 'History', 'Insight', 'Intimidation', 'Investigation', 'Medicine', 'Nature', 'Perception', 'Performance', 'Persuasion', 'Religion', 'Sleight of Hand', 'Stealth', 'Survival'], count: 2 }
+  ];
+
+  const allSkills = [
+    { name: 'Acrobatics', ability: 'dexterity' },
+    { name: 'Animal Handling', ability: 'wisdom' },
+    { name: 'Arcana', ability: 'intelligence' },
+    { name: 'Athletics', ability: 'strength' },
+    { name: 'Deception', ability: 'charisma' },
+    { name: 'History', ability: 'intelligence' },
+    { name: 'Insight', ability: 'wisdom' },
+    { name: 'Intimidation', ability: 'charisma' },
+    { name: 'Investigation', ability: 'intelligence' },
+    { name: 'Medicine', ability: 'wisdom' },
+    { name: 'Nature', ability: 'intelligence' },
+    { name: 'Perception', ability: 'wisdom' },
+    { name: 'Performance', ability: 'charisma' },
+    { name: 'Persuasion', ability: 'charisma' },
+    { name: 'Religion', ability: 'intelligence' },
+    { name: 'Sleight of Hand', ability: 'dexterity' },
+    { name: 'Stealth', ability: 'dexterity' },
+    { name: 'Survival', ability: 'wisdom' }
+  ];
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
@@ -43,16 +79,105 @@ const BackgroundScreen = ({ data, onUpdate }: BackgroundScreenProps) => {
     }));
   };
 
-  const updateBackgroundData = (field: string, value: string) => {
+  const updateBackgroundData = (field: string, value: string | string[]) => {
     const newData = { ...backgroundData, [field]: value };
     setBackgroundData(newData);
     onUpdate({ background: newData });
   };
 
+  const handleBackgroundChange = (backgroundName: string) => {
+    const selectedBackground = backgroundOptions.find(bg => bg.name === backgroundName);
+    if (selectedBackground) {
+      // For predefined backgrounds, auto-select their skills
+      if (backgroundName !== 'Custom Background') {
+        updateBackgroundData('name', backgroundName);
+        updateBackgroundData('selectedSkills', selectedBackground.skills);
+      } else {
+        updateBackgroundData('name', backgroundName);
+        updateBackgroundData('selectedSkills', []);
+      }
+    }
+  };
+
+  const handleSkillsChange = (skills: string[]) => {
+    updateBackgroundData('selectedSkills', skills);
+  };
+
+  const selectedBackground = backgroundOptions.find(bg => bg.name === backgroundData.name);
+
   return (
     <div className="p-4 space-y-4">
       <h1 className="text-xl font-bold text-gray-900">Choose Origin: Background</h1>
       
+      {/* Background Choice */}
+      <Collapsible open={expandedSections.backgroundChoice} onOpenChange={() => toggleSection('backgroundChoice')}>
+        <div className="border border-gray-200 rounded-lg">
+          <CollapsibleTrigger className="w-full p-4 text-left">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-semibold text-gray-900">Background Selection</div>
+                <div className="text-sm text-gray-600">Choose your character's background</div>
+              </div>
+              <div className="text-gray-400">
+                {expandedSections.backgroundChoice ? '▲' : '▼'}
+              </div>
+            </div>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent>
+            <div className="px-4 pb-4 space-y-4 border-t border-gray-100">
+              <div>
+                <Label className="text-sm text-gray-600">Background</Label>
+                <Select value={backgroundData.name} onValueChange={handleBackgroundChange}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select a background" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {backgroundOptions.map(bg => (
+                      <SelectItem key={bg.name} value={bg.name}>{bg.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Background Skills */}
+              {selectedBackground && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Background Skills</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedBackground.name === 'Custom Background' ? (
+                      <SkillSelector
+                        availableSkills={allSkills}
+                        maxSelections={selectedBackground.count}
+                        selectedSkills={backgroundData.selectedSkills}
+                        onSkillsChange={handleSkillsChange}
+                        title="Choose Background Skills"
+                        source="your custom background"
+                      />
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-sm text-gray-600">
+                          Your {selectedBackground.name} background grants proficiency in:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedBackground.skills.map(skill => (
+                            <span key={skill} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+
       {/* Character Details */}
       <Collapsible open={expandedSections.characterDetails} onOpenChange={() => toggleSection('characterDetails')}>
         <div className="border border-gray-200 rounded-lg">
