@@ -30,25 +30,41 @@ const FeaturesTraits = ({ character }: FeaturesTraitsProps) => {
       console.log('Processing species data...');
       
       // Get traits from multiple possible locations
-      const traitsText = character.species_data?.traits || 
+      const traitsData = character.species_data?.traits || 
                         character.species_data?.apiData?.traits ||
                         character.species?.apiData?.traits ||
                         character.species?.traits;
       
-      console.log('Found species traits text:', traitsText);
+      console.log('Found species traits data:', traitsData);
+      console.log('Traits data type:', typeof traitsData);
+      console.log('Is traits data an array?', Array.isArray(traitsData));
       
-      if (traitsText) {
-        // Parse the traits text which contains multiple traits separated by markdown headers
-        const parsedTraits = parseTraitsFromText(traitsText);
-        parsedTraits.forEach((trait, index) => {
-          features.push({
-            id: `species-trait-${index}`,
-            name: trait.name,
-            source: character.species_name || character.species?.name || 'Species',
-            description: trait.description,
-            type: 'species'
+      if (traitsData) {
+        // Handle both string and array formats
+        let traitsText = '';
+        
+        if (Array.isArray(traitsData)) {
+          // If it's an array, join the elements
+          traitsText = traitsData.join('\n\n');
+        } else if (typeof traitsData === 'string') {
+          traitsText = traitsData;
+        }
+        
+        console.log('Final traits text for parsing:', traitsText);
+        
+        if (traitsText) {
+          // Parse the traits text which contains multiple traits separated by markdown headers
+          const parsedTraits = parseTraitsFromText(traitsText);
+          parsedTraits.forEach((trait, index) => {
+            features.push({
+              id: `species-trait-${index}`,
+              name: trait.name,
+              source: character.species_name || character.species?.name || 'Species',
+              description: trait.description,
+              type: 'species'
+            });
           });
-        });
+        }
       }
 
       // Add ability score increases
@@ -218,6 +234,12 @@ const FeaturesTraits = ({ character }: FeaturesTraitsProps) => {
   // Parse traits from formatted text (markdown style)
   const parseTraitsFromText = (traitsText: string) => {
     const traits = [];
+    
+    // Ensure we have a string to work with
+    if (!traitsText || typeof traitsText !== 'string') {
+      console.log('parseTraitsFromText: Invalid input, expected string but got:', typeof traitsText);
+      return traits;
+    }
     
     // Split by markdown bold headers like **_Name._**
     const traitSections = traitsText.split(/\*\*_([^_]+)\._\*\*/);
