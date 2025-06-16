@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,26 +21,55 @@ const BackgroundScreen = ({ data, onUpdate }: BackgroundScreenProps) => {
     notes: false
   });
 
-  const [backgroundData, setBackgroundData] = useState({
-    name: data.background?.name || '',
-    selectedSkills: data.background?.selectedSkills || [],
-    alignment: data.background?.alignment || '',
-    faith: data.background?.faith || '',
-    lifestyle: data.background?.lifestyle || '',
-    hair: data.background?.hair || '',
-    skin: data.background?.skin || '',
-    eyes: data.background?.eyes || '',
-    height: data.background?.height || '',
-    weight: data.background?.weight || '',
-    age: data.background?.age || '',
-    gender: data.background?.gender || '',
-    ideals: data.background?.ideals || '',
-    bonds: data.background?.bonds || '',
-    flaws: data.background?.flaws || '',
-    notes: data.background?.notes || '',
-    customName: data.background?.customName || '',
-    customDescription: data.background?.customDescription || ''
+  // Initialize background data from the passed data
+  const [backgroundData, setBackgroundData] = useState(() => {
+    const bg = data.background || {};
+    return {
+      name: bg.name || '',
+      selectedSkills: bg.selectedSkills || [],
+      alignment: bg.alignment || '',
+      faith: bg.faith || '',
+      lifestyle: bg.lifestyle || '',
+      hair: bg.hair || '',
+      skin: bg.skin || '',
+      eyes: bg.eyes || '',
+      height: bg.height || '',
+      weight: bg.weight || '',
+      age: bg.age || '',
+      gender: bg.gender || '',
+      ideals: bg.ideals || '',
+      bonds: bg.bonds || '',
+      flaws: bg.flaws || '',
+      notes: bg.notes || '',
+      customName: bg.customName || '',
+      customDescription: bg.customDescription || ''
+    };
   });
+
+  // Update local state when data prop changes
+  useEffect(() => {
+    const bg = data.background || {};
+    setBackgroundData({
+      name: bg.name || '',
+      selectedSkills: bg.selectedSkills || [],
+      alignment: bg.alignment || '',
+      faith: bg.faith || '',
+      lifestyle: bg.lifestyle || '',
+      hair: bg.hair || '',
+      skin: bg.skin || '',
+      eyes: bg.eyes || '',
+      height: bg.height || '',
+      weight: bg.weight || '',
+      age: bg.age || '',
+      gender: bg.gender || '',
+      ideals: bg.ideals || '',
+      bonds: bg.bonds || '',
+      flaws: bg.flaws || '',
+      notes: bg.notes || '',
+      customName: bg.customName || '',
+      customDescription: bg.customDescription || ''
+    });
+  }, [data.background]);
 
   // Common D&D 5e backgrounds and their skill options
   const backgroundOptions = [
@@ -89,18 +117,28 @@ const BackgroundScreen = ({ data, onUpdate }: BackgroundScreenProps) => {
   };
 
   const handleBackgroundChange = (backgroundName: string) => {
+    console.log('Background selected:', backgroundName);
     const selectedBackground = backgroundOptions.find(bg => bg.name === backgroundName);
     if (selectedBackground) {
       // For predefined backgrounds, auto-select their skills
       if (backgroundName !== 'Custom Background') {
-        updateBackgroundData('name', backgroundName);
-        updateBackgroundData('selectedSkills', selectedBackground.skills);
-        // Clear custom fields when switching to predefined background
-        updateBackgroundData('customName', '');
-        updateBackgroundData('customDescription', '');
+        const newData = {
+          ...backgroundData,
+          name: backgroundName,
+          selectedSkills: selectedBackground.skills,
+          customName: '',
+          customDescription: ''
+        };
+        setBackgroundData(newData);
+        onUpdate({ background: newData });
       } else {
-        updateBackgroundData('name', backgroundName);
-        updateBackgroundData('selectedSkills', []);
+        const newData = {
+          ...backgroundData,
+          name: backgroundName,
+          selectedSkills: []
+        };
+        setBackgroundData(newData);
+        onUpdate({ background: newData });
       }
     }
   };
