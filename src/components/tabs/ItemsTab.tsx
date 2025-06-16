@@ -17,25 +17,16 @@ const ItemsTab = () => {
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<'name' | 'rarity' | 'cost'>('rarity');
-
-  const getRarityFromCost = (cost: { quantity: number; unit: string }) => {
-    const goldValue = cost.unit === 'gp' ? cost.quantity : 
-                     cost.unit === 'sp' ? cost.quantity * 0.1 :
-                     cost.unit === 'cp' ? cost.quantity * 0.01 : cost.quantity;
-    
-    if (goldValue <= 50) return 'Common';
-    if (goldValue <= 500) return 'Uncommon';
-    if (goldValue <= 5000) return 'Rare';
-    return 'Very Rare';
-  };
+  const [sortBy, setSortBy] = useState<'name' | 'rarity' | 'type'>('rarity');
 
   const getRarityOrder = (rarity: string) => {
-    switch (rarity) {
-      case 'Common': return 1;
-      case 'Uncommon': return 2;
-      case 'Rare': return 3;
-      case 'Very Rare': return 4;
+    switch (rarity.toLowerCase()) {
+      case 'common': return 1;
+      case 'uncommon': return 2;
+      case 'rare': return 3;
+      case 'very rare': return 4;
+      case 'legendary': return 5;
+      case 'artifact': return 6;
       default: return 0;
     }
   };
@@ -58,7 +49,8 @@ const ItemsTab = () => {
     if (searchTerm.trim()) {
       filtered = filtered.filter(item => 
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.equipment_category.toLowerCase().includes(searchTerm.toLowerCase())
+        item.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.rarity.toLowerCase().includes(searchTerm.toLowerCase())
       );
       console.log('Filtered by search:', filtered.length);
     }
@@ -69,17 +61,11 @@ const ItemsTab = () => {
         case 'name':
           return a.name.localeCompare(b.name);
         case 'rarity':
-          const rarityA = getRarityOrder(getRarityFromCost(a.cost));
-          const rarityB = getRarityOrder(getRarityFromCost(b.cost));
+          const rarityA = getRarityOrder(a.rarity);
+          const rarityB = getRarityOrder(b.rarity);
           return rarityA - rarityB;
-        case 'cost':
-          const costA = a.cost.unit === 'gp' ? a.cost.quantity : 
-                       a.cost.unit === 'sp' ? a.cost.quantity * 0.1 :
-                       a.cost.unit === 'cp' ? a.cost.quantity * 0.01 : a.cost.quantity;
-          const costB = b.cost.unit === 'gp' ? b.cost.quantity : 
-                       b.cost.unit === 'sp' ? b.cost.quantity * 0.1 :
-                       b.cost.unit === 'cp' ? b.cost.quantity * 0.01 : b.cost.quantity;
-          return costA - costB;
+        case 'type':
+          return a.type.localeCompare(b.type);
         default:
           return 0;
       }
@@ -163,14 +149,14 @@ const ItemsTab = () => {
             Filters
           </Button>
           
-          <Select value={sortBy} onValueChange={(value: 'name' | 'rarity' | 'cost') => setSortBy(value)}>
+          <Select value={sortBy} onValueChange={(value: 'name' | 'rarity' | 'type') => setSortBy(value)}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="rarity">Rarity</SelectItem>
               <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="cost">Cost</SelectItem>
+              <SelectItem value="type">Type</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -237,13 +223,20 @@ const ItemsTab = () => {
                   onClick={() => setSelectedItem(item)}
                 >
                   <h4 className="font-bold text-gray-900">{item.name}</h4>
-                  <p className="text-sm text-gray-600">{item.equipment_category}</p>
-                  <p className="text-sm text-gray-600">{getRarityFromCost(item.cost)}</p>
+                  <p className="text-sm text-gray-600">{item.type}</p>
+                  <p className="text-sm text-gray-600">{item.rarity}</p>
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-gray-500">
-                      Cost: {item.cost.quantity} {item.cost.unit}
-                    </span>
-                    <span className="text-xs text-gray-500">Weight: {item.weight} lb</span>
+                    {item.cost && (
+                      <span className="text-xs text-gray-500">
+                        Cost: {item.cost.quantity} {item.cost.unit}
+                      </span>
+                    )}
+                    {item.weight && (
+                      <span className="text-xs text-gray-500">Weight: {item.weight} lb</span>
+                    )}
+                    {item.requires_attunement && (
+                      <span className="text-xs text-blue-600">Requires Attunement</span>
+                    )}
                   </div>
                 </div>
                 <button
@@ -281,30 +274,23 @@ const ItemsTab = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg w-full max-w-md p-6 max-h-[80vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-gray-900 mb-4">{selectedItem.name}</h3>
-            <p className="text-gray-600 mb-2"><strong>Category:</strong> {selectedItem.equipment_category}</p>
-            <p className="text-gray-600 mb-2"><strong>Cost:</strong> {selectedItem.cost.quantity} {selectedItem.cost.unit}</p>
-            <p className="text-gray-600 mb-2"><strong>Weight:</strong> {selectedItem.weight} lb</p>
-            <p className="text-gray-600 mb-4"><strong>Rarity:</strong> {getRarityFromCost(selectedItem.cost)}</p>
+            <p className="text-gray-600 mb-2"><strong>Type:</strong> {selectedItem.type}</p>
+            <p className="text-gray-600 mb-2"><strong>Rarity:</strong> {selectedItem.rarity}</p>
+            {selectedItem.cost && (
+              <p className="text-gray-600 mb-2"><strong>Cost:</strong> {selectedItem.cost.quantity} {selectedItem.cost.unit}</p>
+            )}
+            {selectedItem.weight && (
+              <p className="text-gray-600 mb-2"><strong>Weight:</strong> {selectedItem.weight} lb</p>
+            )}
+            {selectedItem.requires_attunement && (
+              <p className="text-gray-600 mb-4"><strong>Requires Attunement:</strong> Yes</p>
+            )}
             
             {selectedItem.desc && (
               <div className="mb-4">
                 <strong className="text-gray-600">Description:</strong>
                 <p className="text-gray-600 mt-1" dangerouslySetInnerHTML={{ __html: selectedItem.desc }} />
               </div>
-            )}
-            
-            {selectedItem.damage && (
-              <p className="text-gray-600 mb-2">
-                <strong>Damage:</strong> {selectedItem.damage.dice_count}d{selectedItem.damage.dice_value} {selectedItem.damage.damage_type}
-              </p>
-            )}
-            
-            {selectedItem.armor_class && (
-              <p className="text-gray-600 mb-2">
-                <strong>AC:</strong> {selectedItem.armor_class.base}
-                {selectedItem.armor_class.dex_bonus && ' + Dex modifier'}
-                {selectedItem.armor_class.max_bonus && ` (max ${selectedItem.armor_class.max_bonus})`}
-              </p>
             )}
             
             <button

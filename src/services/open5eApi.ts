@@ -32,35 +32,15 @@ interface Open5eSpell {
 interface Open5eEquipment {
   slug: string;
   name: string;
-  equipment_category: string;
-  gear_category?: string;
-  weapon_category?: string;
-  weapon_range?: string;
-  vehicle_category?: string;
-  tool_category?: string;
-  cost: {
+  type: string;
+  rarity: string;
+  requires_attunement: boolean;
+  cost?: {
     quantity: number;
     unit: string;
   };
-  weight: number;
+  weight?: number;
   desc: string;
-  properties?: Array<{ name: string }>;
-  armor_class?: {
-    base: number;
-    dex_bonus: boolean;
-    max_bonus?: number;
-  };
-  damage?: {
-    dice_count: number;
-    dice_value: number;
-    damage_type: string;
-  };
-  range?: {
-    normal: number;
-    long: number;
-  };
-  stealth_disadvantage?: boolean;
-  str_minimum?: number;
   document__slug: string;
 }
 
@@ -126,9 +106,10 @@ class Open5eApiService {
       let url = `${this.baseUrl}${endpoint}?limit=1000`;
       
       while (url) {
+        console.log('Fetching:', url);
         const response = await fetch(url);
         if (!response.ok) {
-          throw new Error(`Failed to fetch ${endpoint}: ${response.statusText}`);
+          throw new Error(`Failed to fetch ${endpoint}: ${response.status} ${response.statusText}`);
         }
         
         const data: Open5eResponse<T> = await response.json();
@@ -136,11 +117,12 @@ class Open5eApiService {
         url = data.next;
       }
 
+      console.log(`Fetched ${allResults.length} items from ${endpoint}`);
       this.cache.set(endpoint, allResults);
       return allResults;
     } catch (error) {
       console.error(`Error fetching ${endpoint}:`, error);
-      return [];
+      throw error;
     }
   }
 
@@ -149,7 +131,7 @@ class Open5eApiService {
   }
 
   async fetchEquipment(): Promise<Open5eEquipment[]> {
-    return this.fetchWithCache<Open5eEquipment>('/equipment');
+    return this.fetchWithCache<Open5eEquipment>('/magicitems');
   }
 
   async fetchRaces(): Promise<Open5eRace[]> {
