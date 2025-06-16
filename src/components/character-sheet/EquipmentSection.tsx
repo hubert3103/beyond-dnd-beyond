@@ -37,6 +37,7 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
   const [newItemType, setNewItemType] = useState('adventuring-gear');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEquipmentItem, setSelectedEquipmentItem] = useState<any>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   
   const { equipment: apiEquipment, isLoading: equipmentLoading } = useOpen5eData();
   
@@ -94,7 +95,7 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
 
   // Get filtered equipment suggestions based on category and search term
   const getEquipmentSuggestions = () => {
-    if (!apiEquipment || equipmentLoading) return [];
+    if (!apiEquipment || equipmentLoading || !searchTerm.trim()) return [];
     
     let filtered = apiEquipment.filter((item: any) => {
       // Filter by category if not 'adventuring-gear' (which includes everything)
@@ -105,13 +106,9 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
       }
       
       // Filter by search term
-      if (searchTerm.trim()) {
-        const searchLower = searchTerm.toLowerCase();
-        return item.name.toLowerCase().includes(searchLower) ||
-               item.type.toLowerCase().includes(searchLower);
-      }
-      
-      return true;
+      const searchLower = searchTerm.toLowerCase();
+      return item.name.toLowerCase().includes(searchLower) ||
+             item.type.toLowerCase().includes(searchLower);
     });
     
     // Limit to first 10 results for better UX
@@ -121,13 +118,24 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
   const suggestions = getEquipmentSuggestions();
 
   const selectEquipmentItem = (item: any) => {
+    console.log('Selecting equipment item:', item);
     setSelectedEquipmentItem(item);
+    setSearchTerm(item.name); // Set search term to the item name
     setNewItemName(item.name);
     setNewItemWeight(item.weight?.toString() || '0');
     setNewItemType(item.type === 'weapon' ? 'weapon' : 
                    item.type.includes('armor') || item.type === 'shield' ? 'armor' : 
                    'adventuring-gear');
-    setSearchTerm('');
+    setShowSuggestions(false); // Hide suggestions after selection
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setNewItemName(value); // Also update item name
+    setShowSuggestions(value.trim().length > 0); // Show suggestions when typing
+    if (value.trim().length === 0) {
+      setSelectedEquipmentItem(null);
+    }
   };
 
   const toggleEquipped = (itemId: string) => {
@@ -198,6 +206,17 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
     setNewItemType('adventuring-gear');
     setSearchTerm('');
     setSelectedEquipmentItem(null);
+    setShowSuggestions(false);
+    setShowAddItemDialog(false);
+  };
+
+  const resetForm = () => {
+    setNewItemName('');
+    setNewItemWeight('');
+    setNewItemType('adventuring-gear');
+    setSearchTerm('');
+    setSelectedEquipmentItem(null);
+    setShowSuggestions(false);
     setShowAddItemDialog(false);
   };
 
@@ -332,52 +351,46 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
                     </Select>
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Search Equipment</label>
+                  <div className="relative">
+                    <label className="text-sm font-medium text-gray-700">
+                      {equipmentLoading ? 'Loading equipment...' : 'Search & Select Item'}
+                    </label>
                     <div className="relative mt-1">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                       <Input
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Type to search for items..."
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        placeholder={equipmentLoading ? "Loading..." : "Type to search for items or enter custom name..."}
                         className="pl-10"
+                        disabled={equipmentLoading}
+                        onFocus={() => setShowSuggestions(searchTerm.trim().length > 0)}
                       />
                     </div>
                     
-                    {/* Equipment Suggestions */}
-                    {searchTerm && suggestions.length > 0 && (
-                      <div className="mt-2 max-h-48 overflow-y-auto border border-gray-200 rounded-md bg-white">
+                    {/* Equipment Suggestions Dropdown */}
+                    {showSuggestions && suggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto border border-gray-200 rounded-md bg-white shadow-lg z-50">
                         {suggestions.map((item: any, index) => (
                           <button
-                            key={index}
+                            key={`${item.slug}-${index}`}
                             onClick={() => selectEquipmentItem(item)}
-                            className="w-full text-left p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                            className="w-full text-left p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 focus:bg-blue-50 focus:outline-none"
                           >
-                            <div className="font-medium text-sm">{item.name}</div>
+                            <div className="font-medium text-sm text-gray-900">{item.name}</div>
                             <div className="text-xs text-gray-600">
                               {item.type} • {item.weight || 0} lbs
-                              {item.rarity && ` • ${item.rarity}`}
+                              {item.rarity && item.rarity !== 'common' && ` • ${item.rarity}`}
                             </div>
                           </button>
                         ))}
                       </div>
                     )}
                     
-                    {searchTerm && suggestions.length === 0 && !equipmentLoading && (
-                      <div className="mt-2 p-3 text-sm text-gray-500 border border-gray-200 rounded-md">
-                        No items found. You can still add a custom item below.
+                    {showSuggestions && searchTerm.trim() && suggestions.length === 0 && !equipmentLoading && (
+                      <div className="absolute top-full left-0 right-0 mt-1 p-3 text-sm text-gray-500 border border-gray-200 rounded-md bg-white shadow-lg z-50">
+                        No items found. You can still add "{searchTerm}" as a custom item.
                       </div>
                     )}
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Item Name</label>
-                    <Input
-                      value={newItemName}
-                      onChange={(e) => setNewItemName(e.target.value)}
-                      placeholder="Enter or select item name"
-                      className="mt-1"
-                    />
                   </div>
                   
                   <div>
@@ -388,23 +401,32 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
                       onChange={(e) => setNewItemWeight(e.target.value)}
                       placeholder="0"
                       className="mt-1"
+                      step="0.1"
+                      min="0"
                     />
                   </div>
+
+                  {selectedEquipmentItem && (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="text-sm font-medium text-blue-900">Selected: {selectedEquipmentItem.name}</div>
+                      <div className="text-xs text-blue-700 mt-1">
+                        {selectedEquipmentItem.type} • {selectedEquipmentItem.weight || 0} lbs
+                        {selectedEquipmentItem.rarity && selectedEquipmentItem.rarity !== 'common' && ` • ${selectedEquipmentItem.rarity}`}
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="flex space-x-2">
-                    <Button onClick={addNewItem} className="flex-1" disabled={!newItemName.trim()}>
+                    <Button 
+                      onClick={addNewItem} 
+                      className="flex-1" 
+                      disabled={!searchTerm.trim()}
+                    >
                       Add Item
                     </Button>
                     <Button 
                       variant="outline" 
-                      onClick={() => {
-                        setShowAddItemDialog(false);
-                        setNewItemName('');
-                        setNewItemWeight('');
-                        setNewItemType('adventuring-gear');
-                        setSearchTerm('');
-                        setSelectedEquipmentItem(null);
-                      }}
+                      onClick={resetForm}
                       className="flex-1"
                     >
                       Cancel
