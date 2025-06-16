@@ -1,64 +1,26 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Checkbox } from '@/components/ui/checkbox';
-import { supabase } from '@/integrations/supabase/client';
-
-interface Spell {
-  name: string;
-  level: string;
-  school: string;
-  cast_time: string;
-  range: string;
-  duration: string;
-  description: string;
-  classes: string;
-  verbal: number;
-  somatic: number;
-  material: string;
-  material_cost: string;
-}
+import { useOpen5eData } from '../../hooks/useOpen5eData';
+import { Open5eSpell } from '../../services/open5eApi';
+import LoadingSpinner from '../character-creation/LoadingSpinner';
+import ErrorMessage from '../character-creation/ErrorMessage';
 
 const SpellsTab = () => {
-  const [spells, setSpells] = useState<Spell[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { spells, isLoading, error, refresh } = useOpen5eData();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
+  const [selectedSpell, setSelectedSpell] = useState<Open5eSpell | null>(null);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
   const [filters, setFilters] = useState({
     levels: [] as string[],
     schools: [] as string[],
     classes: [] as string[],
   });
-
-  useEffect(() => {
-    fetchSpells();
-  }, []);
-
-  const fetchSpells = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('Spells 5e')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching spells:', error);
-        return;
-      }
-
-      setSpells(data || []);
-    } catch (error) {
-      console.error('Error fetching spells:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredSpells = useMemo(() => {
     return spells.filter(spell => {
@@ -79,9 +41,9 @@ const SpellsTab = () => {
 
       // Class filter
       if (filters.classes.length > 0) {
-        const spellClasses = spell.classes?.toLowerCase() || '';
+        const spellClassNames = spell.classes?.map(cls => cls.name.toLowerCase()) || [];
         const hasMatchingClass = filters.classes.some(cls => 
-          spellClasses.includes(cls.toLowerCase())
+          spellClassNames.includes(cls.toLowerCase())
         );
         if (!hasMatchingClass) return false;
       }
@@ -96,7 +58,7 @@ const SpellsTab = () => {
       if (!acc[levelKey]) acc[levelKey] = [];
       acc[levelKey].push(spell);
       return acc;
-    }, {} as Record<string, Spell[]>);
+    }, {} as Record<string, Open5eSpell[]>);
   }, [filteredSpells]);
 
   // Get unique values for filters
@@ -112,8 +74,7 @@ const SpellsTab = () => {
     const classSet = new Set<string>();
     spells.forEach(spell => {
       if (spell.classes) {
-        const classes = spell.classes.split(',').map(c => c.trim());
-        classes.forEach(cls => classSet.add(cls));
+        spell.classes.forEach(cls => classSet.add(cls.name));
       }
     });
     return [...classSet].sort();
@@ -132,20 +93,20 @@ const SpellsTab = () => {
     setFilters({ levels: [], schools: [], classes: [] });
   };
 
-  const getSpellComponents = (spell: Spell) => {
-    const components = [];
-    if (spell.verbal) components.push('V');
-    if (spell.somatic) components.push('S');
-    if (spell.material) components.push('M');
-    return components.join(', ');
+  const getSpellComponents = (spell: Open5eSpell) => {
+    return spell.components || '';
   };
 
-  if (loading) {
-    return (
-      <div className="p-4 flex items-center justify-center">
-        <div className="text-white">Loading spells...</div>
-      </div>
-    );
+  const getSpellClasses = (spell: Open5eSpell) => {
+    return spell.classes?.map(cls => cls.name).join(', ') || '';
+  };
+
+  if (isLoading) {
+    return <LoadingSpinner message="Loading spells..." />;
+  }
+
+  if (error) {
+    return <ErrorMessage message={error} onRetry={refresh} />;
   }
 
   return (
@@ -257,7 +218,7 @@ const SpellsTab = () => {
           <h3 className="text-white font-bold mb-3">{level}</h3>
           <div className="space-y-2">
             {levelSpells.map((spell, index) => (
-              <Card key={`${spell.name}-${index}`} className="bg-white rounded-lg">
+              <Card key={`${spell.slug}-${index}`} className="bg-white rounded-lg">
                 <CardContent className="p-4 flex items-center justify-between">
                   <div 
                     className="flex-1 cursor-pointer"
@@ -266,7 +227,7 @@ const SpellsTab = () => {
                     <h4 className="font-bold text-gray-900">{spell.name}</h4>
                     <p className="text-sm text-gray-600">{spell.school}</p>
                     <p className="text-sm text-gray-600">
-                      {spell.cast_time} • {spell.range} • {getSpellComponents(spell)}
+                      {spell.casting_time} • {spell.range} • {getSpellComponents(spell)}
                     </p>
                   </div>
                   <button
@@ -298,19 +259,31 @@ const SpellsTab = () => {
                 <strong>Level:</strong> {selectedSpell.level === '0' ? 'Cantrip' : selectedSpell.level}
               </p>
               <p className="text-gray-600"><strong>School:</strong> {selectedSpell.school}</p>
-              <p className="text-gray-600"><strong>Casting Time:</strong> {selectedSpell.cast_time}</p>
+              <p className="text-gray-600"><strong>Casting Time:</strong> {selectedSpell.casting_time}</p>
               <p className="text-gray-600"><strong>Range:</strong> {selectedSpell.range}</p>
               <p className="text-gray-600"><strong>Duration:</strong> {selectedSpell.duration}</p>
               <p className="text-gray-600"><strong>Components:</strong> {getSpellComponents(selectedSpell)}</p>
               {selectedSpell.material && (
                 <p className="text-gray-600"><strong>Materials:</strong> {selectedSpell.material}</p>
               )}
-              {selectedSpell.classes && (
-                <p className="text-gray-600"><strong>Classes:</strong> {selectedSpell.classes}</p>
+              {selectedSpell.classes && selectedSpell.classes.length > 0 && (
+                <p className="text-gray-600"><strong>Classes:</strong> {getSpellClasses(selectedSpell)}</p>
+              )}
+              {selectedSpell.concentration && (
+                <p className="text-gray-600"><strong>Concentration:</strong> Yes</p>
+              )}
+              {selectedSpell.ritual && (
+                <p className="text-gray-600"><strong>Ritual:</strong> Yes</p>
               )}
             </div>
             <div className="mb-6">
-              <p className="text-gray-600 whitespace-pre-wrap">{selectedSpell.description}</p>
+              <p className="text-gray-600 whitespace-pre-wrap">{selectedSpell.desc}</p>
+              {selectedSpell.higher_level && (
+                <div className="mt-4">
+                  <strong className="text-gray-900">At Higher Levels:</strong>
+                  <p className="text-gray-600">{selectedSpell.higher_level}</p>
+                </div>
+              )}
             </div>
             <button
               onClick={() => setSelectedSpell(null)}

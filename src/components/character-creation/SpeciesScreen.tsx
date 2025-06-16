@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -31,30 +30,37 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
     const availableSources = open5eApi.getAvailableSources(races);
     console.log('Available sources in races:', availableSources);
     
-    // If no specific sources are enabled, or coreRules is enabled, include 5esrd
-    // Also include other commonly available sources
-    const enabledSources: string[] = [];
+    // Determine which sources to include based on user settings
+    let enabledSources: string[] = [];
     
+    // If coreRules is enabled (default true), include core sources
     if (data.sources?.coreRules !== false) {
       enabledSources.push('5esrd', 'cc', 'kp');
     }
     
-    if (data.sources?.expansions) {
+    // If expansions is enabled, include expansion sources
+    if (data.sources?.expansions === true) {
       enabledSources.push('tce', 'xge', 'vgm', 'mtf');
     }
     
-    if (data.sources?.homebrew) {
+    // If homebrew is enabled, include homebrew sources
+    if (data.sources?.homebrew === true) {
       enabledSources.push('homebrew');
     }
     
-    // If no specific filtering, show all
+    // If no sources would be enabled, show all available sources
     if (enabledSources.length === 0) {
-      enabledSources.push(...availableSources);
+      enabledSources = availableSources;
     }
     
     console.log('Enabled sources:', enabledSources);
     
-    let filtered = open5eApi.filterBySource(races, enabledSources);
+    // Filter by enabled sources
+    let filtered = races.filter(race => {
+      // Check if race's source is in enabled sources, or if no specific filtering is applied
+      return enabledSources.length === 0 || enabledSources.includes(race.document__slug);
+    });
+    
     console.log('Filtered by source:', filtered.length);
     
     // Apply search filter
@@ -142,6 +148,8 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
       {/* Debug info */}
       <div className="text-sm text-gray-500 bg-gray-100 p-2 rounded">
         Debug: {races.length} total races, {filteredRaces.length} after filtering
+        <br />
+        Sources enabled: coreRules={String(data.sources?.coreRules !== false)}, expansions={String(data.sources?.expansions === true)}, homebrew={String(data.sources?.homebrew === true)}
       </div>
 
       {/* Search */}
