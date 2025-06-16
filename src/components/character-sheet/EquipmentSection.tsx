@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Package, Sword, Shield } from 'lucide-react';
+import { ChevronDown, ChevronRight, Package, Sword, Shield, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -15,6 +14,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useOpen5eData } from '@/hooks/useOpen5eData';
 
 interface EquipmentSectionProps {
   character: any;
@@ -27,6 +34,10 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
   const [newItemName, setNewItemName] = useState('');
   const [newItemWeight, setNewItemWeight] = useState('');
   const [newItemType, setNewItemType] = useState('adventuring-gear');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedEquipmentItem, setSelectedEquipmentItem] = useState<any>(null);
+  
+  const { equipment, isLoading: equipmentLoading } = useOpen5eData();
   
   // Get equipment from character's starting equipment and inventory
   const getCharacterEquipment = () => {
@@ -80,6 +91,44 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
   const carryingCapacity = strScore * 15; // Base carrying capacity
   const isEncumbered = totalWeight > carryingCapacity;
 
+  // Get filtered equipment suggestions based on category and search term
+  const getEquipmentSuggestions = () => {
+    if (!equipment || equipmentLoading) return [];
+    
+    let filtered = equipment.filter((item: any) => {
+      // Filter by category if not 'adventuring-gear' (which includes everything)
+      if (newItemType !== 'adventuring-gear') {
+        if (newItemType === 'weapon' && item.type !== 'weapon') return false;
+        if (newItemType === 'armor' && !item.type.includes('armor') && item.type !== 'shield') return false;
+        if (newItemType === 'tool' && !item.name.toLowerCase().includes('tool') && !item.type.includes('tool')) return false;
+      }
+      
+      // Filter by search term
+      if (searchTerm.trim()) {
+        const searchLower = searchTerm.toLowerCase();
+        return item.name.toLowerCase().includes(searchLower) ||
+               item.type.toLowerCase().includes(searchLower);
+      }
+      
+      return true;
+    });
+    
+    // Limit to first 10 results for better UX
+    return filtered.slice(0, 10);
+  };
+
+  const suggestions = getEquipmentSuggestions();
+
+  const selectEquipmentItem = (item: any) => {
+    setSelectedEquipmentItem(item);
+    setNewItemName(item.name);
+    setNewItemWeight(item.weight?.toString() || '0');
+    setNewItemType(item.type === 'weapon' ? 'weapon' : 
+                   item.type.includes('armor') || item.type === 'shield' ? 'armor' : 
+                   'adventuring-gear');
+    setSearchTerm('');
+  };
+
   const toggleEquipped = (itemId: string) => {
     if (!setCharacter) return;
 
@@ -117,7 +166,15 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
       category: newItemType,
       weight: parseFloat(newItemWeight) || 0,
       equipped: false,
-      quantity: 1
+      quantity: 1,
+      // Include additional data from selected equipment item if available
+      ...(selectedEquipmentItem && {
+        damage: selectedEquipmentItem.damage_dice,
+        damage_type: selectedEquipmentItem.damage_type,
+        ac: selectedEquipmentItem.ac,
+        rarity: selectedEquipmentItem.rarity,
+        type: selectedEquipmentItem.type
+      })
     };
 
     const updatedCharacter = { ...character };
@@ -138,6 +195,8 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
     setNewItemName('');
     setNewItemWeight('');
     setNewItemType('adventuring-gear');
+    setSearchTerm('');
+    setSelectedEquipmentItem(null);
     setShowAddItemDialog(false);
   };
 
@@ -251,20 +310,75 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
                   Add Item
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>Add New Item</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
+                    <label className="text-sm font-medium text-gray-700">Category</label>
+                    <Select value={newItemType} onValueChange={setNewItemType}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="adventuring-gear">Adventuring Gear</SelectItem>
+                        <SelectItem value="weapon">Weapon</SelectItem>
+                        <SelectItem value="armor">Armor</SelectItem>
+                        <SelectItem value="tool">Tool</SelectItem>
+                        <SelectItem value="consumable">Consumable</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Search Equipment</label>
+                    <div className="relative mt-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Type to search for items..."
+                        className="pl-10"
+                      />
+                    </div>
+                    
+                    {/* Equipment Suggestions */}
+                    {searchTerm && suggestions.length > 0 && (
+                      <div className="mt-2 max-h-48 overflow-y-auto border border-gray-200 rounded-md bg-white">
+                        {suggestions.map((item: any, index) => (
+                          <button
+                            key={index}
+                            onClick={() => selectEquipmentItem(item)}
+                            className="w-full text-left p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="font-medium text-sm">{item.name}</div>
+                            <div className="text-xs text-gray-600">
+                              {item.type} • {item.weight || 0} lbs
+                              {item.rarity && ` • ${item.rarity}`}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {searchTerm && suggestions.length === 0 && !equipmentLoading && (
+                      <div className="mt-2 p-3 text-sm text-gray-500 border border-gray-200 rounded-md">
+                        No items found. You can still add a custom item below.
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
                     <label className="text-sm font-medium text-gray-700">Item Name</label>
                     <Input
                       value={newItemName}
                       onChange={(e) => setNewItemName(e.target.value)}
-                      placeholder="Enter item name"
+                      placeholder="Enter or select item name"
                       className="mt-1"
                     />
                   </div>
+                  
                   <div>
                     <label className="text-sm font-medium text-gray-700">Weight (lbs)</label>
                     <Input
@@ -275,27 +389,21 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
                       className="mt-1"
                     />
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Type</label>
-                    <select
-                      value={newItemType}
-                      onChange={(e) => setNewItemType(e.target.value)}
-                      className="mt-1 w-full p-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="adventuring-gear">Adventuring Gear</option>
-                      <option value="weapon">Weapon</option>
-                      <option value="armor">Armor</option>
-                      <option value="tool">Tool</option>
-                      <option value="consumable">Consumable</option>
-                    </select>
-                  </div>
+                  
                   <div className="flex space-x-2">
-                    <Button onClick={addNewItem} className="flex-1">
+                    <Button onClick={addNewItem} className="flex-1" disabled={!newItemName.trim()}>
                       Add Item
                     </Button>
                     <Button 
                       variant="outline" 
-                      onClick={() => setShowAddItemDialog(false)}
+                      onClick={() => {
+                        setShowAddItemDialog(false);
+                        setNewItemName('');
+                        setNewItemWeight('');
+                        setNewItemType('adventuring-gear');
+                        setSearchTerm('');
+                        setSelectedEquipmentItem(null);
+                      }}
                       className="flex-1"
                     >
                       Cancel
