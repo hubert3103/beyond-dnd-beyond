@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,41 +21,68 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
     const dexModifier = character.abilities?.dexterity?.modifier || 0;
     let baseAC = 10 + dexModifier;
     
+    console.log('=== AC Calculation Debug ===');
+    console.log('Character equipment:', character.equipment);
+    console.log('Dex modifier:', dexModifier);
+    console.log('Base AC (10 + dex):', baseAC);
+    
     // Check for equipped armor in both starting_equipment and inventory
     let equippedArmor = null;
     
     // Check starting equipment first
     if (character.equipment?.starting_equipment) {
-      equippedArmor = character.equipment.starting_equipment.find((item: any) => 
-        item.category === 'armor' && item.equipped
-      );
+      console.log('Checking starting equipment:', character.equipment.starting_equipment);
+      equippedArmor = character.equipment.starting_equipment.find((item: any) => {
+        console.log('Checking item:', item.name, 'category:', item.category, 'equipped:', item.equipped);
+        return item.category === 'armor' && item.equipped;
+      });
+      if (equippedArmor) console.log('Found equipped armor in starting equipment:', equippedArmor);
     }
     
     // If no equipped armor found in starting equipment, check inventory
     if (!equippedArmor && character.equipment?.inventory) {
-      equippedArmor = character.equipment.inventory.find((item: any) => 
-        item.category === 'armor' && item.equipped
-      );
+      console.log('Checking inventory:', character.equipment.inventory);
+      equippedArmor = character.equipment.inventory.find((item: any) => {
+        console.log('Checking inventory item:', item.name, 'category:', item.category, 'equipped:', item.equipped);
+        return item.category === 'armor' && item.equipped;
+      });
+      if (equippedArmor) console.log('Found equipped armor in inventory:', equippedArmor);
     }
     
+    console.log('Final equipped armor found:', equippedArmor);
+    
     if (equippedArmor && equippedArmor.ac) {
+      console.log('Armor AC value:', equippedArmor.ac);
+      console.log('Armor dex_bonus:', equippedArmor.dex_bonus);
+      console.log('Armor max_dex_bonus:', equippedArmor.max_dex_bonus);
+      
       if (equippedArmor.dex_bonus !== false) {
         const maxDexBonus = equippedArmor.max_dex_bonus || 999;
         baseAC = equippedArmor.ac + Math.min(dexModifier, maxDexBonus);
+        console.log('AC with dex bonus:', baseAC);
       } else {
         baseAC = equippedArmor.ac;
+        console.log('AC without dex bonus:', baseAC);
       }
+    } else {
+      console.log('No equipped armor found or armor has no AC value');
     }
+    
+    console.log('Final calculated AC:', baseAC);
+    console.log('=== End AC Calculation ===');
     
     return baseAC;
   };
 
   // Update AC when equipment changes
   useEffect(() => {
+    console.log('PassiveScoresDefenses useEffect triggered - equipment changed');
     const newAC = calculateArmorClass();
     if (newAC !== character.armorClass) {
       console.log('Updating AC from', character.armorClass, 'to', newAC);
       setCharacter({ ...character, armorClass: newAC });
+    } else {
+      console.log('AC unchanged, staying at:', character.armorClass);
     }
   }, [character.equipment]);
 
@@ -155,4 +181,3 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
 };
 
 export default PassiveScoresDefenses;
-
