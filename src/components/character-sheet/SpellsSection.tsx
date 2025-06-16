@@ -88,8 +88,9 @@ const SpellsSection = ({ character, setCharacter }: SpellsSectionProps) => {
       }
       spellsByLevel[level].push({
         ...spell,
-        // Ensure prepared is a boolean
-        prepared: spell.prepared === true || spell.prepared === 'true'
+        // For classes that don't need preparation, all spells are considered "prepared"
+        // For preparation classes, use the actual prepared state
+        prepared: needsSpellPreparation() ? (spell.prepared === true || spell.prepared === 'true') : true
       });
     });
     
@@ -185,6 +186,24 @@ const SpellsSection = ({ character, setCharacter }: SpellsSectionProps) => {
     }
   };
 
+  // Helper function to determine if a spell can be cast
+  const canCastSpell = (spell: any, spellLevel: number) => {
+    // Cantrips can always be cast
+    if (spellLevel === 0) return true;
+    
+    // Check if we have spell slots available
+    const slots = spellSlots[spellLevel];
+    if (!slots || slots.used >= slots.max) return false;
+    
+    // For classes that need preparation, spell must be prepared
+    if (needsSpellPreparation()) {
+      return spell.prepared === true;
+    }
+    
+    // For classes that don't need preparation, all known spells can be cast
+    return true;
+  };
+
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div className="bg-white rounded-lg overflow-hidden">
@@ -271,7 +290,7 @@ const SpellsSection = ({ character, setCharacter }: SpellsSectionProps) => {
                       <div className="flex-1">
                         <h4 className="font-medium text-gray-900 flex items-center space-x-2">
                           <span>{spell.name}</span>
-                          {spell.prepared && (
+                          {spell.prepared && needsSpellPreparation() && (
                             <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                               Prepared
                             </span>
@@ -299,7 +318,7 @@ const SpellsSection = ({ character, setCharacter }: SpellsSectionProps) => {
                         </Button>
                       )}
                       
-                      {(selectedLevel === 0 || spell.prepared || !needsSpellPreparation()) && (
+                      {canCastSpell(spell, selectedLevel) && (
                         <Button
                           size="sm"
                           className="bg-red-600 hover:bg-red-700"
@@ -307,9 +326,19 @@ const SpellsSection = ({ character, setCharacter }: SpellsSectionProps) => {
                             e.stopPropagation();
                             castSpell(selectedLevel);
                           }}
-                          disabled={selectedLevel > 0 && spellSlots[selectedLevel]?.used >= spellSlots[selectedLevel]?.max}
                         >
                           Cast
+                        </Button>
+                      )}
+                      
+                      {!canCastSpell(spell, selectedLevel) && selectedLevel > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled
+                          className="opacity-50"
+                        >
+                          {!spell.prepared && needsSpellPreparation() ? 'Need to Prepare' : 'No Slots'}
                         </Button>
                       )}
                     </div>
