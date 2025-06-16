@@ -59,7 +59,7 @@ const CharacterSelectModal = ({ onClose, selectedSpell }: CharacterSelectModalPr
         range: selectedSpell.range,
         components: selectedSpell.components,
         duration: selectedSpell.duration,
-        description: selectedSpell.desc?.join('\n') || '',
+        description: selectedSpell.desc || '',
         classes: selectedSpell.classes,
         prepared: false, // Default to not prepared
         slug: selectedSpell.slug,

@@ -46,13 +46,9 @@ const CharacterSelectModal = ({ isOpen, onClose, selectedItem }: CharacterSelect
         rarity: selectedItem.rarity,
         cost: selectedItem.cost,
         weight: selectedItem.weight,
-        description: selectedItem.desc?.join('\n') || '',
+        description: selectedItem.desc || '',
         equipped: false,
-        category: selectedItem.category || 'item',
-        ac: selectedItem.ac,
-        damage: selectedItem.damage,
-        damage_type: selectedItem.damage_type,
-        damage_dice: selectedItem.damage_dice,
+        category: 'item', // Default category since it's not in the API type
         requires_attunement: selectedItem.requires_attunement || false,
         index: selectedItem.slug,
         source: 'added'
