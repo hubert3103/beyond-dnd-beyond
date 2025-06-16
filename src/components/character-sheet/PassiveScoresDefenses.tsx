@@ -51,21 +51,27 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
     
     console.log('Final equipped armor found:', equippedArmor);
     
-    if (equippedArmor && equippedArmor.ac) {
-      console.log('Armor AC value:', equippedArmor.ac);
+    if (equippedArmor) {
+      // Check for AC value in multiple possible properties
+      const armorAC = equippedArmor.ac || equippedArmor.ac_base;
+      console.log('Armor AC value:', armorAC);
       console.log('Armor dex_bonus:', equippedArmor.dex_bonus);
       console.log('Armor max_dex_bonus:', equippedArmor.max_dex_bonus);
       
-      if (equippedArmor.dex_bonus !== false) {
-        const maxDexBonus = equippedArmor.max_dex_bonus || 999;
-        baseAC = equippedArmor.ac + Math.min(dexModifier, maxDexBonus);
-        console.log('AC with dex bonus:', baseAC);
+      if (armorAC) {
+        if (equippedArmor.dex_bonus !== false) {
+          const maxDexBonus = equippedArmor.max_dex_bonus || 999;
+          baseAC = armorAC + Math.min(dexModifier, maxDexBonus);
+          console.log('AC with dex bonus:', baseAC);
+        } else {
+          baseAC = armorAC;
+          console.log('AC without dex bonus:', baseAC);
+        }
       } else {
-        baseAC = equippedArmor.ac;
-        console.log('AC without dex bonus:', baseAC);
+        console.log('No AC value found on armor item');
       }
     } else {
-      console.log('No equipped armor found or armor has no AC value');
+      console.log('No equipped armor found');
     }
     
     console.log('Final calculated AC:', baseAC);

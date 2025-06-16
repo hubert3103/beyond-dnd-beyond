@@ -42,6 +42,18 @@ interface Open5eEquipment {
   weight?: number;
   desc: string;
   document__slug: string;
+  // Add armor-specific properties
+  ac?: number;
+  ac_base?: number;
+  ac_add_dex?: boolean;
+  ac_cap_dex?: number;
+  dex_bonus?: boolean;
+  max_dex_bonus?: number;
+  // Add weapon-specific properties
+  damage_dice?: string;
+  damage_type?: string;
+  category?: string;
+  properties?: string[];
 }
 
 interface Open5eWeapon {
@@ -183,7 +195,7 @@ class Open5eApiService {
         combinedEquipment.push(...magicItems.value);
       }
 
-      // Add weapons (convert to equipment format)
+      // Add weapons (convert to equipment format with proper properties)
       if (weapons.status === 'fulfilled') {
         const weaponEquipment: Open5eEquipment[] = weapons.value.map(weapon => ({
           slug: weapon.slug,
@@ -194,12 +206,16 @@ class Open5eApiService {
           cost: weapon.cost,
           weight: weapon.weight,
           desc: weapon.desc,
-          document__slug: weapon.document__slug
+          document__slug: weapon.document__slug,
+          category: weapon.category,
+          damage_dice: weapon.damage?.damage_dice,
+          damage_type: weapon.damage?.damage_type,
+          properties: weapon.properties
         }));
         combinedEquipment.push(...weaponEquipment);
       }
 
-      // Add armor (convert to equipment format)
+      // Add armor (convert to equipment format with proper AC properties)
       if (armor.status === 'fulfilled') {
         const armorEquipment: Open5eEquipment[] = armor.value.map(armorItem => ({
           slug: armorItem.slug,
@@ -210,12 +226,19 @@ class Open5eApiService {
           cost: armorItem.cost,
           weight: armorItem.weight,
           desc: armorItem.desc,
-          document__slug: armorItem.document__slug
+          document__slug: armorItem.document__slug,
+          // Preserve armor-specific properties
+          ac: armorItem.ac_base, // Map ac_base to ac for consistency
+          ac_base: armorItem.ac_base,
+          dex_bonus: armorItem.ac_add_dex !== false, // Convert to boolean
+          max_dex_bonus: armorItem.ac_cap_dex,
+          category: armorItem.category
         }));
         combinedEquipment.push(...armorEquipment);
       }
 
       console.log(`Combined equipment: ${combinedEquipment.length} items`);
+      console.log('Sample armor item:', combinedEquipment.find(item => item.type.includes('armor')));
       this.cache.set('/equipment-combined', combinedEquipment);
       return combinedEquipment;
     } catch (error) {
