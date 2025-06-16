@@ -17,7 +17,6 @@ const StandardArraySelector = ({ abilities, onUpdate }: StandardArraySelectorPro
   );
 
   const handleAssignment = (abilityKey: string, value: string) => {
-    const numValue = parseInt(value);
     const newAssignedValues = { ...assignedValues };
     
     // Remove old assignment if exists
@@ -25,8 +24,9 @@ const StandardArraySelector = ({ abilities, onUpdate }: StandardArraySelectorPro
       delete newAssignedValues[abilityKey];
     }
     
-    // Add new assignment
-    if (numValue) {
+    // Add new assignment only if it's not the unassigned value
+    if (value !== 'unassigned') {
+      const numValue = parseInt(value);
       newAssignedValues[abilityKey] = numValue;
     }
     
@@ -71,14 +71,14 @@ const StandardArraySelector = ({ abilities, onUpdate }: StandardArraySelectorPro
             </div>
             <div className="ml-4 w-24">
               <Select 
-                value={assignedValues[key]?.toString() || ''} 
+                value={assignedValues[key]?.toString() || 'unassigned'} 
                 onValueChange={(value) => handleAssignment(key, value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="--" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {STANDARD_ARRAY_VALUES.map(value => (
                     <SelectItem 
                       key={value} 
