@@ -16,8 +16,8 @@ const SpellDetailModal = ({ spell, onClose }: SpellDetailModalProps) => {
       return '';
     }
     return spell.classes
-      .map((cls: any) => cls?.name || '')
-      .filter((name: string) => name.length > 0)
+      .map(cls => cls?.name || '')
+      .filter(name => name.length > 0)
       .join(', ');
   };
 

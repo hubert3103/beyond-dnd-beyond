@@ -36,7 +36,7 @@ const SpellsHeader = ({
     
     spells.forEach(spell => {
       if (spell.classes && Array.isArray(spell.classes)) {
-        spell.classes.forEach((cls: any) => {
+        spell.classes.forEach(cls => {
           if (cls?.name) {
             classSet.add(cls.name);
           }

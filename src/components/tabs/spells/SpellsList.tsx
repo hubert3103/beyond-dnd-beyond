@@ -29,9 +29,9 @@ const SpellsList = ({
       return [];
     }
     return spell.classes
-      .map((cls: any) => cls?.name || '')
-      .filter((name: string) => name.length > 0)
-      .map((name: string) => name.toLowerCase());
+      .map(cls => cls?.name || '')
+      .filter(name => name.length > 0)
+      .map(name => name.toLowerCase());
   };
 
   // Optimized filtering and sorting - only recalculates when dependencies change
