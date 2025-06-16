@@ -8,27 +8,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-interface Character {
-  id: string;
-  name: string;
-  level: number;
-  class: string;
-  race: string;
-  avatar: string;
-}
+import { useCharacters } from '@/hooks/useCharacters';
+import { Loader2 } from 'lucide-react';
 
 const CharactersTab = () => {
   const navigate = useNavigate();
-  // Remove mockup characters - this will be populated with real created characters
-  const [characters] = useState<Character[]>([]);
-
+  const { characters, loading, deleteCharacter } = useCharacters();
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
 
-  const handleDeleteCharacter = (id: string) => {
+  const handleDeleteCharacter = async (id: string) => {
+    await deleteCharacter(id);
     setShowDeleteDialog(null);
-    // Handle character deletion
-    console.log('Deleting character:', id);
   };
 
   const handleEditCharacter = () => {
@@ -39,9 +29,18 @@ const CharactersTab = () => {
     navigate('/character-creation');
   };
 
-  const handleCharacterTap = (character: Character) => {
+  const handleCharacterTap = (character: any) => {
     navigate(`/character/${character.id}`);
   };
+
+  if (loading) {
+    return (
+      <div className="p-4 flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <span className="ml-2">Loading characters...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 space-y-4">
@@ -71,7 +70,7 @@ const CharactersTab = () => {
             >
               <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
                 <img 
-                  src={character.avatar} 
+                  src="/avatarPlaceholder.svg" 
                   alt="Character avatar"
                   className="w-8 h-8"
                   style={{
@@ -81,8 +80,13 @@ const CharactersTab = () => {
               </div>
               <div>
                 <h3 className="font-bold text-gray-900">{character.name}</h3>
-                <p className="text-sm text-gray-600">Level {character.level} • {character.class}</p>
-                <p className="text-sm text-gray-600">{character.race}</p>
+                <p className="text-sm text-gray-600">
+                  Level {character.level}
+                  {character.class_name && ` • ${character.class_name}`}
+                </p>
+                {character.species_name && (
+                  <p className="text-sm text-gray-600">{character.species_name}</p>
+                )}
               </div>
             </div>
             

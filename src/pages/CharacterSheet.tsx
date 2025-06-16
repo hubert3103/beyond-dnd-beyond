@@ -1,7 +1,7 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, MoreVertical } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,54 +21,148 @@ import SpellsSection from '../components/character-sheet/SpellsSection';
 import FeaturesTraits from '../components/character-sheet/FeaturesTraits';
 import CurrencyNotes from '../components/character-sheet/CurrencyNotes';
 import { TabType } from './PlayerDashboard';
+import { useCharacters } from '@/hooks/useCharacters';
+import { useToast } from '@/hooks/use-toast';
 
 const CharacterSheet = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { getCharacter, deleteCharacter } = useCharacters();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('characters');
+  const [character, setCharacter] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock character data - in real app, this would come from an API/context
-  const [character, setCharacter] = useState({
-    id: id || '1',
-    name: 'Thalara Brightbranch',
-    level: 10,
-    class: 'Druid',
-    race: 'Wood elf',
-    avatar: '/avatarPlaceholder.svg',
-    currentHP: 78,
-    maxHP: 85,
-    tempHP: 0,
-    proficiencyBonus: 4,
-    abilities: {
-      strength: { score: 12, modifier: 1, proficient: false },
-      dexterity: { score: 16, modifier: 3, proficient: true },
-      constitution: { score: 14, modifier: 2, proficient: false },
-      intelligence: { score: 13, modifier: 1, proficient: false },
-      wisdom: { score: 18, modifier: 4, proficient: true },
-      charisma: { score: 10, modifier: 0, proficient: false }
-    },
-    armorClass: 16,
-    initiative: 3,
-    speed: 30
-  });
+  useEffect(() => {
+    const loadCharacter = async () => {
+      if (!id) {
+        navigate('/player');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const characterData = await getCharacter(id);
+        
+        if (characterData) {
+          // Convert database character to the format expected by the character sheet
+          const formattedCharacter = {
+            id: characterData.id,
+            name: characterData.name,
+            level: characterData.level,
+            class: characterData.class_name || 'Unknown',
+            race: characterData.species_name || 'Unknown',
+            avatar: '/avatarPlaceholder.svg',
+            currentHP: characterData.hit_points?.current || 78,
+            maxHP: characterData.hit_points?.max || 85,
+            tempHP: characterData.hit_points?.temporary || 0,
+            proficiencyBonus: Math.ceil(characterData.level / 4) + 1,
+            abilities: {
+              strength: { 
+                score: characterData.abilities?.str?.total || 10, 
+                modifier: Math.floor((characterData.abilities?.str?.total || 10 - 10) / 2), 
+                proficient: false 
+              },
+              dexterity: { 
+                score: characterData.abilities?.dex?.total || 10, 
+                modifier: Math.floor((characterData.abilities?.dex?.total || 10 - 10) / 2), 
+                proficient: true 
+              },
+              constitution: { 
+                score: characterData.abilities?.con?.total || 10, 
+                modifier: Math.floor((characterData.abilities?.con?.total || 10 - 10) / 2), 
+                proficient: false 
+              },
+              intelligence: { 
+                score: characterData.abilities?.int?.total || 10, 
+                modifier: Math.floor((characterData.abilities?.int?.total || 10 - 10) / 2), 
+                proficient: false 
+              },
+              wisdom: { 
+                score: characterData.abilities?.wis?.total || 10, 
+                modifier: Math.floor((characterData.abilities?.wis?.total || 10 - 10) / 2), 
+                proficient: true 
+              },
+              charisma: { 
+                score: characterData.abilities?.cha?.total || 10, 
+                modifier: Math.floor((characterData.abilities?.cha?.total || 10 - 10) / 2), 
+                proficient: false 
+              }
+            },
+            armorClass: 16,
+            initiative: Math.floor((characterData.abilities?.dex?.total || 10 - 10) / 2),
+            speed: 30
+          };
+          
+          setCharacter(formattedCharacter);
+        } else {
+          toast({
+            title: "Error",
+            description: "Character not found",
+            variant: "destructive",
+          });
+          navigate('/player');
+        }
+      } catch (error) {
+        console.error('Error loading character:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load character",
+          variant: "destructive",
+        });
+        navigate('/player');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCharacter();
+  }, [id, getCharacter, navigate, toast]);
 
   const handleBack = () => {
     navigate('/player');
   };
 
-  const handleOverflowAction = (action: string) => {
+  const handleOverflowAction = async (action: string) => {
     switch (action) {
       case 'share':
         console.log('Share character');
         break;
       case 'delete':
-        console.log('Delete character');
+        if (character?.id) {
+          await deleteCharacter(character.id);
+          navigate('/player');
+        }
         break;
       case 'export':
         console.log('Export PDF');
         break;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#4a4a4a] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-white mx-auto mb-4" />
+          <p className="text-white">Loading character...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!character) {
+    return (
+      <div className="min-h-screen bg-[#4a4a4a] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-white mb-4">Character not found</p>
+          <Button onClick={handleBack} variant="outline">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#4a4a4a] flex flex-col">

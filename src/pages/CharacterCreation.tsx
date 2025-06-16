@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavigation from '../components/BottomNavigation';
@@ -9,11 +10,13 @@ import AbilitiesScreen from '../components/character-creation/AbilitiesScreen';
 import BackgroundScreen from '../components/character-creation/BackgroundScreen';
 import EquipmentScreen from '../components/character-creation/EquipmentScreen';
 import SummaryScreen from '../components/character-creation/SummaryScreen';
+import { useCharacters } from '@/hooks/useCharacters';
 
 export type CreationStep = 'setup' | 'species' | 'class' | 'abilities' | 'background' | 'equipment' | 'summary';
 
 const CharacterCreation = () => {
   const navigate = useNavigate();
+  const { saveCharacter } = useCharacters();
   const [currentStep, setCurrentStep] = useState<CreationStep>('setup');
   const [characterData, setCharacterData] = useState({
     name: '',
@@ -57,14 +60,19 @@ const CharacterCreation = () => {
     }
   };
 
-  const goToNextStep = () => {
+  const goToNextStep = async () => {
     if (currentStepIndex < steps.length - 1) {
       setCurrentStep(steps[currentStepIndex + 1].id);
     } else {
       // Save character and navigate to character sheet
-      // Generate a temporary ID for the new character
-      const newCharacterId = Date.now().toString();
-      navigate(`/character/${newCharacterId}`);
+      try {
+        const savedCharacter = await saveCharacter(characterData);
+        if (savedCharacter) {
+          navigate(`/character/${savedCharacter.id}`);
+        }
+      } catch (error) {
+        console.error('Failed to save character:', error);
+      }
     }
   };
 

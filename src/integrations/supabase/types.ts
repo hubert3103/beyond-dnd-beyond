@@ -9,6 +9,75 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      characters: {
+        Row: {
+          abilities: Json
+          advancement_type: string | null
+          background_data: Json | null
+          background_name: string | null
+          class_data: Json | null
+          class_name: string | null
+          created_at: string
+          equipment: Json | null
+          hit_point_type: string | null
+          hit_points: Json | null
+          id: string
+          level: number
+          name: string
+          sources: Json | null
+          species_data: Json | null
+          species_name: string | null
+          spells: Json | null
+          subclass_name: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          abilities: Json
+          advancement_type?: string | null
+          background_data?: Json | null
+          background_name?: string | null
+          class_data?: Json | null
+          class_name?: string | null
+          created_at?: string
+          equipment?: Json | null
+          hit_point_type?: string | null
+          hit_points?: Json | null
+          id?: string
+          level?: number
+          name: string
+          sources?: Json | null
+          species_data?: Json | null
+          species_name?: string | null
+          spells?: Json | null
+          subclass_name?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          abilities?: Json
+          advancement_type?: string | null
+          background_data?: Json | null
+          background_name?: string | null
+          class_data?: Json | null
+          class_name?: string | null
+          created_at?: string
+          equipment?: Json | null
+          hit_point_type?: string | null
+          hit_points?: Json | null
+          id?: string
+          level?: number
+          name?: string
+          sources?: Json | null
+          species_data?: Json | null
+          species_name?: string | null
+          spells?: Json | null
+          subclass_name?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       "Spells 5e": {
         Row: {
           cast_time: string | null
