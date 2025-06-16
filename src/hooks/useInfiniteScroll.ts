@@ -52,12 +52,26 @@ export const useInfiniteScroll = ({ items, itemsPerPage = 100 }: UseInfiniteScro
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    const threshold = 200; // Load more when 200px from bottom
     
+    // More generous threshold - trigger when within 300px OR when very close to bottom
+    const threshold = 300;
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    console.log('Scroll event:', { scrollTop, scrollHeight, clientHeight, distanceFromBottom, threshold });
+    const isNearBottom = distanceFromBottom <= threshold;
+    const isAtBottom = Math.abs(distanceFromBottom) < 5; // Account for floating point precision
     
-    if (distanceFromBottom <= threshold && !isLoading && hasMore) {
+    console.log('Scroll event:', { 
+      scrollTop, 
+      scrollHeight, 
+      clientHeight, 
+      distanceFromBottom, 
+      threshold,
+      isNearBottom,
+      isAtBottom,
+      isLoading,
+      hasMore
+    });
+    
+    if ((isNearBottom || isAtBottom) && !isLoading && hasMore) {
       console.log('Triggering load more...');
       loadMore();
     }
