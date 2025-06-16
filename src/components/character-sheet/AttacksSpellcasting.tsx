@@ -19,6 +19,8 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
   const getCharacterAttacks = () => {
     const attacks = [];
     
+    console.log('Getting attacks for character with equipment:', character.equipment);
+    
     // Always add unarmed attack
     const strModifier = Math.floor((character.abilities.strength.score - 10) / 2);
     attacks.push({
@@ -31,23 +33,88 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
       uses: null
     });
     
-    // Add weapon attacks from equipped equipment
+    // Helper function to determine if an item is a weapon
+    const isWeapon = (item: any) => {
+      // Check multiple possible indicators that this is a weapon
+      return item.category === 'weapon' || 
+             item.type === 'weapon' ||
+             item.damage ||
+             item.damage_dice ||
+             (item.name && (
+               item.name.toLowerCase().includes('sword') ||
+               item.name.toLowerCase().includes('axe') ||
+               item.name.toLowerCase().includes('bow') ||
+               item.name.toLowerCase().includes('crossbow') ||
+               item.name.toLowerCase().includes('dagger') ||
+               item.name.toLowerCase().includes('mace') ||
+               item.name.toLowerCase().includes('hammer') ||
+               item.name.toLowerCase().includes('spear') ||
+               item.name.toLowerCase().includes('club') ||
+               item.name.toLowerCase().includes('staff') ||
+               item.name.toLowerCase().includes('javelin')
+             ));
+    };
+
+    // Helper function to create weapon attack
+    const createWeaponAttack = (item: any) => {
+      console.log('Creating weapon attack for item:', item);
+      
+      // Determine if weapon uses Dex or Str
+      const usesDexterity = item.finesse || 
+                           item.ranged || 
+                           item.name?.toLowerCase().includes('bow') ||
+                           item.name?.toLowerCase().includes('crossbow') ||
+                           item.name?.toLowerCase().includes('dagger');
+      
+      const abilityModifier = usesDexterity ? 
+        Math.floor((character.abilities.dexterity.score - 10) / 2) :
+        Math.floor((character.abilities.strength.score - 10) / 2);
+      
+      // Get damage - try multiple possible formats
+      let damage = item.damage || item.damage_dice || '1d4';
+      if (typeof damage === 'object' && damage.damage_dice) {
+        damage = damage.damage_dice;
+      }
+      
+      // Get damage type
+      let damageType = item.damage_type || 'bludgeoning';
+      if (typeof damageType === 'object' && damageType.damage_type) {
+        damageType = damageType.damage_type;
+      }
+      
+      return {
+        id: item.index || item.name,
+        name: item.name,
+        type: 'weapon',
+        attackBonus: `+${abilityModifier + character.proficiencyBonus}`,
+        damage: damage,
+        damageType: damageType,
+        uses: null
+      };
+    };
+    
+    // Add weapon attacks from equipped starting equipment
     if (character.equipment?.starting_equipment) {
+      console.log('Checking starting equipment:', character.equipment.starting_equipment);
       character.equipment.starting_equipment.forEach((item: any) => {
-        if (item.category === 'weapon' && item.equipped) {
-          const abilityModifier = item.finesse || item.ranged ? 
-            Math.floor((character.abilities.dexterity.score - 10) / 2) :
-            Math.floor((character.abilities.strength.score - 10) / 2);
-          
-          attacks.push({
-            id: item.index || item.name,
-            name: item.name,
-            type: 'weapon',
-            attackBonus: `+${abilityModifier + character.proficiencyBonus}`,
-            damage: item.damage || '1d4',
-            damageType: item.damage_type || 'bludgeoning',
-            uses: null
-          });
+        console.log('Checking starting equipment item:', item, 'equipped:', item.equipped, 'is weapon:', isWeapon(item));
+        if (item.equipped && isWeapon(item)) {
+          const weaponAttack = createWeaponAttack(item);
+          console.log('Adding weapon attack from starting equipment:', weaponAttack);
+          attacks.push(weaponAttack);
+        }
+      });
+    }
+
+    // Add weapon attacks from equipped inventory items
+    if (character.equipment?.inventory) {
+      console.log('Checking inventory:', character.equipment.inventory);
+      character.equipment.inventory.forEach((item: any) => {
+        console.log('Checking inventory item:', item, 'equipped:', item.equipped, 'is weapon:', isWeapon(item));
+        if (item.equipped && isWeapon(item)) {
+          const weaponAttack = createWeaponAttack(item);
+          console.log('Adding weapon attack from inventory:', weaponAttack);
+          attacks.push(weaponAttack);
         }
       });
     }
@@ -70,6 +137,7 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
       });
     }
 
+    console.log('Final attacks list:', attacks);
     return attacks;
   };
 
