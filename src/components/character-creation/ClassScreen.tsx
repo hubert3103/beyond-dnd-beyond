@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, ChevronDown, ChevronRight, Shield, Sword, Wand2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,10 +21,26 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
   const { classes, isLoading, error, refresh } = useOpen5eData();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
-  const [selectedClass, setSelectedClass] = useState<Open5eClass | null>(data.class);
+  const [selectedClass, setSelectedClass] = useState<Open5eClass | null>(null);
   const [detailModalClass, setDetailModalClass] = useState<Open5eClass | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedSkills, setSelectedSkills] = useState<string[]>(data.class?.selectedSkills || []);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+
+  // Initialize selected class and skills from data when component mounts or data changes
+  useEffect(() => {
+    if (data.class && classes.length > 0) {
+      // Find the matching class from the API data
+      const matchingClass = classes.find(cls => cls.name === data.class.name);
+      if (matchingClass) {
+        setSelectedClass(matchingClass);
+      }
+      
+      // Set selected skills from the character data
+      if (data.class.selectedSkills) {
+        setSelectedSkills(data.class.selectedSkills);
+      }
+    }
+  }, [data.class, classes]);
 
   // All D&D 5e skills with their associated abilities
   const allSkills = [
@@ -256,6 +272,8 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
         Debug: {classes.length} total classes, {filteredClasses.length} after filtering
         <br />
         Sources enabled: coreRules={String(data.sources?.coreRules === true)}, expansions={String(data.sources?.expansions === true)}, homebrew={String(data.sources?.homebrew === true)}
+        <br />
+        Selected class: {selectedClass?.name || 'None'}
       </div>
 
       {/* Search */}

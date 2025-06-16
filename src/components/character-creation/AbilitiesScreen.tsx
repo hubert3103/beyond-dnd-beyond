@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,28 @@ interface AbilitiesScreenProps {
 const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
   const [generationMethod, setGenerationMethod] = useState('standard-array');
   const [expandedAbilities, setExpandedAbilities] = useState<Record<string, boolean>>({});
+
+  // Initialize generation method based on existing character data
+  useEffect(() => {
+    if (data.abilities) {
+      // Try to detect the generation method based on the ability scores
+      const abilityScores = Object.values(data.abilities).map((ability: any) => ability.base);
+      const standardArrayValues = [15, 14, 13, 12, 10, 8];
+      const sortedScores = [...abilityScores].sort((a, b) => b - a);
+      const sortedStandardArray = [...standardArrayValues].sort((a, b) => b - a);
+      
+      // Check if it matches standard array
+      const isStandardArray = sortedScores.every((score, index) => score === sortedStandardArray[index]);
+      
+      if (isStandardArray) {
+        setGenerationMethod('standard-array');
+      } else {
+        // For now, default to manual for non-standard array scores
+        // We could add more sophisticated detection for point-buy vs rolled stats
+        setGenerationMethod('manual');
+      }
+    }
+  }, [data.abilities]);
 
   const abilities = [
     { id: 'str', name: 'STRENGTH', shortName: 'STR' },
@@ -92,17 +115,20 @@ const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
   const handleGenerationMethodChange = (method: string) => {
     setGenerationMethod(method);
     
-    // Reset abilities when changing method
+    // Reset abilities when changing method (but preserve existing scores if they were already set)
     if (method !== 'manual') {
       const newAbilities = { ...data.abilities };
       Object.keys(newAbilities).forEach(key => {
         const racialBonus = getRacialBonus(key);
-        newAbilities[key] = {
-          ...newAbilities[key],
-          base: 8, // Default base
-          bonus: racialBonus,
-          total: 8 + racialBonus
-        };
+        // Only reset if the scores are at default values
+        if (newAbilities[key].base === 10) {
+          newAbilities[key] = {
+            ...newAbilities[key],
+            base: 8, // Default base
+            bonus: racialBonus,
+            total: 8 + racialBonus
+          };
+        }
       });
       onUpdate({ abilities: newAbilities });
     }
@@ -143,7 +169,7 @@ const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white z-50">
             <SelectItem value="standard-array">Standard Array</SelectItem>
             <SelectItem value="point-buy">Point Buy</SelectItem>
             <SelectItem value="roll">Roll 4d6 (Drop Lowest)</SelectItem>
