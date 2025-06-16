@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { STANDARD_ARRAY_VALUES, ABILITY_NAMES, ABILITY_DESCRIPTIONS } from '../../data/standardArrayData';
@@ -11,6 +11,22 @@ interface StandardArraySelectorProps {
 
 const StandardArraySelector = ({ abilities, onUpdate }: StandardArraySelectorProps) => {
   const [assignedValues, setAssignedValues] = useState<Record<string, number>>({});
+  
+  // Initialize assigned values based on existing ability scores
+  useEffect(() => {
+    const initialAssignments: Record<string, number> = {};
+    
+    // Check if any of the base scores match standard array values
+    Object.entries(abilities).forEach(([key, abilityData]: [string, any]) => {
+      const baseScore = abilityData.base;
+      if (STANDARD_ARRAY_VALUES.includes(baseScore)) {
+        initialAssignments[key] = baseScore;
+      }
+    });
+    
+    console.log('Initializing standard array assignments:', initialAssignments);
+    setAssignedValues(initialAssignments);
+  }, [abilities]);
   
   const availableValues = STANDARD_ARRAY_VALUES.filter(value => 
     !Object.values(assignedValues).includes(value)
