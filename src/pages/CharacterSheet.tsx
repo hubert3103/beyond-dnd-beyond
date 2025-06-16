@@ -179,23 +179,33 @@ const CharacterSheet = () => {
             
             console.log('Calculating AC with equipment:', characterData.equipment);
             
-            // Check for armor in equipment
+            // Check for armor in equipment - look in both starting_equipment and inventory
+            let equippedArmor = null;
+            
+            // Check starting equipment first
             if (characterData.equipment?.starting_equipment) {
-              const armor = characterData.equipment.starting_equipment.find((item: any) => 
+              equippedArmor = characterData.equipment.starting_equipment.find((item: any) => 
                 item.category === 'armor' && item.equipped
               );
-              
-              console.log('Found armor:', armor);
-              
-              if (armor && armor.ac) {
-                if (armor.dex_bonus !== false) {
-                  const maxDexBonus = armor.max_dex_bonus || 999;
-                  baseAC = armor.ac + Math.min(dexModifier, maxDexBonus);
-                } else {
-                  baseAC = armor.ac;
-                }
-                console.log('Calculated AC with armor:', baseAC);
+            }
+            
+            // If no equipped armor found in starting equipment, check inventory
+            if (!equippedArmor && characterData.equipment?.inventory) {
+              equippedArmor = characterData.equipment.inventory.find((item: any) => 
+                item.category === 'armor' && item.equipped
+              );
+            }
+            
+            console.log('Found equipped armor:', equippedArmor);
+            
+            if (equippedArmor && equippedArmor.ac) {
+              if (equippedArmor.dex_bonus !== false) {
+                const maxDexBonus = equippedArmor.max_dex_bonus || 999;
+                baseAC = equippedArmor.ac + Math.min(dexModifier, maxDexBonus);
+              } else {
+                baseAC = equippedArmor.ac;
               }
+              console.log('Calculated AC with armor:', baseAC);
             }
             
             return baseAC;

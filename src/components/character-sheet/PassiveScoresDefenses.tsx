@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,49 @@ interface PassiveScoresDefensesProps {
 
 const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefensesProps) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Function to recalculate AC based on equipped armor
+  const calculateArmorClass = () => {
+    const dexModifier = character.abilities?.dexterity?.modifier || 0;
+    let baseAC = 10 + dexModifier;
+    
+    // Check for equipped armor in both starting_equipment and inventory
+    let equippedArmor = null;
+    
+    // Check starting equipment first
+    if (character.equipment?.starting_equipment) {
+      equippedArmor = character.equipment.starting_equipment.find((item: any) => 
+        item.category === 'armor' && item.equipped
+      );
+    }
+    
+    // If no equipped armor found in starting equipment, check inventory
+    if (!equippedArmor && character.equipment?.inventory) {
+      equippedArmor = character.equipment.inventory.find((item: any) => 
+        item.category === 'armor' && item.equipped
+      );
+    }
+    
+    if (equippedArmor && equippedArmor.ac) {
+      if (equippedArmor.dex_bonus !== false) {
+        const maxDexBonus = equippedArmor.max_dex_bonus || 999;
+        baseAC = equippedArmor.ac + Math.min(dexModifier, maxDexBonus);
+      } else {
+        baseAC = equippedArmor.ac;
+      }
+    }
+    
+    return baseAC;
+  };
+
+  // Update AC when equipment changes
+  useEffect(() => {
+    const newAC = calculateArmorClass();
+    if (newAC !== character.armorClass) {
+      console.log('Updating AC from', character.armorClass, 'to', newAC);
+      setCharacter({ ...character, armorClass: newAC });
+    }
+  }, [character.equipment]);
 
   const getModifier = (score: number) => {
     return Math.floor((score - 10) / 2);
@@ -112,3 +155,4 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
 };
 
 export default PassiveScoresDefenses;
+
