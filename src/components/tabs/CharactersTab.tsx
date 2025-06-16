@@ -20,32 +20,8 @@ interface Character {
 
 const CharactersTab = () => {
   const navigate = useNavigate();
-  const [characters] = useState<Character[]>([
-    {
-      id: '1',
-      name: 'Thalara Brightbranch',
-      level: 10,
-      class: 'Druid',
-      race: 'Wood elf',
-      avatar: '/avatarPlaceholder.svg'
-    },
-    {
-      id: '2',
-      name: 'Magnus Ironmantle',
-      level: 4,
-      class: 'Paladin',
-      race: 'Mountain dwarf',
-      avatar: '/avatarPlaceholder.svg'
-    },
-    {
-      id: '3',
-      name: 'Ziri Shadowveil',
-      level: 8,
-      class: 'Warlock',
-      race: 'Tiefling',
-      avatar: '/avatarPlaceholder.svg'
-    }
-  ]);
+  // Remove mockup characters - this will be populated with real created characters
+  const [characters] = useState<Character[]>([]);
 
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
 
@@ -69,46 +45,65 @@ const CharactersTab = () => {
 
   return (
     <div className="p-4 space-y-4">
-      {characters.map((character) => (
-        <div key={character.id} className="bg-white rounded-lg p-4 flex items-center justify-between">
-          <div 
-            className="flex items-center space-x-3 flex-1 cursor-pointer"
-            onClick={() => handleCharacterTap(character)}
-          >
-            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-              <img 
-                src={character.avatar} 
-                alt="Character avatar"
-                className="w-8 h-8"
-                style={{
-                  filter: 'invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)'
-                }}
-              />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900">{character.name}</h3>
-              <p className="text-sm text-gray-600">Level {character.level} • {character.class}</p>
-              <p className="text-sm text-gray-600">{character.race}</p>
-            </div>
+      {characters.length === 0 ? (
+        // Empty state when no characters exist
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
+            <img 
+              src="/characterIcon.svg" 
+              alt="No characters"
+              className="w-8 h-8 opacity-50"
+              style={{
+                filter: 'invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)'
+              }}
+            />
           </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="text-gray-400 hover:text-gray-600 p-2">
-                ⋮
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={handleEditCharacter}>
-                Edit Character
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowDeleteDialog(character.id)}>
-                Delete Character
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Characters Yet</h3>
+          <p className="text-gray-600 mb-6">Create your first character to get started on your adventure!</p>
         </div>
-      ))}
+      ) : (
+        // Character list (when characters exist)
+        characters.map((character) => (
+          <div key={character.id} className="bg-white rounded-lg p-4 flex items-center justify-between">
+            <div 
+              className="flex items-center space-x-3 flex-1 cursor-pointer"
+              onClick={() => handleCharacterTap(character)}
+            >
+              <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                <img 
+                  src={character.avatar} 
+                  alt="Character avatar"
+                  className="w-8 h-8"
+                  style={{
+                    filter: 'invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)'
+                  }}
+                />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">{character.name}</h3>
+                <p className="text-sm text-gray-600">Level {character.level} • {character.class}</p>
+                <p className="text-sm text-gray-600">{character.race}</p>
+              </div>
+            </div>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-gray-400 hover:text-gray-600 p-2">
+                  ⋮
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={handleEditCharacter}>
+                  Edit Character
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowDeleteDialog(character.id)}>
+                  Delete Character
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ))
+      )}
       
       <Button 
         onClick={handleNewCharacter}
