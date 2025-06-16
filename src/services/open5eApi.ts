@@ -1,5 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
-
 interface Open5eResponse<T> {
   count: number;
   next: string | null;
@@ -143,307 +141,161 @@ interface Open5eBackground {
 }
 
 class Open5eApiService {
+  private baseUrl = 'https://api.open5e.com';
   private cache: Map<string, any> = new Map();
 
-  // Transform database spell to API format
-  private transformSpellFromDb(dbSpell: any): Open5eSpell {
-    return {
-      slug: dbSpell.slug,
-      name: dbSpell.name,
-      level: dbSpell.level,
-      school: dbSpell.school,
-      casting_time: dbSpell.casting_time,
-      range: dbSpell.range_value,
-      components: dbSpell.components,
-      material: dbSpell.material,
-      duration: dbSpell.duration,
-      concentration: dbSpell.concentration,
-      ritual: dbSpell.ritual,
-      desc: dbSpell.description,
-      higher_level: dbSpell.higher_level,
-      damage: dbSpell.damage_type ? { damage_type: dbSpell.damage_type } : undefined,
-      save: dbSpell.save_type,
-      attack_type: dbSpell.attack_type,
-      document__slug: dbSpell.document_slug,
-      classes: Array.isArray(dbSpell.classes) ? dbSpell.classes : []
-    };
-  }
+  async fetchWithCache<T>(endpoint: string): Promise<T[]> {
+    if (this.cache.has(endpoint)) {
+      return this.cache.get(endpoint);
+    }
 
-  // Transform database equipment to API format
-  private transformEquipmentFromDb(dbEquipment: any): Open5eEquipment {
-    return {
-      slug: dbEquipment.slug,
-      name: dbEquipment.name,
-      type: dbEquipment.type,
-      rarity: dbEquipment.rarity,
-      requires_attunement: dbEquipment.requires_attunement,
-      cost: dbEquipment.cost_quantity && dbEquipment.cost_unit ? {
-        quantity: dbEquipment.cost_quantity,
-        unit: dbEquipment.cost_unit
-      } : undefined,
-      weight: dbEquipment.weight,
-      desc: dbEquipment.description,
-      document__slug: dbEquipment.document_slug,
-      ac: dbEquipment.ac,
-      ac_base: dbEquipment.ac_base,
-      ac_add_dex: dbEquipment.ac_add_dex,
-      ac_cap_dex: dbEquipment.ac_cap_dex,
-      dex_bonus: dbEquipment.dex_bonus,
-      max_dex_bonus: dbEquipment.max_dex_bonus,
-      damage_dice: dbEquipment.damage_dice,
-      damage_type: dbEquipment.damage_type,
-      category: dbEquipment.category,
-      properties: Array.isArray(dbEquipment.properties) ? dbEquipment.properties : []
-    };
-  }
+    try {
+      const allResults: T[] = [];
+      let url = `${this.baseUrl}${endpoint}?limit=1000`;
+      
+      while (url) {
+        console.log('Fetching:', url);
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${endpoint}: ${response.status} ${response.statusText}`);
+        }
+        
+        const data: Open5eResponse<T> = await response.json();
+        allResults.push(...data.results);
+        url = data.next;
+      }
 
-  // Transform database race to API format
-  private transformRaceFromDb(dbRace: any): Open5eRace {
-    return {
-      slug: dbRace.slug,
-      name: dbRace.name,
-      desc: dbRace.description,
-      asi: Array.isArray(dbRace.asi) ? dbRace.asi : [],
-      age: dbRace.age,
-      alignment: dbRace.alignment,
-      size: dbRace.size,
-      speed: typeof dbRace.speed === 'object' ? dbRace.speed : { walk: 30 },
-      languages: dbRace.languages,
-      proficiencies: dbRace.proficiencies || '',
-      traits: dbRace.traits || '',
-      document__slug: dbRace.document_slug
-    };
-  }
-
-  // Transform database class to API format
-  private transformClassFromDb(dbClass: any): Open5eClass {
-    return {
-      slug: dbClass.slug,
-      name: dbClass.name,
-      desc: dbClass.description,
-      hit_die: dbClass.hit_die,
-      prof_armor: dbClass.prof_armor || '',
-      prof_weapons: dbClass.prof_weapons || '',
-      prof_tools: dbClass.prof_tools || '',
-      prof_saving_throws: dbClass.prof_saving_throws || '',
-      prof_skills: dbClass.prof_skills || '',
-      equipment: dbClass.equipment || '',
-      spellcasting_ability: dbClass.spellcasting_ability,
-      subtypes_name: dbClass.subtypes_name,
-      document__slug: dbClass.document_slug
-    };
-  }
-
-  // Transform database background to API format
-  private transformBackgroundFromDb(dbBackground: any): Open5eBackground {
-    return {
-      slug: dbBackground.slug,
-      name: dbBackground.name,
-      desc: dbBackground.description,
-      skill_proficiencies: dbBackground.skill_proficiencies || '',
-      languages: dbBackground.languages || '',
-      equipment: dbBackground.equipment || '',
-      feature: dbBackground.feature || '',
-      feature_desc: dbBackground.feature_desc || '',
-      document__slug: dbBackground.document_slug
-    };
+      console.log(`Fetched ${allResults.length} items from ${endpoint}`);
+      this.cache.set(endpoint, allResults);
+      return allResults;
+    } catch (error) {
+      console.error(`Error fetching ${endpoint}:`, error);
+      throw error;
+    }
   }
 
   async fetchSpells(): Promise<Open5eSpell[]> {
-    const cacheKey = 'spells';
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey);
-    }
-
-    try {
-      console.log('Fetching spells from local database...');
-      const { data, error } = await supabase
-        .from('open5e_spells')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching spells from database:', error);
-        throw error;
+    const allSpells = await this.fetchWithCache<Open5eSpell>('/spells');
+    
+    // Deduplicate spells by name, keeping the first occurrence
+    const uniqueSpells = allSpells.reduce((acc: Open5eSpell[], spell: Open5eSpell) => {
+      const existingSpell = acc.find(s => s.name.toLowerCase() === spell.name.toLowerCase());
+      if (!existingSpell) {
+        acc.push(spell);
       }
-
-      const transformedSpells = (data || []).map(spell => this.transformSpellFromDb(spell));
-      
-      // Deduplicate spells by name, keeping the first occurrence
-      const uniqueSpells = transformedSpells.reduce((acc: Open5eSpell[], spell: Open5eSpell) => {
-        const existingSpell = acc.find(s => s.name.toLowerCase() === spell.name.toLowerCase());
-        if (!existingSpell) {
-          acc.push(spell);
-        }
-        return acc;
-      }, []);
-
-      console.log(`Fetched ${transformedSpells.length} spells from database, deduplicated to ${uniqueSpells.length}`);
-      this.cache.set(cacheKey, uniqueSpells);
-      return uniqueSpells;
-    } catch (error) {
-      console.error('Error fetching spells:', error);
-      return [];
-    }
+      return acc;
+    }, []);
+    
+    console.log(`Deduplicated spells: ${allSpells.length} → ${uniqueSpells.length}`);
+    return uniqueSpells;
   }
 
   async fetchEquipment(): Promise<Open5eEquipment[]> {
-    const cacheKey = 'equipment';
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey);
-    }
-
     try {
-      console.log('Fetching equipment from local database...');
-      const { data, error } = await supabase
-        .from('open5e_equipment')
-        .select('*')
-        .order('name');
+      // Try to fetch from multiple endpoints and combine results
+      const [magicItems, weapons, armor] = await Promise.allSettled([
+        this.fetchWithCache<Open5eEquipment>('/magicitems'),
+        this.fetchWithCache<Open5eWeapon>('/weapons'),
+        this.fetchWithCache<Open5eArmor>('/armor')
+      ]);
 
-      if (error) {
-        console.error('Error fetching equipment from database:', error);
-        throw error;
+      let combinedEquipment: Open5eEquipment[] = [];
+
+      // Add magic items
+      if (magicItems.status === 'fulfilled') {
+        combinedEquipment.push(...magicItems.value);
       }
 
-      const transformedEquipment = (data || []).map(item => this.transformEquipmentFromDb(item));
-      
-      console.log(`Fetched ${transformedEquipment.length} equipment items from database`);
-      this.cache.set(cacheKey, transformedEquipment);
-      return transformedEquipment;
+      // Add weapons (convert to equipment format with proper properties)
+      if (weapons.status === 'fulfilled') {
+        const weaponEquipment: Open5eEquipment[] = weapons.value.map(weapon => ({
+          slug: weapon.slug,
+          name: weapon.name,
+          type: 'weapon',
+          rarity: 'common',
+          requires_attunement: false,
+          cost: weapon.cost,
+          weight: weapon.weight,
+          desc: weapon.desc,
+          document__slug: weapon.document__slug,
+          category: weapon.category,
+          damage_dice: weapon.damage?.damage_dice,
+          damage_type: weapon.damage?.damage_type,
+          properties: weapon.properties
+        }));
+        combinedEquipment.push(...weaponEquipment);
+      }
+
+      // Add armor (convert to equipment format with proper AC properties)
+      if (armor.status === 'fulfilled') {
+        console.log('=== ARMOR API PROCESSING ===');
+        console.log('Raw armor data sample:', armor.value.slice(0, 3));
+        
+        const armorEquipment: Open5eEquipment[] = armor.value.map(armorItem => {
+          console.log('Processing armor item:', {
+            name: armorItem.name,
+            type: armorItem.type,
+            category: armorItem.category,
+            ac_base: armorItem.ac_base,
+            weight: armorItem.weight,
+            ac_add_dex: armorItem.ac_add_dex,
+            ac_cap_dex: armorItem.ac_cap_dex
+          });
+          
+          const mappedArmor = {
+            slug: armorItem.slug,
+            name: armorItem.name,
+            type: armorItem.type || 'armor',
+            rarity: 'common',
+            requires_attunement: false,
+            cost: armorItem.cost,
+            weight: armorItem.weight || 0, // Ensure weight is preserved
+            desc: armorItem.desc,
+            document__slug: armorItem.document__slug,
+            // Preserve armor-specific properties with better mapping
+            ac: armorItem.ac_base || 10, // Ensure AC is always set
+            ac_base: armorItem.ac_base || 10,
+            dex_bonus: armorItem.ac_add_dex !== false, // Convert to boolean, default true
+            max_dex_bonus: armorItem.ac_cap_dex || 999, // Default to no limit
+            category: 'armor' // Ensure all armor has 'armor' category
+          };
+          
+          console.log('Mapped armor result:', mappedArmor);
+          return mappedArmor;
+        });
+        combinedEquipment.push(...armorEquipment);
+        console.log('=== END ARMOR PROCESSING ===');
+      }
+
+      console.log(`Combined equipment: ${combinedEquipment.length} items`);
+      const sampleArmor = combinedEquipment.find(item => item.type.includes('armor'));
+      console.log('Sample armor item after processing:', sampleArmor);
+      this.cache.set('/equipment-combined', combinedEquipment);
+      return combinedEquipment;
     } catch (error) {
-      console.error('Error fetching equipment:', error);
+      console.warn('Equipment fetch failed, returning empty array:', error);
       return [];
     }
   }
 
   async fetchWeapons(): Promise<Open5eWeapon[]> {
-    // Weapons are stored in the equipment table with type 'weapon'
-    const equipment = await this.fetchEquipment();
-    return equipment
-      .filter(item => item.type === 'weapon')
-      .map(item => ({
-        slug: item.slug,
-        name: item.name,
-        type: item.type,
-        category: item.category || 'simple',
-        cost: item.cost,
-        damage: item.damage_dice && item.damage_type ? {
-          damage_dice: item.damage_dice,
-          damage_type: item.damage_type
-        } : undefined,
-        weight: item.weight,
-        properties: item.properties || [],
-        desc: item.desc,
-        document__slug: item.document__slug
-      }));
+    return this.fetchWithCache<Open5eWeapon>('/weapons');
   }
 
   async fetchArmor(): Promise<Open5eArmor[]> {
-    // Armor is stored in the equipment table with type 'armor'
-    const equipment = await this.fetchEquipment();
-    return equipment
-      .filter(item => item.type === 'armor')
-      .map(item => ({
-        slug: item.slug,
-        name: item.name,
-        type: item.type,
-        category: 'armor',
-        cost: item.cost,
-        ac_base: item.ac_base,
-        ac_add_dex: item.ac_add_dex,
-        ac_cap_dex: item.ac_cap_dex,
-        weight: item.weight,
-        stealth_disadvantage: false, // Not stored in our simplified schema
-        desc: item.desc,
-        document__slug: item.document__slug
-      }));
+    return this.fetchWithCache<Open5eArmor>('/armor');
   }
 
   async fetchRaces(): Promise<Open5eRace[]> {
-    const cacheKey = 'races';
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey);
-    }
-
-    try {
-      console.log('Fetching races from local database...');
-      const { data, error } = await supabase
-        .from('open5e_races')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching races from database:', error);
-        throw error;
-      }
-
-      const transformedRaces = (data || []).map(race => this.transformRaceFromDb(race));
-      
-      console.log(`Fetched ${transformedRaces.length} races from database`);
-      this.cache.set(cacheKey, transformedRaces);
-      return transformedRaces;
-    } catch (error) {
-      console.error('Error fetching races:', error);
-      return [];
-    }
+    return this.fetchWithCache<Open5eRace>('/races');
   }
 
   async fetchClasses(): Promise<Open5eClass[]> {
-    const cacheKey = 'classes';
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey);
-    }
-
-    try {
-      console.log('Fetching classes from local database...');
-      const { data, error } = await supabase
-        .from('open5e_classes')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching classes from database:', error);
-        throw error;
-      }
-
-      const transformedClasses = (data || []).map(cls => this.transformClassFromDb(cls));
-      
-      console.log(`Fetched ${transformedClasses.length} classes from database`);
-      this.cache.set(cacheKey, transformedClasses);
-      return transformedClasses;
-    } catch (error) {
-      console.error('Error fetching classes:', error);
-      return [];
-    }
+    return this.fetchWithCache<Open5eClass>('/classes');
   }
 
   async fetchBackgrounds(): Promise<Open5eBackground[]> {
-    const cacheKey = 'backgrounds';
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey);
-    }
-
-    try {
-      console.log('Fetching backgrounds from local database...');
-      const { data, error } = await supabase
-        .from('open5e_backgrounds')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching backgrounds from database:', error);
-        throw error;
-      }
-
-      const transformedBackgrounds = (data || []).map(bg => this.transformBackgroundFromDb(bg));
-      
-      console.log(`Fetched ${transformedBackgrounds.length} backgrounds from database`);
-      this.cache.set(cacheKey, transformedBackgrounds);
-      return transformedBackgrounds;
-    } catch (error) {
-      console.error('Error fetching backgrounds:', error);
-      return [];
-    }
+    return this.fetchWithCache<Open5eBackground>('/backgrounds');
   }
 
   clearCache(): void {
