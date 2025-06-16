@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, MoreVertical, Loader2 } from 'lucide-react';
@@ -61,6 +60,11 @@ const CharacterSheet = () => {
         // Update spells if they exist
         if (updatedCharacter.spells) {
           updateData.spells = updatedCharacter.spells;
+        }
+        
+        // Update spell slots if they exist
+        if (updatedCharacter.spellSlots) {
+          updateData.spell_slots = updatedCharacter.spellSlots;
         }
         
         console.log('Updating character in database with data:', updateData);
@@ -270,12 +274,13 @@ const CharacterSheet = () => {
             abilities: formattedAbilities,
             equipment: characterData.equipment,
             spells: characterData.spells || [],
+            spellSlots: characterData.spell_slots || {},
             armorClass: calculatedAC,
             initiative: formattedAbilities.dexterity.modifier,
             speed: calculatedSpeed
           };
           
-          console.log('Final formatted character with AC:', formattedCharacter.armorClass);
+          console.log('Final formatted character with spell slots:', formattedCharacter.spellSlots);
           setCharacter(formattedCharacter);
           console.log('Character formatted and set:', formattedCharacter);
         } else {
