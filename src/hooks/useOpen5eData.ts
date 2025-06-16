@@ -28,20 +28,38 @@ export const useOpen5eData = (): Open5eData => {
     try {
       setData(prev => ({ ...prev, isLoading: true, error: null }));
       
-      const [spells, equipment, races, classes, backgrounds] = await Promise.all([
+      console.log('Starting to fetch Open5e data...');
+      
+      // Fetch each resource individually to better handle failures
+      const [spells, races, classes, backgrounds] = await Promise.allSettled([
         open5eApi.fetchSpells(),
-        open5eApi.fetchEquipment(),
         open5eApi.fetchRaces(),
         open5eApi.fetchClasses(),
         open5eApi.fetchBackgrounds(),
       ]);
 
+      // Try equipment separately since it's failing
+      let equipment: Open5eEquipment[] = [];
+      try {
+        equipment = await open5eApi.fetchEquipment();
+      } catch (equipmentError) {
+        console.warn('Equipment fetch failed, continuing without equipment data:', equipmentError);
+      }
+
+      console.log('Fetch results:', {
+        spells: spells.status === 'fulfilled' ? spells.value.length : 'failed',
+        races: races.status === 'fulfilled' ? races.value.length : 'failed',
+        classes: classes.status === 'fulfilled' ? classes.value.length : 'failed',
+        backgrounds: backgrounds.status === 'fulfilled' ? backgrounds.value.length : 'failed',
+        equipment: equipment.length
+      });
+
       setData({
-        spells,
+        spells: spells.status === 'fulfilled' ? spells.value : [],
         equipment,
-        races,
-        classes,
-        backgrounds,
+        races: races.status === 'fulfilled' ? races.value : [],
+        classes: classes.status === 'fulfilled' ? classes.value : [],
+        backgrounds: backgrounds.status === 'fulfilled' ? backgrounds.value : [],
         isLoading: false,
         error: null,
       });

@@ -22,27 +22,46 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
   const [selectedClass, setSelectedClass] = useState<Open5eClass | null>(data.class);
 
   const filteredClasses = useMemo(() => {
+    console.log('All classes:', classes.length);
+    console.log('Data sources:', data.sources);
+    
     if (!classes.length) return [];
     
-    // Filter by enabled sources
-    const enabledSources = Object.entries(data.sources || {})
-      .filter(([_, enabled]) => enabled)
-      .map(([source, _]) => {
-        switch (source) {
-          case 'coreRules': return '5esrd';
-          case 'expansions': return 'xge';
-          case 'homebrew': return 'homebrew';
-          default: return source;
-        }
-      });
-
+    // Get all available sources from the data
+    const availableSources = open5eApi.getAvailableSources(classes);
+    console.log('Available sources in classes:', availableSources);
+    
+    // If no specific sources are enabled, or coreRules is enabled, include 5esrd
+    const enabledSources: string[] = [];
+    
+    if (data.sources?.coreRules !== false) {
+      enabledSources.push('5esrd', 'cc', 'kp');
+    }
+    
+    if (data.sources?.expansions) {
+      enabledSources.push('tce', 'xge', 'vgm', 'mtf');
+    }
+    
+    if (data.sources?.homebrew) {
+      enabledSources.push('homebrew');
+    }
+    
+    // If no specific filtering, show all
+    if (enabledSources.length === 0) {
+      enabledSources.push(...availableSources);
+    }
+    
+    console.log('Enabled sources:', enabledSources);
+    
     let filtered = open5eApi.filterBySource(classes, enabledSources);
+    console.log('Filtered by source:', filtered.length);
     
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(cls => 
         cls.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
+      console.log('Filtered by search:', filtered.length);
     }
     
     return filtered;
@@ -62,9 +81,13 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
 
   const getSourceDisplayName = (source: string) => {
     switch (source) {
-      case '5esrd': return 'Core Rules';
+      case '5esrd': return 'Core Rules (SRD)';
+      case 'cc': return 'Core Rules (CC)';
+      case 'kp': return 'Kobold Press';
       case 'xge': return "Xanathar's Guide";
       case 'tce': return "Tasha's Cauldron";
+      case 'vgm': return "Volo's Guide";
+      case 'mtf': return "Mordenkainen's Tome";
       default: return source.toUpperCase();
     }
   };
@@ -126,6 +149,11 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
       <div className="text-center">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Choose Your Class</h1>
         <p className="text-gray-600">Select a class that defines your character's abilities and role</p>
+      </div>
+
+      {/* Debug info */}
+      <div className="text-sm text-gray-500 bg-gray-100 p-2 rounded">
+        Debug: {classes.length} total classes, {filteredClasses.length} after filtering
       </div>
 
       {/* Search */}
@@ -224,6 +252,9 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
       {filteredClasses.length === 0 && (
         <div className="text-center py-8">
           <p className="text-gray-500">No classes found matching your criteria.</p>
+          <p className="text-xs text-gray-400 mt-2">
+            Try adjusting your source settings or search terms.
+          </p>
         </div>
       )}
     </div>
