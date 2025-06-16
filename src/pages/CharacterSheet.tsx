@@ -26,11 +26,28 @@ import { useToast } from '@/hooks/use-toast';
 const CharacterSheet = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { getCharacter, deleteCharacter } = useCharacters();
+  const { getCharacter, deleteCharacter, updateCharacter } = useCharacters();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('characters');
   const [character, setCharacter] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Function to handle character updates and sync with database
+  const handleCharacterUpdate = async (updatedCharacter: any) => {
+    setCharacter(updatedCharacter);
+    
+    // Update the database with the new hit points
+    if (id && updatedCharacter.hit_points) {
+      try {
+        await updateCharacter(id, {
+          hit_points: updatedCharacter.hit_points
+        });
+        console.log('Character HP updated in database');
+      } catch (error) {
+        console.error('Failed to update character in database:', error);
+      }
+    }
+  };
 
   useEffect(() => {
     const loadCharacter = async () => {
@@ -178,6 +195,10 @@ const CharacterSheet = () => {
           const calculatedSpeed = calculateSpeed(characterData);
           console.log('Calculated speed:', calculatedSpeed);
 
+          // Calculate max HP if not stored
+          const maxHP = characterData.hit_points?.max || calculateInitialHP(characterData, formattedAbilities);
+          const currentHP = characterData.hit_points?.current !== undefined ? characterData.hit_points.current : maxHP;
+
           // Convert database character to the format expected by the character sheet
           const formattedCharacter = {
             id: characterData.id,
@@ -191,10 +212,15 @@ const CharacterSheet = () => {
             background_data: characterData.background_data,
             avatar: '/avatarPlaceholder.svg',
             // Use stored hit points or calculate them
-            currentHP: characterData.hit_points?.current || calculateInitialHP(characterData, formattedAbilities),
-            maxHP: characterData.hit_points?.max || calculateInitialHP(characterData, formattedAbilities),
+            currentHP: currentHP,
+            maxHP: maxHP,
             tempHP: characterData.hit_points?.temporary || 0,
-            hit_points: characterData.hit_points,
+            hit_points: {
+              current: currentHP,
+              max: maxHP,
+              temporary: characterData.hit_points?.temporary || 0,
+              hit_dice_remaining: characterData.hit_points?.hit_dice_remaining || characterData.level
+            },
             hit_point_type: characterData.hit_point_type,
             proficiencyBonus: Math.ceil(characterData.level / 4) + 1,
             abilities: formattedAbilities,
@@ -338,11 +364,11 @@ const CharacterSheet = () => {
 
       {/* Scrollable Content */}
       <main className="flex-1 overflow-y-auto pb-20 px-4 space-y-4">
-        <CharacterSummary character={character} setCharacter={setCharacter} />
-        <AbilitiesSection character={character} setCharacter={setCharacter} />
+        <CharacterSummary character={character} setCharacter={handleCharacterUpdate} />
+        <AbilitiesSection character={character} setCharacter={handleCharacterUpdate} />
         <SavingThrowsSkills character={character} />
-        <PassiveScoresDefenses character={character} setCharacter={setCharacter} />
-        <HitPointsHitDice character={character} setCharacter={setCharacter} />
+        <PassiveScoresDefenses character={character} setCharacter={handleCharacterUpdate} />
+        <HitPointsHitDice character={character} setCharacter={handleCharacterUpdate} />
         <AttacksSpellcasting character={character} />
         <EquipmentSection character={character} />
         <SpellsSection character={character} />

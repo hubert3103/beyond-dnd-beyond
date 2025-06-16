@@ -39,9 +39,20 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
   const handleDamage = () => {
     const damage = parseInt(tempDamage);
     if (damage > 0) {
-      const currentHP = character.currentHP || character.maxHP || 0;
+      const currentHP = character.hit_points?.current !== undefined ? character.hit_points.current : character.maxHP;
       const newHP = Math.max(0, currentHP - damage);
-      setCharacter({ ...character, currentHP: newHP });
+      
+      const updatedCharacter = {
+        ...character,
+        currentHP: newHP,
+        hit_points: {
+          ...character.hit_points,
+          current: newHP
+        }
+      };
+      
+      console.log('Applying damage:', damage, 'New HP:', newHP);
+      setCharacter(updatedCharacter);
       setTempDamage('');
       setShowHPDialog(false);
     }
@@ -50,19 +61,30 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
   const handleHealing = () => {
     const healing = parseInt(tempHealing);
     if (healing > 0) {
-      const currentHP = character.currentHP || character.maxHP || 0;
-      const maxHP = character.maxHP || 0;
+      const currentHP = character.hit_points?.current !== undefined ? character.hit_points.current : character.maxHP;
+      const maxHP = character.hit_points?.max || character.maxHP;
       const newHP = Math.min(maxHP, currentHP + healing);
-      setCharacter({ ...character, currentHP: newHP });
+      
+      const updatedCharacter = {
+        ...character,
+        currentHP: newHP,
+        hit_points: {
+          ...character.hit_points,
+          current: newHP
+        }
+      };
+      
+      console.log('Applying healing:', healing, 'New HP:', newHP);
+      setCharacter(updatedCharacter);
       setTempHealing('');
       setShowHPDialog(false);
     }
   };
 
   // Get HP values with fallbacks
-  const currentHP = character.currentHP !== undefined ? character.currentHP : (character.maxHP || 0);
-  const maxHP = character.maxHP || 0;
-  const tempHP = character.tempHP || 0;
+  const currentHP = character.hit_points?.current !== undefined ? character.hit_points.current : (character.maxHP || 0);
+  const maxHP = character.hit_points?.max || character.maxHP || 0;
+  const tempHP = character.hit_points?.temporary || character.tempHP || 0;
 
   return (
     <div className="bg-white rounded-lg p-4 mt-4">

@@ -45,10 +45,10 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
     return Math.max(1, maxHP);
   };
 
-  // Use the values from the formatted character or calculate them
-  const maxHP = character.maxHP || calculateMaxHP();
-  const currentHP = character.currentHP !== undefined ? character.currentHP : maxHP;
-  const tempHP = character.tempHP || 0;
+  // Use the values from the character's hit_points object
+  const maxHP = character.hit_points?.max || character.maxHP || calculateMaxHP();
+  const currentHP = character.hit_points?.current !== undefined ? character.hit_points.current : character.currentHP !== undefined ? character.currentHP : maxHP;
+  const tempHP = character.hit_points?.temporary || character.tempHP || 0;
 
   const [hitDice] = useState({
     total: character.level,

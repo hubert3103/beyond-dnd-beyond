@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -116,6 +117,27 @@ export const useCharacters = () => {
     }
   };
 
+  const updateCharacter = async (characterId: string, updates: Partial<Character>) => {
+    try {
+      const { error } = await supabase
+        .from('characters')
+        .update(updates)
+        .eq('id', characterId);
+
+      if (error) throw error;
+
+      console.log('Character updated successfully');
+    } catch (error) {
+      console.error('Error updating character:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update character",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const deleteCharacter = async (characterId: string) => {
     try {
       const { error } = await supabase
@@ -165,6 +187,7 @@ export const useCharacters = () => {
     characters,
     loading,
     saveCharacter,
+    updateCharacter,
     deleteCharacter,
     getCharacter,
     refreshCharacters: fetchCharacters,
