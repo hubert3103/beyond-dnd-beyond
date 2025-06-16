@@ -1,10 +1,11 @@
 
 import { useState, useMemo } from 'react';
-import { Search, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useOpen5eData } from '../../hooks/useOpen5eData';
 import { open5eApi, Open5eEquipment } from '../../services/open5eApi';
 import LoadingSpinner from '../character-creation/LoadingSpinner';
@@ -16,14 +17,44 @@ const ItemsTab = () => {
   const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
   const [selectedItem, setSelectedItem] = useState<Open5eEquipment | null>(null);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<'name' | 'rarity' | 'cost'>('rarity');
 
-  // For now, we'll show all equipment since we don't have source filtering UI in this tab
+  const getRarityFromCost = (cost: { quantity: number; unit: string }) => {
+    const goldValue = cost.unit === 'gp' ? cost.quantity : 
+                     cost.unit === 'sp' ? cost.quantity * 0.1 :
+                     cost.unit === 'cp' ? cost.quantity * 0.01 : cost.quantity;
+    
+    if (goldValue <= 50) return 'Common';
+    if (goldValue <= 500) return 'Uncommon';
+    if (goldValue <= 5000) return 'Rare';
+    return 'Very Rare';
+  };
+
+  const getRarityOrder = (rarity: string) => {
+    switch (rarity) {
+      case 'Common': return 1;
+      case 'Uncommon': return 2;
+      case 'Rare': return 3;
+      case 'Very Rare': return 4;
+      default: return 0;
+    }
+  };
+
   const filteredEquipment = useMemo(() => {
     console.log('All equipment:', equipment.length);
+    console.log('Selected sources:', selectedSources);
     
     if (!equipment.length) return [];
     
     let filtered = equipment;
+    
+    // Apply source filter - only if sources are explicitly selected
+    if (selectedSources.length > 0) {
+      filtered = filtered.filter(item => selectedSources.includes(item.document__slug));
+      console.log('Filtered by source:', filtered.length);
+    }
     
     // Apply search filter
     if (searchTerm) {
@@ -34,8 +65,30 @@ const ItemsTab = () => {
       console.log('Filtered by search:', filtered.length);
     }
     
+    // Sort the results
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'rarity':
+          const rarityA = getRarityOrder(getRarityFromCost(a.cost));
+          const rarityB = getRarityOrder(getRarityFromCost(b.cost));
+          return rarityA - rarityB;
+        case 'cost':
+          const costA = a.cost.unit === 'gp' ? a.cost.quantity : 
+                       a.cost.unit === 'sp' ? a.cost.quantity * 0.1 :
+                       a.cost.unit === 'cp' ? a.cost.quantity * 0.01 : a.cost.quantity;
+          const costB = b.cost.unit === 'gp' ? b.cost.quantity : 
+                       b.cost.unit === 'sp' ? b.cost.quantity * 0.1 :
+                       b.cost.unit === 'cp' ? b.cost.quantity * 0.01 : b.cost.quantity;
+          return costA - costB;
+        default:
+          return 0;
+      }
+    });
+    
     return filtered;
-  }, [equipment, searchTerm]);
+  }, [equipment, selectedSources, searchTerm, sortBy]);
 
   const equipmentBySource = useMemo(() => {
     const grouped: Record<string, Open5eEquipment[]> = {};
@@ -49,6 +102,10 @@ const ItemsTab = () => {
     return grouped;
   }, [filteredEquipment]);
 
+  const availableSources = useMemo(() => {
+    return open5eApi.getAvailableSources(equipment);
+  }, [equipment]);
+
   const getSourceDisplayName = (source: string) => {
     switch (source) {
       case '5esrd': return 'Core Rules (SRD)';
@@ -60,17 +117,6 @@ const ItemsTab = () => {
       case 'mtf': return "Mordenkainen's Tome";
       default: return source.toUpperCase();
     }
-  };
-
-  const getRarityFromCost = (cost: { quantity: number; unit: string }) => {
-    const goldValue = cost.unit === 'gp' ? cost.quantity : 
-                     cost.unit === 'sp' ? cost.quantity * 0.1 :
-                     cost.unit === 'cp' ? cost.quantity * 0.01 : cost.quantity;
-    
-    if (goldValue <= 50) return 'Common';
-    if (goldValue <= 500) return 'Uncommon';
-    if (goldValue <= 5000) return 'Rare';
-    return 'Very Rare';
   };
 
   const toggleSource = (source: string) => {
@@ -88,6 +134,14 @@ const ItemsTab = () => {
     setExpandedSources(newState);
   };
 
+  const handleSourceFilterChange = (source: string, checked: boolean) => {
+    setSelectedSources(prev => 
+      checked 
+        ? [...prev, source]
+        : prev.filter(s => s !== source)
+    );
+  };
+
   if (isLoading) {
     return <LoadingSpinner message="Loading equipment data..." />;
   }
@@ -103,15 +157,81 @@ const ItemsTab = () => {
         <p className="text-gray-300">Browse equipment from D&D 5e sources</p>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder="Search equipment..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search and Filter Controls */}
+      <div className="space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search equipment..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2"
+          >
+            <Filter className="h-4 w-4" />
+            Filters
+          </Button>
+          
+          <Select value={sortBy} onValueChange={(value: 'name' | 'rarity' | 'cost') => setSortBy(value)}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="rarity">Rarity</SelectItem>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="cost">Cost</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Filter Panel */}
+        {showFilters && (
+          <Card className="p-4">
+            <h3 className="font-semibold mb-3 text-gray-900">Filter by Source</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {availableSources.map(source => (
+                <label key={source} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedSources.includes(source)}
+                    onChange={(e) => handleSourceFilterChange(source, e.target.checked)}
+                    className="rounded"
+                  />
+                  <span className="text-sm text-gray-700">{getSourceDisplayName(source)}</span>
+                </label>
+              ))}
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedSources(availableSources)}
+              >
+                Select All
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedSources([])}
+              >
+                Clear All
+              </Button>
+            </div>
+          </Card>
+        )}
+      </div>
+
+      {/* Results Summary */}
+      <div className="text-sm text-gray-300">
+        Showing {filteredEquipment.length} of {equipment.length} items
       </div>
 
       {/* Expand/Collapse All */}
@@ -199,7 +319,7 @@ const ItemsTab = () => {
         <div className="text-center py-8">
           <p className="text-white">No equipment found matching your search.</p>
           <p className="text-xs text-gray-400 mt-2">
-            Try adjusting your search terms.
+            Try adjusting your search terms or filter settings.
           </p>
         </div>
       )}
