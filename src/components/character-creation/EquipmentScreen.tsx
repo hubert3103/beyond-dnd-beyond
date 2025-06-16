@@ -236,15 +236,33 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
 
   const getTotalWeight = () => {
     let total = 0;
-    total += equipmentData.selectedWeapons.reduce((sum, weapon) => sum + (weapon.weight || 0), 0);
-    total += equipmentData.selectedArmor.reduce((sum, armor) => sum + (armor.weight || 0), 0);
-    total += equipmentData.inventory.reduce((sum, item: any) => sum + (item.weight || 0), 0);
-    return total;
+    
+    // Safely calculate weapon weights
+    total += equipmentData.selectedWeapons.reduce((sum, weapon) => {
+      const weight = parseFloat(weapon.weight) || 0;
+      return sum + weight;
+    }, 0);
+    
+    // Safely calculate armor weights
+    total += equipmentData.selectedArmor.reduce((sum, armor) => {
+      const weight = parseFloat(armor.weight) || 0;
+      return sum + weight;
+    }, 0);
+    
+    // Safely calculate inventory weights
+    total += equipmentData.inventory.reduce((sum, item: any) => {
+      const weight = parseFloat(item.weight) || 0;
+      return sum + weight;
+    }, 0);
+    
+    // Ensure we return a valid number
+    return isNaN(total) ? 0 : total;
   };
 
   const getTotalGoldValue = () => {
     const { cp, sp, ep, gp, pp } = equipmentData.currency;
-    return cp * 0.01 + sp * 0.1 + ep * 0.5 + gp + pp * 10;
+    const totalValue = (cp || 0) * 0.01 + (sp || 0) * 0.1 + (ep || 0) * 0.5 + (gp || 0) + (pp || 0) * 10;
+    return isNaN(totalValue) ? 0 : totalValue;
   };
 
   if (isLoading) {
