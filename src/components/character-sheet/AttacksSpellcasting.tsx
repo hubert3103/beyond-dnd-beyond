@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, Sword, Zap } from 'lucide-react';
+import { ChevronDown, ChevronRight, Sword, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Collapsible,
@@ -31,7 +31,7 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
       uses: null
     });
     
-    // Add weapon attacks from equipment
+    // Add weapon attacks from equipped equipment
     if (character.equipment?.starting_equipment) {
       character.equipment.starting_equipment.forEach((item: any) => {
         if (item.category === 'weapon' && item.equipped) {
@@ -140,7 +140,7 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
           {characterAttacks.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>No attacks or spells available</p>
-              <p className="text-sm">Add weapons to your equipment or learn spells to see them here</p>
+              <p className="text-sm">Equip weapons in your equipment or learn spells to see them here</p>
             </div>
           ) : (
             characterAttacks.map((attack) => (
@@ -184,15 +184,6 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
               </div>
             ))
           )}
-          
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => console.log('Add new attack/spell')}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add New
-          </Button>
         </CollapsibleContent>
       </div>
     </Collapsible>

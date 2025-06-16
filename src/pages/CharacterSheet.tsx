@@ -385,7 +385,7 @@ const CharacterSheet = () => {
         <PassiveScoresDefenses character={character} setCharacter={handleCharacterUpdate} />
         <HitPointsHitDice character={character} setCharacter={handleCharacterUpdate} />
         <AttacksSpellcasting character={character} />
-        <EquipmentSection character={character} />
+        <EquipmentSection character={character} setCharacter={handleCharacterUpdate} />
         <SpellsSection character={character} />
         <FeaturesTraits character={character} />
         <CurrencyNotes />
