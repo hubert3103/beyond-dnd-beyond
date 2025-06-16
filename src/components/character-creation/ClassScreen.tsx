@@ -1,8 +1,14 @@
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { Search, ChevronDown, ChevronRight, Shield, Sword, Wand2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useOpen5eData } from '../../hooks/useOpen5eData';
+import { open5eApi, Open5eClass } from '../../services/open5eApi';
+import LoadingSpinner from './LoadingSpinner';
+import ErrorMessage from './ErrorMessage';
 
 interface ClassScreenProps {
   data: any;
@@ -10,208 +16,216 @@ interface ClassScreenProps {
 }
 
 const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
+  const { classes, isLoading, error, refresh } = useOpen5eData();
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    coreRules: true,
-    expansions: false,
-    homebrew: false
-  });
-  const [selectedClass, setSelectedClass] = useState(null);
+  const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
+  const [selectedClass, setSelectedClass] = useState<Open5eClass | null>(data.class);
 
-  const classData = {
-    coreRules: [
-      { id: 'barbarian', name: 'BARBARIAN', description: 'A fierce warrior of primitive background who can enter a battle rage.' },
-      { id: 'bard', name: 'BARD', description: 'A master of song, speech, and the magic they contain.' },
-      { id: 'cleric', name: 'CLERIC', description: 'A priestly champion who wields divine magic in service of a higher power.' },
-      { id: 'druid', name: 'DRUID', description: 'A priest of the Old Faith, wielding elemental forces and transforming into animal forms.' },
-      { id: 'fighter', name: 'FIGHTER', description: 'A master of martial combat, skilled with a variety of weapons and armor.' },
-      { id: 'monk', name: 'MONK', description: 'A master of martial arts, harnessing inner power through discipline.' }
-    ],
-    expansions: [
-      { id: 'artificer', name: 'ARTIFICER', description: 'A master of invention, using ingenuity and magic to unlock extraordinary capabilities.' }
-    ],
-    homebrew: []
+  const filteredClasses = useMemo(() => {
+    if (!classes.length) return [];
+    
+    // Filter by enabled sources
+    const enabledSources = Object.entries(data.sources || {})
+      .filter(([_, enabled]) => enabled)
+      .map(([source, _]) => {
+        switch (source) {
+          case 'coreRules': return '5esrd';
+          case 'expansions': return 'xge';
+          case 'homebrew': return 'homebrew';
+          default: return source;
+        }
+      });
+
+    let filtered = open5eApi.filterBySource(classes, enabledSources);
+    
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(cls => 
+        cls.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [classes, data.sources, searchTerm]);
+
+  const classesBySource = useMemo(() => {
+    const grouped: Record<string, Open5eClass[]> = {};
+    filteredClasses.forEach(cls => {
+      const source = cls.document__slug;
+      if (!grouped[source]) {
+        grouped[source] = [];
+      }
+      grouped[source].push(cls);
+    });
+    return grouped;
+  }, [filteredClasses]);
+
+  const getSourceDisplayName = (source: string) => {
+    switch (source) {
+      case '5esrd': return 'Core Rules';
+      case 'xge': return "Xanathar's Guide";
+      case 'tce': return "Tasha's Cauldron";
+      default: return source.toUpperCase();
+    }
   };
 
-  const toggleSection = (section: string) => {
-    setExpandedSections(prev => ({
+  const getClassIcon = (className: string) => {
+    const name = className.toLowerCase();
+    if (['fighter', 'barbarian', 'paladin'].includes(name)) return Shield;
+    if (['rogue', 'ranger', 'monk'].includes(name)) return Sword;
+    return Wand2;
+  };
+
+  const toggleSource = (source: string) => {
+    setExpandedSources(prev => ({
       ...prev,
-      [section]: !prev[section]
+      [source]: !prev[source]
     }));
   };
 
-  const collapseAll = () => {
-    setExpandedSections({
-      coreRules: false,
-      expansions: false,
-      homebrew: false
+  const toggleAllSources = (expand: boolean) => {
+    const newState: Record<string, boolean> = {};
+    Object.keys(classesBySource).forEach(source => {
+      newState[source] = expand;
+    });
+    setExpandedSources(newState);
+  };
+
+  const handleSelectClass = (cls: Open5eClass) => {
+    setSelectedClass(cls);
+    onUpdate({ 
+      class: {
+        name: cls.name,
+        description: cls.desc,
+        hitDie: cls.hit_die,
+        proficiencies: {
+          armor: cls.prof_armor,
+          weapons: cls.prof_weapons,
+          tools: cls.prof_tools,
+          savingThrows: cls.prof_saving_throws,
+          skills: cls.prof_skills
+        },
+        equipment: cls.equipment,
+        spellcastingAbility: cls.spellcasting_ability,
+        source: cls.document__slug,
+        features: [] // Will be populated with level 1 features
+      }
     });
   };
 
-  const expandAll = () => {
-    setExpandedSections({
-      coreRules: true,
-      expansions: true,
-      homebrew: true
-    });
-  };
+  if (isLoading) {
+    return <LoadingSpinner message="Loading class data..." />;
+  }
 
-  const selectClass = (characterClass: any) => {
-    onUpdate({ class: characterClass });
-    setSelectedClass(null);
-  };
-
-  if (selectedClass) {
-    return (
-      <div className="p-4">
-        <div className="bg-white rounded-lg p-6 text-center">
-          <div className="w-24 h-24 bg-gray-200 rounded-lg mx-auto mb-4 flex items-center justify-center">
-            <img 
-              src="/avatarPlaceholder.svg" 
-              alt="Class icon"
-              className="w-12 h-12"
-              style={{ filter: 'invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)' }}
-            />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">{selectedClass.name}</h2>
-          <p className="text-gray-600 mb-6">{selectedClass.description}</p>
-          <div className="space-y-3">
-            <Button 
-              onClick={() => selectClass(selectedClass)}
-              className="w-full bg-red-600 hover:bg-red-700 text-white"
-            >
-              Select
-            </Button>
-            <Button 
-              onClick={() => setSelectedClass(null)}
-              variant="outline"
-              className="w-full"
-            >
-              Back
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
+  if (error) {
+    return <ErrorMessage message={error} onRetry={refresh} />;
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">Choose a Class</h1>
-      
+    <div className="p-4 space-y-6">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Choose Your Class</h1>
+        <p className="text-gray-600">Select a class that defines your character's abilities and role</p>
+      </div>
+
       {/* Search */}
       <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
         <Input
+          placeholder="Search classes..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search"
           className="pl-10"
         />
-        <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-          <img 
-            src="/searchIcon.svg" 
-            alt="Search"
-            className="w-4 h-4"
-            style={{ filter: 'invert(60%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)' }}
-          />
-        </div>
       </div>
 
-      {/* Expand/Collapse Controls */}
-      <div className="flex justify-end space-x-4 text-sm">
-        <button onClick={collapseAll} className="text-gray-600 hover:text-gray-800">
-          Collapse all
-        </button>
-        <button onClick={expandAll} className="text-gray-600 hover:text-gray-800">
-          Expand all
-        </button>
+      {/* Expand/Collapse All */}
+      <div className="flex space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => toggleAllSources(true)}
+          className="flex-1"
+        >
+          Expand All
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => toggleAllSources(false)}
+          className="flex-1"
+        >
+          Collapse All
+        </Button>
       </div>
 
-      {/* Core Rules Section */}
-      <Collapsible open={expandedSections.coreRules} onOpenChange={() => toggleSection('coreRules')}>
-        <div className="space-y-2">
-          <CollapsibleTrigger className="w-full">
-            <div className="flex items-center justify-between p-3 bg-gray-100 rounded-lg">
-              <div className="text-left">
-                <h3 className="font-semibold text-gray-900">Core Rules</h3>
-                <p className="text-sm text-gray-600">
-                  Character options from the Player's Handbook, Dungeon Master's Guide and Monster Manual.
-                </p>
-              </div>
-              <div className={`transform transition-transform ${expandedSections.coreRules ? 'rotate-180' : ''}`}>
-                ▼
-              </div>
-            </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="space-y-2 ml-4">
-              {classData.coreRules
-                .filter(cls => cls.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                .map((cls) => (
-                  <button
-                    key={cls.id}
-                    onClick={() => setSelectedClass(cls)}
-                    className="w-full flex items-center p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
-                  >
-                    <div className="w-8 h-8 bg-gray-200 rounded mr-3 flex items-center justify-center">
-                      <img 
-                        src="/avatarPlaceholder.svg" 
-                        alt="Class"
-                        className="w-5 h-5"
-                        style={{ filter: 'invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)' }}
-                      />
-                    </div>
-                    <span className="flex-1 text-left font-medium text-gray-900">{cls.name}</span>
-                    <span className="text-gray-400">▶</span>
-                  </button>
-                ))}
-            </div>
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
+      {/* Classes by Source */}
+      <div className="space-y-4">
+        {Object.entries(classesBySource).map(([source, sourceClasses]) => (
+          <Collapsible
+            key={source}
+            open={expandedSources[source]}
+            onOpenChange={() => toggleSource(source)}
+          >
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full justify-between p-4 h-auto border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                <div className="text-left">
+                  <div className="font-semibold text-gray-900">{getSourceDisplayName(source)}</div>
+                  <div className="text-sm text-gray-600">{sourceClasses.length} classes available</div>
+                </div>
+                {expandedSources[source] ? 
+                  <ChevronDown className="h-5 w-5" /> : 
+                  <ChevronRight className="h-5 w-5" />
+                }
+              </Button>
+            </CollapsibleTrigger>
 
-      {/* Expansions Section */}
-      <Collapsible open={expandedSections.expansions} onOpenChange={() => toggleSection('expansions')}>
-        <div className="space-y-2">
-          <CollapsibleTrigger className="w-full">
-            <div className="flex items-center justify-between p-3 bg-gray-100 rounded-lg">
-              <div className="text-left">
-                <h3 className="font-semibold text-gray-900">Expansions</h3>
-                <p className="text-sm text-gray-600">
-                  Character options from official expansion books.
-                </p>
-              </div>
-              <div className={`transform transition-transform ${expandedSections.expansions ? 'rotate-180' : ''}`}>
-                ▼
-              </div>
-            </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="space-y-2 ml-4">
-              {classData.expansions
-                .filter(cls => cls.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                .map((cls) => (
-                  <button
-                    key={cls.id}
-                    onClick={() => setSelectedClass(cls)}
-                    className="w-full flex items-center p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+            <CollapsibleContent className="mt-2 space-y-2">
+              {sourceClasses.map((cls) => {
+                const IconComponent = getClassIcon(cls.name);
+                return (
+                  <Card 
+                    key={cls.slug}
+                    className={`cursor-pointer transition-colors hover:bg-gray-50 ${
+                      selectedClass?.slug === cls.slug ? 'ring-2 ring-red-600 bg-red-50' : ''
+                    }`}
+                    onClick={() => handleSelectClass(cls)}
                   >
-                    <div className="w-8 h-8 bg-gray-200 rounded mr-3 flex items-center justify-center">
-                      <img 
-                        src="/avatarPlaceholder.svg" 
-                        alt="Class"
-                        className="w-5 h-5"
-                        style={{ filter: 'invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)' }}
-                      />
-                    </div>
-                    <span className="flex-1 text-left font-medium text-gray-900">{cls.name}</span>
-                    <span className="text-gray-400">▶</span>
-                  </button>
-                ))}
-            </div>
-          </CollapsibleContent>
+                    <CardContent className="p-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <IconComponent className="w-6 h-6 text-gray-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 truncate">{cls.name}</h3>
+                          <p className="text-sm text-gray-600 line-clamp-2 mt-1">
+                            {cls.desc.replace(/<[^>]*>/g, '').substring(0, 100)}...
+                          </p>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-xs text-gray-500">Hit Die: d{cls.hit_die}</span>
+                            {cls.spellcasting_ability && (
+                              <span className="text-xs text-blue-600">Spellcaster</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </CollapsibleContent>
+          </Collapsible>
+        ))}
+      </div>
+
+      {filteredClasses.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">No classes found matching your criteria.</p>
         </div>
-      </Collapsible>
+      )}
     </div>
   );
 };

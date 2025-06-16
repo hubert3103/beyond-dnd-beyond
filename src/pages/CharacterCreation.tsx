@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNavigation from '../components/BottomNavigation';
@@ -32,7 +31,8 @@ const CharacterCreation = () => {
       cha: { base: 10, bonus: 0, total: 10 }
     },
     background: null,
-    equipment: { startingEquipment: [], inventory: [], currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 } }
+    equipment: { startingEquipment: [], inventory: [], currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 } },
+    spells: []
   });
 
   const steps: { id: CreationStep; label: string }[] = [
