@@ -81,6 +81,303 @@ export type Database = {
         }
         Relationships: []
       }
+      open5e_backgrounds: {
+        Row: {
+          created_at: string
+          description: string
+          document_slug: string
+          equipment: string | null
+          feature: string | null
+          feature_desc: string | null
+          id: string
+          languages: string | null
+          name: string
+          skill_proficiencies: string | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          document_slug: string
+          equipment?: string | null
+          feature?: string | null
+          feature_desc?: string | null
+          id?: string
+          languages?: string | null
+          name: string
+          skill_proficiencies?: string | null
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          document_slug?: string
+          equipment?: string | null
+          feature?: string | null
+          feature_desc?: string | null
+          id?: string
+          languages?: string | null
+          name?: string
+          skill_proficiencies?: string | null
+          slug?: string
+        }
+        Relationships: []
+      }
+      open5e_classes: {
+        Row: {
+          archetypes: Json | null
+          created_at: string
+          description: string
+          document_slug: string
+          equipment: string | null
+          hit_die: number
+          id: string
+          name: string
+          prof_armor: string | null
+          prof_saving_throws: string | null
+          prof_skills: string | null
+          prof_tools: string | null
+          prof_weapons: string | null
+          slug: string
+          spellcasting_ability: string | null
+          subtypes_name: string | null
+        }
+        Insert: {
+          archetypes?: Json | null
+          created_at?: string
+          description: string
+          document_slug: string
+          equipment?: string | null
+          hit_die: number
+          id?: string
+          name: string
+          prof_armor?: string | null
+          prof_saving_throws?: string | null
+          prof_skills?: string | null
+          prof_tools?: string | null
+          prof_weapons?: string | null
+          slug: string
+          spellcasting_ability?: string | null
+          subtypes_name?: string | null
+        }
+        Update: {
+          archetypes?: Json | null
+          created_at?: string
+          description?: string
+          document_slug?: string
+          equipment?: string | null
+          hit_die?: number
+          id?: string
+          name?: string
+          prof_armor?: string | null
+          prof_saving_throws?: string | null
+          prof_skills?: string | null
+          prof_tools?: string | null
+          prof_weapons?: string | null
+          slug?: string
+          spellcasting_ability?: string | null
+          subtypes_name?: string | null
+        }
+        Relationships: []
+      }
+      open5e_equipment: {
+        Row: {
+          ac: number | null
+          ac_add_dex: boolean | null
+          ac_base: number | null
+          ac_cap_dex: number | null
+          category: string | null
+          cost_quantity: number | null
+          cost_unit: string | null
+          created_at: string
+          damage_dice: string | null
+          damage_type: string | null
+          description: string
+          dex_bonus: boolean | null
+          document_slug: string
+          id: string
+          max_dex_bonus: number | null
+          name: string
+          properties: Json | null
+          rarity: string
+          requires_attunement: boolean
+          slug: string
+          type: string
+          weight: number | null
+        }
+        Insert: {
+          ac?: number | null
+          ac_add_dex?: boolean | null
+          ac_base?: number | null
+          ac_cap_dex?: number | null
+          category?: string | null
+          cost_quantity?: number | null
+          cost_unit?: string | null
+          created_at?: string
+          damage_dice?: string | null
+          damage_type?: string | null
+          description: string
+          dex_bonus?: boolean | null
+          document_slug: string
+          id?: string
+          max_dex_bonus?: number | null
+          name: string
+          properties?: Json | null
+          rarity?: string
+          requires_attunement?: boolean
+          slug: string
+          type: string
+          weight?: number | null
+        }
+        Update: {
+          ac?: number | null
+          ac_add_dex?: boolean | null
+          ac_base?: number | null
+          ac_cap_dex?: number | null
+          category?: string | null
+          cost_quantity?: number | null
+          cost_unit?: string | null
+          created_at?: string
+          damage_dice?: string | null
+          damage_type?: string | null
+          description?: string
+          dex_bonus?: boolean | null
+          document_slug?: string
+          id?: string
+          max_dex_bonus?: number | null
+          name?: string
+          properties?: Json | null
+          rarity?: string
+          requires_attunement?: boolean
+          slug?: string
+          type?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
+      open5e_races: {
+        Row: {
+          age: string
+          alignment: string
+          asi: Json
+          created_at: string
+          description: string
+          document_slug: string
+          id: string
+          languages: string
+          name: string
+          proficiencies: string | null
+          size: string
+          slug: string
+          speed: Json
+          subraces: Json | null
+          traits: string | null
+        }
+        Insert: {
+          age: string
+          alignment: string
+          asi?: Json
+          created_at?: string
+          description: string
+          document_slug: string
+          id?: string
+          languages: string
+          name: string
+          proficiencies?: string | null
+          size: string
+          slug: string
+          speed?: Json
+          subraces?: Json | null
+          traits?: string | null
+        }
+        Update: {
+          age?: string
+          alignment?: string
+          asi?: Json
+          created_at?: string
+          description?: string
+          document_slug?: string
+          id?: string
+          languages?: string
+          name?: string
+          proficiencies?: string | null
+          size?: string
+          slug?: string
+          speed?: Json
+          subraces?: Json | null
+          traits?: string | null
+        }
+        Relationships: []
+      }
+      open5e_spells: {
+        Row: {
+          attack_type: string | null
+          casting_time: string
+          classes: Json
+          components: string
+          concentration: boolean
+          created_at: string
+          damage_type: string | null
+          description: string
+          document_slug: string
+          duration: string
+          higher_level: string | null
+          id: string
+          level: string
+          material: string | null
+          name: string
+          range_value: string
+          ritual: boolean
+          save_type: string | null
+          school: string
+          slug: string
+        }
+        Insert: {
+          attack_type?: string | null
+          casting_time: string
+          classes?: Json
+          components: string
+          concentration?: boolean
+          created_at?: string
+          damage_type?: string | null
+          description: string
+          document_slug: string
+          duration: string
+          higher_level?: string | null
+          id?: string
+          level: string
+          material?: string | null
+          name: string
+          range_value: string
+          ritual?: boolean
+          save_type?: string | null
+          school: string
+          slug: string
+        }
+        Update: {
+          attack_type?: string | null
+          casting_time?: string
+          classes?: Json
+          components?: string
+          concentration?: boolean
+          created_at?: string
+          damage_type?: string | null
+          description?: string
+          document_slug?: string
+          duration?: string
+          higher_level?: string | null
+          id?: string
+          level?: string
+          material?: string | null
+          name?: string
+          range_value?: string
+          ritual?: boolean
+          save_type?: string | null
+          school?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -99,51 +396,6 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
-        }
-        Relationships: []
-      }
-      "Spells 5e": {
-        Row: {
-          cast_time: string | null
-          classes: string | null
-          description: string | null
-          duration: string | null
-          level: string | null
-          material: string | null
-          material_cost: string | null
-          name: string
-          range: string | null
-          school: string | null
-          somatic: number | null
-          verbal: number | null
-        }
-        Insert: {
-          cast_time?: string | null
-          classes?: string | null
-          description?: string | null
-          duration?: string | null
-          level?: string | null
-          material?: string | null
-          material_cost?: string | null
-          name: string
-          range?: string | null
-          school?: string | null
-          somatic?: number | null
-          verbal?: number | null
-        }
-        Update: {
-          cast_time?: string | null
-          classes?: string | null
-          description?: string | null
-          duration?: string | null
-          level?: string | null
-          material?: string | null
-          material_cost?: string | null
-          name?: string
-          range?: string | null
-          school?: string | null
-          somatic?: number | null
-          verbal?: number | null
         }
         Relationships: []
       }

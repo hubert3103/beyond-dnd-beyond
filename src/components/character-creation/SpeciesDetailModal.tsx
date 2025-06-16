@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Open5eRace } from '../../services/open5eApi';
 
 interface SpeciesDetailModalProps {
@@ -190,114 +191,162 @@ const SpeciesDetailModal = ({ species, isOpen, onClose, onSelect }: SpeciesDetai
     ).join(', ');
   };
 
+  // Parse racial traits from the traits text
+  const parseRacialTraits = (traitsText: string) => {
+    if (!traitsText) return [];
+    
+    const traits = [];
+    
+    // Split by markdown bold headers like **_Name._**
+    const traitSections = traitsText.split(/\*\*_([^_]+)\._\*\*/);
+    
+    for (let i = 1; i < traitSections.length; i += 2) {
+      const name = traitSections[i];
+      const description = traitSections[i + 1]?.trim() || '';
+      
+      if (name && description) {
+        traits.push({
+          name: name,
+          description: description.replace(/^\s*\*\s*/, '').trim()
+        });
+      }
+    }
+    
+    return traits;
+  };
+
+  const racialTraits = parseRacialTraits(species.traits || '');
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">{species.name}</DialogTitle>
+          <DialogTitle className="text-3xl font-bold text-center">{species.name}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Species Image Placeholder */}
-          <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+          <div className="w-full h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center border-2 border-gray-300">
             <img 
               src="/avatarPlaceholder.svg" 
               alt={species.name}
-              className="w-16 h-16"
+              className="w-20 h-20 opacity-60"
               style={{ filter: 'invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)' }}
             />
           </div>
 
-          {/* Basic Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h4 className="font-semibold text-gray-900">Size</h4>
-              <p className="text-gray-600">{species.size}</p>
+          {/* Quick Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <h4 className="font-semibold text-blue-900 text-sm">Size</h4>
+              <p className="text-blue-700 font-medium">{species.size}</p>
             </div>
-            <div>
-              <h4 className="font-semibold text-gray-900">Speed</h4>
-              <p className="text-gray-600">{species.speed?.walk || 30} feet</p>
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <h4 className="font-semibold text-green-900 text-sm">Speed</h4>
+              <p className="text-green-700 font-medium">{species.speed?.walk || 30} feet</p>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 col-span-2">
+              <h4 className="font-semibold text-purple-900 text-sm">Ability Bonuses</h4>
+              <p className="text-purple-700 font-medium">{parseAbilityScoreIncrease(species.asi)}</p>
             </div>
           </div>
 
-          {/* Ability Score Increase */}
-          <div>
-            <h4 className="font-semibold text-gray-900 mb-2">Ability Score Increase</h4>
-            <p className="text-gray-600">{parseAbilityScoreIncrease(species.asi)}</p>
+          {/* Description */}
+          <div className="bg-gray-50 p-6 rounded-lg border">
+            <h4 className="font-semibold text-gray-900 mb-3 text-lg">About {species.name}</h4>
+            <p className="text-gray-700 leading-relaxed">{cleanDescription(species.desc)}</p>
           </div>
 
           {/* Languages */}
           {species.languages && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Languages</h4>
-              <p className="text-gray-600">{species.languages}</p>
+            <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+              <h4 className="font-semibold text-amber-900 mb-2 flex items-center">
+                <span className="text-lg">🗣️</span>
+                <span className="ml-2">Languages</span>
+              </h4>
+              <p className="text-amber-800">{species.languages}</p>
             </div>
           )}
 
           {/* Proficiencies */}
           {species.proficiencies && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Proficiencies</h4>
-              <p className="text-gray-600">{species.proficiencies}</p>
+            <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+              <h4 className="font-semibold text-indigo-900 mb-2 flex items-center">
+                <span className="text-lg">⚔️</span>
+                <span className="ml-2">Proficiencies</span>
+              </h4>
+              <p className="text-indigo-800">{species.proficiencies}</p>
             </div>
           )}
 
-          {/* Description */}
-          <div>
-            <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
-            <p className="text-gray-600 leading-relaxed">{cleanDescription(species.desc)}</p>
-          </div>
-
-          {/* Traits */}
-          {species.traits && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Racial Traits</h4>
-              <p className="text-gray-600">{cleanDescription(species.traits)}</p>
+          {/* Racial Traits */}
+          {racialTraits.length > 0 && (
+            <div className="bg-white border rounded-lg">
+              <div className="bg-gray-100 px-6 py-4 border-b">
+                <h4 className="font-semibold text-gray-900 text-lg flex items-center">
+                  <span className="text-lg">✨</span>
+                  <span className="ml-2">Racial Traits</span>
+                </h4>
+              </div>
+              <div className="p-6 space-y-4">
+                {racialTraits.map((trait, index) => (
+                  <div key={index} className="border-l-4 border-red-600 pl-4">
+                    <h5 className="font-semibold text-gray-900 mb-1">{trait.name}</h5>
+                    <p className="text-gray-700 text-sm leading-relaxed">{trait.description}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           {/* Subspecies Selection */}
           {hasSubspecies && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Subspecies</h4>
-              <p className="text-sm text-gray-500 mb-2">
-                Choose a subspecies to further customize your character's abilities and traits.
-              </p>
-              <Select value={selectedSubspecies} onValueChange={setSelectedSubspecies}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a subspecies (optional)" />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-50">
-                  {subspeciesData.map((sub) => (
-                    <SelectItem key={sub.name} value={sub.name}>
-                      {sub.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              {/* Subspecies Information */}
-              {selectedSubspeciesData && (
-                <div className="border-t border-gray-200 pt-4 mt-4 space-y-3">
-                  <div>
-                    <h5 className="font-semibold text-gray-900">{selectedSubspeciesData.name}</h5>
-                    <p className="text-sm text-gray-600 mt-1">{selectedSubspeciesData.description}</p>
+            <div className="bg-white border rounded-lg">
+              <div className="bg-gray-100 px-6 py-4 border-b">
+                <h4 className="font-semibold text-gray-900 text-lg">Choose a Subspecies</h4>
+                <p className="text-sm text-gray-600 mt-1">
+                  Customize your character with additional abilities and traits.
+                </p>
+              </div>
+              <div className="p-6">
+                <Select value={selectedSubspecies} onValueChange={setSelectedSubspecies}>
+                  <SelectTrigger className="mb-4">
+                    <SelectValue placeholder="Choose a subspecies (optional)" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {subspeciesData.map((sub) => (
+                      <SelectItem key={sub.name} value={sub.name}>
+                        {sub.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {/* Subspecies Information */}
+                {selectedSubspeciesData && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h5 className="font-semibold text-blue-900 mb-2">{selectedSubspeciesData.name}</h5>
+                    <p className="text-blue-800 text-sm mb-3">{selectedSubspeciesData.description}</p>
+                    
+                    {selectedSubspeciesData.bonuses && (
+                      <div className="bg-blue-100 rounded p-3">
+                        <h6 className="text-sm font-medium text-blue-900 mb-1">Additional Benefits</h6>
+                        <p className="text-sm text-blue-800">{selectedSubspeciesData.bonuses}</p>
+                      </div>
+                    )}
                   </div>
-                  
-                  {selectedSubspeciesData.bonuses && (
-                    <div>
-                      <h6 className="text-sm font-medium text-gray-700">Additional Benefits</h6>
-                      <p className="text-sm text-gray-600">{selectedSubspeciesData.bonuses}</p>
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
 
+          <Separator />
+
           {/* Source Badge */}
-          <div>
-            <Badge variant="secondary">{species.document__slug.toUpperCase()}</Badge>
+          <div className="flex justify-center">
+            <Badge variant="secondary" className="text-xs">
+              Source: {species.document__slug.toUpperCase()}
+            </Badge>
           </div>
 
           {/* Action Buttons */}
@@ -305,7 +354,7 @@ const SpeciesDetailModal = ({ species, isOpen, onClose, onSelect }: SpeciesDetai
             <Button variant="outline" onClick={onClose} className="flex-1">
               Close
             </Button>
-            <Button onClick={handleSelect} className="flex-1">
+            <Button onClick={handleSelect} className="flex-1 bg-red-600 hover:bg-red-700">
               Select {species.name}
             </Button>
           </div>
