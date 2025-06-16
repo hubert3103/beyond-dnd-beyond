@@ -141,17 +141,42 @@ const CharacterSheet = () => {
           };
 
           const calculateSpeed = (characterData: any) => {
-            // Default speed, could be modified by species
-            let speed = 30;
-            if (characterData.species_data?.speed) {
-              speed = characterData.species_data.speed;
+            console.log('Calculating speed for character:', characterData);
+            
+            // Check multiple possible locations for speed data
+            let speed = 30; // Default speed
+            
+            // Check species data first
+            if (characterData.species?.speed) {
+              console.log('Found speed in species:', characterData.species.speed);
+              speed = characterData.species.speed;
+            } else if (characterData.species_data?.speed) {
+              console.log('Found speed in species_data:', characterData.species_data.speed);
+              if (typeof characterData.species_data.speed === 'object' && characterData.species_data.speed.walk) {
+                speed = characterData.species_data.speed.walk;
+              } else {
+                speed = characterData.species_data.speed;
+              }
+            } else if (characterData.species?.apiData?.speed) {
+              console.log('Found speed in species apiData:', characterData.species.apiData.speed);
+              if (typeof characterData.species.apiData.speed === 'object' && characterData.species.apiData.speed.walk) {
+                speed = characterData.species.apiData.speed.walk;
+              } else {
+                speed = characterData.species.apiData.speed;
+              }
             }
+            
+            console.log('Final calculated speed:', speed);
             return speed;
           };
 
           // Format abilities first
           const formattedAbilities = formatAbilities(characterData.abilities);
           console.log('Formatted abilities:', formattedAbilities);
+
+          // Calculate speed
+          const calculatedSpeed = calculateSpeed(characterData);
+          console.log('Calculated speed:', calculatedSpeed);
 
           // Convert database character to the format expected by the character sheet
           const formattedCharacter = {
@@ -177,9 +202,10 @@ const CharacterSheet = () => {
             spells: characterData.spells || [],
             armorClass: calculateArmorClass(characterData, formattedAbilities),
             initiative: formattedAbilities.dexterity.modifier,
-            speed: calculateSpeed(characterData)
+            speed: calculatedSpeed
           };
           
+          console.log('Final formatted character with speed:', formattedCharacter.speed);
           setCharacter(formattedCharacter);
           console.log('Character formatted and set:', formattedCharacter);
         } else {
