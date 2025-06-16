@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Zap, Circle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,9 +11,10 @@ import SpellDetailModal from '../tabs/spells/SpellDetailModal';
 
 interface SpellsSectionProps {
   character: any;
+  setCharacter: (character: any) => void;
 }
 
-const SpellsSection = ({ character }: SpellsSectionProps) => {
+const SpellsSection = ({ character, setCharacter }: SpellsSectionProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState(0);
   const [selectedSpellForModal, setSelectedSpellForModal] = useState<any>(null);
@@ -30,7 +32,8 @@ const SpellsSection = ({ character }: SpellsSectionProps) => {
     const className = character.class_name?.toLowerCase();
     const level = character.level;
     
-    // Simplified spell slot calculation - this would need to be more comprehensive
+    // Initialize spell slots from character data or calculate default
+    const storedSlots = character.spellSlots || {};
     const slots: { [key: number]: { max: number; used: number } } = {};
     
     if (level >= 1) {
@@ -40,16 +43,21 @@ const SpellsSection = ({ character }: SpellsSectionProps) => {
         case 'bard':
         case 'cleric':
         case 'druid':
-          if (level >= 1) slots[1] = { max: 2, used: 0 };
-          if (level >= 3) slots[2] = { max: 1, used: 0 };
-          if (level >= 5) slots[3] = { max: 1, used: 0 };
+          if (level >= 1) slots[1] = { max: 2, used: storedSlots[1]?.used || 0 };
+          if (level >= 3) slots[2] = { max: 1, used: storedSlots[2]?.used || 0 };
+          if (level >= 5) slots[3] = { max: 1, used: storedSlots[3]?.used || 0 };
+          if (level >= 7) slots[4] = { max: 1, used: storedSlots[4]?.used || 0 };
+          if (level >= 9) slots[5] = { max: 1, used: storedSlots[5]?.used || 0 };
           break;
         case 'warlock':
-          slots[1] = { max: 1, used: 0 };
+          const warlockSlots = Math.min(4, Math.ceil(level / 2));
+          const warlockLevel = level < 3 ? 1 : level < 5 ? 2 : level < 7 ? 3 : level < 9 ? 4 : 5;
+          slots[warlockLevel] = { max: warlockSlots, used: storedSlots[warlockLevel]?.used || 0 };
           break;
         case 'paladin':
         case 'ranger':
-          if (level >= 2) slots[1] = { max: 2, used: 0 };
+          if (level >= 2) slots[1] = { max: 2, used: storedSlots[1]?.used || 0 };
+          if (level >= 5) slots[2] = { max: 1, used: storedSlots[2]?.used || 0 };
           break;
       }
     }
@@ -120,12 +128,30 @@ const SpellsSection = ({ character }: SpellsSectionProps) => {
   ].filter(level => level.level === 0 || spellSlots[level.level] || characterSpells[level.level]);
 
   const castSpell = (spellLevel: number) => {
-    if (spellLevel === 0) return; // Cantrips don't use slots
+    if (spellLevel === 0) {
+      console.log('Cast cantrip - no spell slot used');
+      return;
+    }
     
     const slots = spellSlots[spellLevel];
     if (slots && slots.used < slots.max) {
       console.log(`Cast spell using level ${spellLevel} slot`);
-      // In real implementation, would update spell slots
+      
+      // Update spell slots
+      const updatedSpellSlots = {
+        ...character.spellSlots,
+        [spellLevel]: {
+          max: slots.max,
+          used: slots.used + 1
+        }
+      };
+      
+      const updatedCharacter = {
+        ...character,
+        spellSlots: updatedSpellSlots
+      };
+      
+      setCharacter(updatedCharacter);
     }
   };
 
@@ -201,12 +227,14 @@ const SpellsSection = ({ character }: SpellsSectionProps) => {
                 {characterSpells[selectedLevel]?.map((spell, index) => (
                   <div
                     key={index}
-                    className={`border rounded-lg p-3 flex items-center justify-between cursor-pointer ${
-                      spell.prepared ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                    } transition-colors`}
-                    onClick={() => setSelectedSpellForModal(spell)}
+                    className={`border rounded-lg p-3 flex items-center justify-between ${
+                      spell.prepared ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+                    }`}
                   >
-                    <div className="flex items-center space-x-3">
+                    <div 
+                      className="flex items-center space-x-3 flex-1 cursor-pointer"
+                      onClick={() => setSelectedSpellForModal(spell)}
+                    >
                       <div className="text-gray-600">
                         <Zap className="h-4 w-4" />
                       </div>

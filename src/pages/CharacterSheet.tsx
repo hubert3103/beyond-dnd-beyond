@@ -19,6 +19,7 @@ import EquipmentSection from '../components/character-sheet/EquipmentSection';
 import SpellsSection from '../components/character-sheet/SpellsSection';
 import FeaturesTraits from '../components/character-sheet/FeaturesTraits';
 import CurrencyNotes from '../components/character-sheet/CurrencyNotes';
+import RestButtons from '../components/character-sheet/RestButtons';
 import { TabType } from './PlayerDashboard';
 import { useCharacters } from '@/hooks/useCharacters';
 import { useToast } from '@/hooks/use-toast';
@@ -401,6 +402,7 @@ const CharacterSheet = () => {
 
       {/* Scrollable Content */}
       <main className="flex-1 overflow-y-auto pb-20 px-4 space-y-4">
+        <RestButtons character={character} setCharacter={handleCharacterUpdate} />
         <CharacterSummary character={character} setCharacter={handleCharacterUpdate} />
         <AbilitiesSection character={character} setCharacter={handleCharacterUpdate} />
         <SavingThrowsSkills character={character} />
@@ -408,7 +410,7 @@ const CharacterSheet = () => {
         <HitPointsHitDice character={character} setCharacter={handleCharacterUpdate} />
         <AttacksSpellcasting character={character} />
         <EquipmentSection character={character} setCharacter={handleCharacterUpdate} />
-        <SpellsSection character={character} />
+        <SpellsSection character={character} setCharacter={handleCharacterUpdate} />
         <FeaturesTraits character={character} />
         <CurrencyNotes />
       </main>
