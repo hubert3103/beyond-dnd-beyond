@@ -1,94 +1,240 @@
 
-import { useState } from 'react';
-
-interface Item {
-  id: string;
-  name: string;
-  type: string;
-  rarity: string;
-  description: string;
-}
+import { useState, useMemo } from 'react';
+import { Search, ChevronDown, ChevronRight } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useOpen5eData } from '../../hooks/useOpen5eData';
+import { open5eApi, Open5eEquipment } from '../../services/open5eApi';
+import LoadingSpinner from '../character-creation/LoadingSpinner';
+import ErrorMessage from '../character-creation/ErrorMessage';
 
 const ItemsTab = () => {
-  const [items] = useState<Item[]>([
-    {
-      id: '1',
-      name: 'Potion of Climbing',
-      type: 'Potion',
-      rarity: 'Common',
-      description: 'When you drink this potion, you gain a climbing speed equal to your walking speed for 1 hour.'
-    },
-    {
-      id: '2',
-      name: 'Potion of Healing',
-      type: 'Potion',
-      rarity: 'Common',
-      description: 'You regain 2d4 + 2 hit points when you drink this potion.'
-    },
-    {
-      id: '3',
-      name: 'Spell Scroll (1st Level)',
-      type: 'Scroll',
-      rarity: 'Common',
-      description: 'A spell scroll bears the words of a single spell, written in a mystical cipher.'
-    },
-    {
-      id: '4',
-      name: 'Bag of Holding',
-      type: 'Wondrous Item',
-      rarity: 'Uncommon',
-      description: 'This bag has an interior space considerably larger than its outside dimensions.'
-    }
-  ]);
-
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const { equipment, isLoading, error, refresh } = useOpen5eData();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
+  const [selectedItem, setSelectedItem] = useState<Open5eEquipment | null>(null);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
 
-  const groupedItems = items.reduce((acc, item) => {
-    const rarity = `Rarity: ${item.rarity}`;
-    if (!acc[rarity]) acc[rarity] = [];
-    acc[rarity].push(item);
-    return acc;
-  }, {} as Record<string, Item[]>);
+  // For now, we'll show all equipment since we don't have source filtering UI in this tab
+  const filteredEquipment = useMemo(() => {
+    console.log('All equipment:', equipment.length);
+    
+    if (!equipment.length) return [];
+    
+    let filtered = equipment;
+    
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(item => 
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.equipment_category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      console.log('Filtered by search:', filtered.length);
+    }
+    
+    return filtered;
+  }, [equipment, searchTerm]);
+
+  const equipmentBySource = useMemo(() => {
+    const grouped: Record<string, Open5eEquipment[]> = {};
+    filteredEquipment.forEach(item => {
+      const source = item.document__slug;
+      if (!grouped[source]) {
+        grouped[source] = [];
+      }
+      grouped[source].push(item);
+    });
+    return grouped;
+  }, [filteredEquipment]);
+
+  const getSourceDisplayName = (source: string) => {
+    switch (source) {
+      case '5esrd': return 'Core Rules (SRD)';
+      case 'cc': return 'Core Rules (CC)';
+      case 'kp': return 'Kobold Press';
+      case 'xge': return "Xanathar's Guide";
+      case 'tce': return "Tasha's Cauldron";
+      case 'vgm': return "Volo's Guide";
+      case 'mtf': return "Mordenkainen's Tome";
+      default: return source.toUpperCase();
+    }
+  };
+
+  const getRarityFromCost = (cost: { quantity: number; unit: string }) => {
+    const goldValue = cost.unit === 'gp' ? cost.quantity : 
+                     cost.unit === 'sp' ? cost.quantity * 0.1 :
+                     cost.unit === 'cp' ? cost.quantity * 0.01 : cost.quantity;
+    
+    if (goldValue <= 50) return 'Common';
+    if (goldValue <= 500) return 'Uncommon';
+    if (goldValue <= 5000) return 'Rare';
+    return 'Very Rare';
+  };
+
+  const toggleSource = (source: string) => {
+    setExpandedSources(prev => ({
+      ...prev,
+      [source]: !prev[source]
+    }));
+  };
+
+  const toggleAllSources = (expand: boolean) => {
+    const newState: Record<string, boolean> = {};
+    Object.keys(equipmentBySource).forEach(source => {
+      newState[source] = expand;
+    });
+    setExpandedSources(newState);
+  };
+
+  if (isLoading) {
+    return <LoadingSpinner message="Loading equipment data..." />;
+  }
+
+  if (error) {
+    return <ErrorMessage message={error} onRetry={refresh} />;
+  }
 
   return (
-    <div className="p-4">
-      {Object.entries(groupedItems).map(([rarity, rarityItems]) => (
-        <div key={rarity} className="mb-6">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-white font-bold">{rarity}</h3>
-            <span className="text-white text-sm">Items: {rarityItems.length}</span>
-          </div>
-          <div className="space-y-2">
-            {rarityItems.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg p-4 flex items-center justify-between">
-                <div 
-                  className="flex-1 cursor-pointer"
-                  onClick={() => setSelectedItem(item)}
-                >
-                  <h4 className="font-bold text-gray-900">{item.name}</h4>
-                  <p className="text-sm text-gray-600">{item.type}</p>
-                  <p className="text-sm text-gray-600">{item.rarity}</p>
-                </div>
-                <button
-                  onClick={() => setShowCharacterSelect(true)}
-                  className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                >
-                  +
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
+    <div className="p-4 space-y-4">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-white mb-2">Equipment & Items</h1>
+        <p className="text-gray-300">Browse equipment from D&D 5e sources</p>
+      </div>
 
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Input
+          placeholder="Search equipment..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* Expand/Collapse All */}
+      <div className="flex space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => toggleAllSources(true)}
+          className="flex-1"
+        >
+          Expand All
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => toggleAllSources(false)}
+          className="flex-1"
+        >
+          Collapse All
+        </Button>
+      </div>
+
+      {/* Equipment by Source */}
+      <div className="space-y-4">
+        {Object.entries(equipmentBySource).map(([source, sourceEquipment]) => (
+          <Collapsible
+            key={source}
+            open={expandedSources[source]}
+            onOpenChange={() => toggleSource(source)}
+          >
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full justify-between p-4 h-auto border border-gray-200 rounded-lg hover:bg-gray-50 text-white hover:text-gray-900"
+              >
+                <div className="text-left">
+                  <div className="font-semibold">{getSourceDisplayName(source)}</div>
+                  <div className="text-sm opacity-75">{sourceEquipment.length} items available</div>
+                </div>
+                {expandedSources[source] ? 
+                  <ChevronDown className="h-5 w-5" /> : 
+                  <ChevronRight className="h-5 w-5" />
+                }
+              </Button>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent className="mt-2 space-y-2">
+              {sourceEquipment.map((item) => (
+                <Card 
+                  key={item.slug}
+                  className="cursor-pointer transition-colors hover:bg-gray-50"
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div 
+                        className="flex-1 cursor-pointer"
+                        onClick={() => setSelectedItem(item)}
+                      >
+                        <h4 className="font-bold text-gray-900">{item.name}</h4>
+                        <p className="text-sm text-gray-600">{item.equipment_category}</p>
+                        <p className="text-sm text-gray-600">{getRarityFromCost(item.cost)}</p>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-xs text-gray-500">
+                            Cost: {item.cost.quantity} {item.cost.unit}
+                          </span>
+                          <span className="text-xs text-gray-500">Weight: {item.weight} lb</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setShowCharacterSelect(true)}
+                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+        ))}
+      </div>
+
+      {filteredEquipment.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-white">No equipment found matching your search.</p>
+          <p className="text-xs text-gray-400 mt-2">
+            Try adjusting your search terms.
+          </p>
+        </div>
+      )}
+
+      {/* Item Detail Modal */}
       {selectedItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-md p-6">
+          <div className="bg-white rounded-lg w-full max-w-md p-6 max-h-[80vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-gray-900 mb-4">{selectedItem.name}</h3>
-            <p className="text-gray-600 mb-2"><strong>Type:</strong> {selectedItem.type}</p>
-            <p className="text-gray-600 mb-4"><strong>Rarity:</strong> {selectedItem.rarity}</p>
-            <p className="text-gray-600 mb-6">{selectedItem.description}</p>
+            <p className="text-gray-600 mb-2"><strong>Category:</strong> {selectedItem.equipment_category}</p>
+            <p className="text-gray-600 mb-2"><strong>Cost:</strong> {selectedItem.cost.quantity} {selectedItem.cost.unit}</p>
+            <p className="text-gray-600 mb-2"><strong>Weight:</strong> {selectedItem.weight} lb</p>
+            <p className="text-gray-600 mb-4"><strong>Rarity:</strong> {getRarityFromCost(selectedItem.cost)}</p>
+            
+            {selectedItem.desc && (
+              <div className="mb-4">
+                <strong className="text-gray-600">Description:</strong>
+                <p className="text-gray-600 mt-1" dangerouslySetInnerHTML={{ __html: selectedItem.desc }} />
+              </div>
+            )}
+            
+            {selectedItem.damage && (
+              <p className="text-gray-600 mb-2">
+                <strong>Damage:</strong> {selectedItem.damage.dice_count}d{selectedItem.damage.dice_value} {selectedItem.damage.damage_type}
+              </p>
+            )}
+            
+            {selectedItem.armor_class && (
+              <p className="text-gray-600 mb-2">
+                <strong>AC:</strong> {selectedItem.armor_class.base}
+                {selectedItem.armor_class.dex_bonus && ' + Dex modifier'}
+                {selectedItem.armor_class.max_bonus && ` (max ${selectedItem.armor_class.max_bonus})`}
+              </p>
+            )}
+            
             <button
               onClick={() => setSelectedItem(null)}
               className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg"
@@ -99,6 +245,7 @@ const ItemsTab = () => {
         </div>
       )}
 
+      {/* Character Select Modal */}
       {showCharacterSelect && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg w-full max-w-sm p-6">

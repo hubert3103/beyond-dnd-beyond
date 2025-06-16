@@ -26,42 +26,46 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
     
     if (!races.length) return [];
     
-    // Get all available sources from the data
-    const availableSources = open5eApi.getAvailableSources(races);
-    console.log('Available sources in races:', availableSources);
+    // If no source filtering is applied (all false or undefined), show all races
+    const hasAnySourceEnabled = data.sources?.coreRules === true || 
+                               data.sources?.expansions === true || 
+                               data.sources?.homebrew === true;
     
-    // Determine which sources to include based on user settings
-    let enabledSources: string[] = [];
+    let filtered = races;
     
-    // If coreRules is enabled (default true), include core sources
-    if (data.sources?.coreRules !== false) {
-      enabledSources.push('5esrd', 'cc', 'kp');
+    // Only apply source filtering if at least one source is explicitly enabled
+    if (hasAnySourceEnabled) {
+      // Get all available sources from the data
+      const availableSources = open5eApi.getAvailableSources(races);
+      console.log('Available sources in races:', availableSources);
+      
+      // Determine which sources to include based on user settings
+      let enabledSources: string[] = [];
+      
+      // If coreRules is enabled, include core sources
+      if (data.sources?.coreRules === true) {
+        enabledSources.push('5esrd', 'cc', 'kp');
+      }
+      
+      // If expansions is enabled, include expansion sources
+      if (data.sources?.expansions === true) {
+        enabledSources.push('tce', 'xge', 'vgm', 'mtf');
+      }
+      
+      // If homebrew is enabled, include homebrew sources
+      if (data.sources?.homebrew === true) {
+        enabledSources.push('homebrew');
+      }
+      
+      console.log('Enabled sources:', enabledSources);
+      
+      // Filter by enabled sources
+      filtered = races.filter(race => {
+        return enabledSources.includes(race.document__slug);
+      });
+      
+      console.log('Filtered by source:', filtered.length);
     }
-    
-    // If expansions is enabled, include expansion sources
-    if (data.sources?.expansions === true) {
-      enabledSources.push('tce', 'xge', 'vgm', 'mtf');
-    }
-    
-    // If homebrew is enabled, include homebrew sources
-    if (data.sources?.homebrew === true) {
-      enabledSources.push('homebrew');
-    }
-    
-    // If no sources would be enabled, show all available sources
-    if (enabledSources.length === 0) {
-      enabledSources = availableSources;
-    }
-    
-    console.log('Enabled sources:', enabledSources);
-    
-    // Filter by enabled sources
-    let filtered = races.filter(race => {
-      // Check if race's source is in enabled sources, or if no specific filtering is applied
-      return enabledSources.length === 0 || enabledSources.includes(race.document__slug);
-    });
-    
-    console.log('Filtered by source:', filtered.length);
     
     // Apply search filter
     if (searchTerm) {
@@ -149,7 +153,7 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
       <div className="text-sm text-gray-500 bg-gray-100 p-2 rounded">
         Debug: {races.length} total races, {filteredRaces.length} after filtering
         <br />
-        Sources enabled: coreRules={String(data.sources?.coreRules !== false)}, expansions={String(data.sources?.expansions === true)}, homebrew={String(data.sources?.homebrew === true)}
+        Sources enabled: coreRules={String(data.sources?.coreRules === true)}, expansions={String(data.sources?.expansions === true)}, homebrew={String(data.sources?.homebrew === true)}
       </div>
 
       {/* Search */}
