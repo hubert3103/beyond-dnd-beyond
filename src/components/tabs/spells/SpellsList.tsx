@@ -43,10 +43,10 @@ const SpellsList = ({
         return false;
       }
 
-      // Class filter
+      // Class filter - Fixed type checking
       if (filters.classes.length > 0) {
         const spellClassNames = spell.classes && Array.isArray(spell.classes) 
-          ? spell.classes.map(cls => cls.name.toLowerCase()) 
+          ? spell.classes.map((cls: any) => cls.name?.toLowerCase() || '') 
           : [];
         const hasMatchingClass = filters.classes.some(cls => 
           spellClassNames.includes(cls.toLowerCase())
