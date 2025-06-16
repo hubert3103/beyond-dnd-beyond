@@ -19,6 +19,7 @@ export const useInfiniteScroll = ({ items, itemsPerPage = 100 }: UseInfiniteScro
     setCurrentPage(1);
     setHasMore(items.length > itemsPerPage);
     setIsLoading(false);
+    console.log('Reset infinite scroll:', { totalItems: items.length, initialItems: initialItems.length });
   }, [items, itemsPerPage]);
 
   const loadMore = useCallback(() => {
@@ -27,7 +28,7 @@ export const useInfiniteScroll = ({ items, itemsPerPage = 100 }: UseInfiniteScro
       return;
     }
 
-    console.log('Loading more items...', { currentPage, totalItems: items.length });
+    console.log('Starting to load more items...', { currentPage, totalItems: items.length });
     setIsLoading(true);
     
     // Simulate a small delay to show loading state
@@ -36,10 +37,14 @@ export const useInfiniteScroll = ({ items, itemsPerPage = 100 }: UseInfiniteScro
       const endIndex = startIndex + itemsPerPage;
       const newItems = items.slice(startIndex, endIndex);
       
-      console.log('New items loaded:', { startIndex, endIndex, newItemsCount: newItems.length });
+      console.log('Loading more items:', { startIndex, endIndex, newItemsCount: newItems.length });
       
       if (newItems.length > 0) {
-        setDisplayedItems(prev => [...prev, ...newItems]);
+        setDisplayedItems(prev => {
+          const combined = [...prev, ...newItems];
+          console.log('Updated displayed items:', combined.length);
+          return combined;
+        });
         setCurrentPage(prev => prev + 1);
         setHasMore(endIndex < items.length);
       } else {
@@ -47,35 +52,37 @@ export const useInfiniteScroll = ({ items, itemsPerPage = 100 }: UseInfiniteScro
       }
       
       setIsLoading(false);
-    }, 200);
+    }, 300);
   }, [items, currentPage, itemsPerPage, isLoading, hasMore]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const element = e.currentTarget;
+    const { scrollTop, scrollHeight, clientHeight } = element;
     
-    // More generous threshold - trigger when within 300px OR when very close to bottom
-    const threshold = 300;
-    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    const isNearBottom = distanceFromBottom <= threshold;
-    const isAtBottom = Math.abs(distanceFromBottom) < 5; // Account for floating point precision
+    // Calculate how close we are to the bottom
+    const scrollPosition = scrollTop + clientHeight;
+    const threshold = 200; // Trigger when within 200px of bottom
+    const isNearBottom = scrollPosition >= scrollHeight - threshold;
     
     console.log('Scroll event:', { 
-      scrollTop, 
+      scrollTop: Math.round(scrollTop), 
       scrollHeight, 
       clientHeight, 
-      distanceFromBottom, 
+      scrollPosition: Math.round(scrollPosition),
+      distanceFromBottom: Math.round(scrollHeight - scrollPosition),
       threshold,
       isNearBottom,
-      isAtBottom,
       isLoading,
-      hasMore
+      hasMore,
+      displayedItemsCount: displayedItems.length,
+      totalItemsCount: items.length
     });
     
-    if ((isNearBottom || isAtBottom) && !isLoading && hasMore) {
-      console.log('Triggering load more...');
+    if (isNearBottom && !isLoading && hasMore) {
+      console.log('🚀 Triggering infinite scroll load more...');
       loadMore();
     }
-  }, [loadMore, isLoading, hasMore]);
+  }, [loadMore, isLoading, hasMore, displayedItems.length, items.length]);
 
   return {
     displayedItems,
