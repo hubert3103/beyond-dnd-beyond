@@ -31,7 +31,7 @@ const CharacterSheet = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('characters');
   const [character, setCharacter] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadCharacter = async () => {
@@ -40,11 +40,13 @@ const CharacterSheet = () => {
         return;
       }
 
+      console.log('Loading character with ID:', id);
+      
       try {
-        setLoading(true);
         const characterData = await getCharacter(id);
         
         if (characterData) {
+          console.log('Character data loaded:', characterData);
           // Convert database character to the format expected by the character sheet
           const formattedCharacter = {
             id: characterData.id,
@@ -95,7 +97,9 @@ const CharacterSheet = () => {
           };
           
           setCharacter(formattedCharacter);
+          console.log('Character formatted and set');
         } else {
+          console.log('Character not found');
           toast({
             title: "Error",
             description: "Character not found",
@@ -112,12 +116,12 @@ const CharacterSheet = () => {
         });
         navigate('/player');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     loadCharacter();
-  }, [id, getCharacter, navigate, toast]);
+  }, [id]); // Removed getCharacter, navigate, toast from dependencies to prevent infinite loops
 
   const handleBack = () => {
     navigate('/player');
@@ -130,8 +134,12 @@ const CharacterSheet = () => {
         break;
       case 'delete':
         if (character?.id) {
-          await deleteCharacter(character.id);
-          navigate('/player');
+          try {
+            await deleteCharacter(character.id);
+            navigate('/player');
+          } catch (error) {
+            console.error('Error deleting character:', error);
+          }
         }
         break;
       case 'export':
@@ -140,7 +148,7 @@ const CharacterSheet = () => {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[#4a4a4a] flex items-center justify-center">
         <div className="text-center">
