@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { useOpen5eData } from '../../hooks/useOpen5eData';
 import { Open5eSpell } from '../../services/open5eApi';
@@ -9,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Zap } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
+import SpellSelectionModal from './SpellSelectionModal';
 
 interface SpellSelectionScreenProps {
   data: any;
@@ -19,6 +19,7 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
   const { spells, isLoading, error, refresh } = useOpen5eData();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpells, setSelectedSpells] = useState<Open5eSpell[]>(data.spells || []);
+  const [selectedSpellForModal, setSelectedSpellForModal] = useState<Open5eSpell | null>(null);
 
   // Get spellcasting info for the selected class
   const getSpellcastingInfo = () => {
@@ -242,6 +243,7 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
         <p className="text-gray-600">Select spells for your {data.class.name}</p>
       </div>
 
+      {/* Spellcasting Information */}
       {spellcastingInfo && (
         <Card>
           <CardHeader>
@@ -343,7 +345,7 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
                         ? 'hover:bg-gray-50' 
                         : 'opacity-50 cursor-not-allowed'
                     }`}
-                    onClick={() => toggleSpell(spell)}
+                    onClick={() => setSelectedSpellForModal(spell)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start space-x-3">
@@ -375,6 +377,17 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
           <p className="text-gray-500">No spells found matching your criteria.</p>
           <p className="text-xs text-gray-400 mt-2">Check console for debugging information</p>
         </div>
+      )}
+
+      {/* Spell Selection Modal */}
+      {selectedSpellForModal && (
+        <SpellSelectionModal
+          spell={selectedSpellForModal}
+          onClose={() => setSelectedSpellForModal(null)}
+          onToggleSpell={toggleSpell}
+          isSelected={selectedSpells.some(s => s.slug === selectedSpellForModal.slug)}
+          canSelect={canSelectSpell(selectedSpellForModal)}
+        />
       )}
     </div>
   );

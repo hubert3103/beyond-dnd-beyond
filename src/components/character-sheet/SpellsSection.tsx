@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Zap, Circle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import SpellDetailModal from '../tabs/spells/SpellDetailModal';
 
 interface SpellsSectionProps {
   character: any;
@@ -15,6 +15,7 @@ interface SpellsSectionProps {
 const SpellsSection = ({ character }: SpellsSectionProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState(0);
+  const [selectedSpellForModal, setSelectedSpellForModal] = useState<any>(null);
   
   // Check if character is a spellcaster
   const isSpellcaster = () => {
@@ -200,9 +201,10 @@ const SpellsSection = ({ character }: SpellsSectionProps) => {
                 {characterSpells[selectedLevel]?.map((spell, index) => (
                   <div
                     key={index}
-                    className={`border rounded-lg p-3 flex items-center justify-between ${
-                      spell.prepared ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+                    className={`border rounded-lg p-3 flex items-center justify-between cursor-pointer ${
+                      spell.prepared ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                     } transition-colors`}
+                    onClick={() => setSelectedSpellForModal(spell)}
                   >
                     <div className="flex items-center space-x-3">
                       <div className="text-gray-600">
@@ -227,7 +229,10 @@ const SpellsSection = ({ character }: SpellsSectionProps) => {
                       <Button
                         size="sm"
                         className="bg-red-600 hover:bg-red-700"
-                        onClick={() => castSpell(selectedLevel)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          castSpell(selectedLevel);
+                        }}
                         disabled={selectedLevel > 0 && spellSlots[selectedLevel]?.used >= spellSlots[selectedLevel]?.max}
                       >
                         Cast
@@ -244,6 +249,14 @@ const SpellsSection = ({ character }: SpellsSectionProps) => {
           )}
         </CollapsibleContent>
       </div>
+
+      {/* Spell Detail Modal */}
+      {selectedSpellForModal && (
+        <SpellDetailModal
+          spell={selectedSpellForModal}
+          onClose={() => setSelectedSpellForModal(null)}
+        />
+      )}
     </Collapsible>
   );
 };
