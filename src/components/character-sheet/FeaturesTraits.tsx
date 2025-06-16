@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Star, MessageSquare, Sword, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,12 +14,43 @@ interface FeaturesTraitsProps {
 const FeaturesTraits = ({ character }: FeaturesTraitsProps) => {
   const [isOpen, setIsOpen] = useState(false);
   
+  // Helper function to extract level requirement from text
+  const extractLevelRequirement = (text: string): number => {
+    if (!text) return 1;
+    
+    // Look for patterns like "At 3rd level", "Starting at 2nd level", "Beginning at 9th level", etc.
+    const levelPatterns = [
+      /(?:at|starting at|beginning at)\s+(\d+)(?:st|nd|rd|th)\s+level/i,
+      /level\s+(\d+)/i,
+      /(\d+)(?:st|nd|rd|th)\s+level/i
+    ];
+    
+    for (const pattern of levelPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        return parseInt(match[1], 10);
+      }
+    }
+    
+    return 1; // Default to level 1 if no level requirement found
+  };
+
+  // Helper function to filter features by character level
+  const filterFeaturesByLevel = (features: any[], characterLevel: number) => {
+    return features.filter(feature => {
+      const requiredLevel = extractLevelRequirement(feature.description);
+      console.log(`Feature "${feature.name}" requires level ${requiredLevel}, character is level ${characterLevel}`);
+      return requiredLevel <= characterLevel;
+    });
+  };
+  
   // Get features and traits from character's species, class, and background
   const getCharacterFeatures = () => {
     const features = [];
 
     console.log('=== Features & Traits Debug ===');
     console.log('Character data:', character);
+    console.log('Character level:', character.level);
     console.log('Species data:', character.species_data);
     console.log('Class data:', character.class_data);
     console.log('Background data:', character.background_data);
@@ -225,10 +255,15 @@ const FeaturesTraits = ({ character }: FeaturesTraitsProps) => {
       }
     }
 
-    console.log('Final features array:', features);
+    console.log('Features before level filtering:', features);
+    
+    // Filter features by character level
+    const filteredFeatures = filterFeaturesByLevel(features, character.level || 1);
+    
+    console.log('Features after level filtering:', filteredFeatures);
     console.log('=== End Features Debug ===');
     
-    return features;
+    return filteredFeatures;
   };
 
   // Parse traits from formatted text (markdown style)
