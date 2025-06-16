@@ -29,7 +29,7 @@ const SpellsTab = () => {
     const schools = [...new Set(spells.map(s => s.school).filter(Boolean))].sort();
     const classSet = new Set<string>();
     spells.forEach(spell => {
-      if (spell.classes) {
+      if (spell.classes && Array.isArray(spell.classes)) {
         spell.classes.forEach(cls => classSet.add(cls.name));
       }
     });
@@ -60,7 +60,9 @@ const SpellsTab = () => {
 
       // Class filter
       if (filters.classes.length > 0) {
-        const spellClassNames = spell.classes?.map(cls => cls.name.toLowerCase()) || [];
+        const spellClassNames = spell.classes && Array.isArray(spell.classes) 
+          ? spell.classes.map(cls => cls.name.toLowerCase()) 
+          : [];
         const hasMatchingClass = filters.classes.some(cls => 
           spellClassNames.includes(cls.toLowerCase())
         );
@@ -119,7 +121,9 @@ const SpellsTab = () => {
   };
 
   const getSpellClasses = (spell: Open5eSpell) => {
-    return spell.classes?.map(cls => cls.name).join(', ') || '';
+    return spell.classes && Array.isArray(spell.classes) 
+      ? spell.classes.map(cls => cls.name).join(', ') 
+      : '';
   };
 
   if (isLoading) {
@@ -312,7 +316,7 @@ const SpellsTab = () => {
               {selectedSpell.material && (
                 <p className="text-gray-600"><strong>Materials:</strong> {selectedSpell.material}</p>
               )}
-              {selectedSpell.classes && selectedSpell.classes.length > 0 && (
+              {selectedSpell.classes && Array.isArray(selectedSpell.classes) && selectedSpell.classes.length > 0 && (
                 <p className="text-gray-600"><strong>Classes:</strong> {getSpellClasses(selectedSpell)}</p>
               )}
               {selectedSpell.concentration && (
