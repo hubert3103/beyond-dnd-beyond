@@ -21,16 +21,35 @@ const SavingThrowsSkills = ({ character }: SavingThrowsSkillsProps) => {
   };
 
   const getSavingThrow = (abilityKey: string) => {
+    if (!character?.abilities?.[abilityKey]) return 0;
     const ability = character.abilities[abilityKey];
-    const modifier = getModifier(ability.score);
-    return ability.proficient ? modifier + character.proficiencyBonus : modifier;
+    const modifier = getModifier(ability.score || 10);
+    const isProficient = getClassSavingThrows().includes(abilityKey);
+    return isProficient ? modifier + (character.proficiencyBonus || 2) : modifier;
   };
 
-  // Get class-based saving throw proficiencies
+  // Get class-based saving throw proficiencies from character creation data
   const getClassSavingThrows = () => {
-    const classData = character.class_data;
-    if (!classData?.saving_throws) return [];
-    return classData.saving_throws;
+    // Map class names to their saving throw proficiencies
+    const classSavingThrows: Record<string, string[]> = {
+      'Fighter': ['strength', 'constitution'],
+      'Wizard': ['intelligence', 'wisdom'],
+      'Rogue': ['dexterity', 'intelligence'],
+      'Barbarian': ['strength', 'constitution'],
+      'Bard': ['dexterity', 'charisma'],
+      'Cleric': ['wisdom', 'charisma'],
+      'Druid': ['intelligence', 'wisdom'],
+      'Monk': ['strength', 'dexterity'],
+      'Paladin': ['wisdom', 'charisma'],
+      'Ranger': ['strength', 'dexterity'],
+      'Sorcerer': ['constitution', 'charisma'],
+      'Warlock': ['wisdom', 'charisma']
+    };
+
+    const className = character?.class_name;
+    if (!className) return [];
+    
+    return classSavingThrows[className] || [];
   };
 
   // Get skills from character background and class choices
@@ -117,12 +136,22 @@ const SavingThrowsSkills = ({ character }: SavingThrowsSkillsProps) => {
   };
 
   const getSkillModifier = (skill: any) => {
-    const abilityModifier = getModifier(character.abilities[skill.ability].score);
-    return skill.proficient ? abilityModifier + character.proficiencyBonus : abilityModifier;
+    if (!character?.abilities?.[skill.ability]) return 0;
+    const abilityModifier = getModifier(character.abilities[skill.ability].score || 10);
+    return skill.proficient ? abilityModifier + (character.proficiencyBonus || 2) : abilityModifier;
   };
 
   const classSavingThrows = getClassSavingThrows();
   const characterSkills = getCharacterSkills();
+
+  // Safety check for character data
+  if (!character?.abilities) {
+    return (
+      <div className="bg-white rounded-lg p-4">
+        <p className="text-gray-500">Loading character data...</p>
+      </div>
+    );
+  }
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -149,6 +178,9 @@ const SavingThrowsSkills = ({ character }: SavingThrowsSkillsProps) => {
                     <div className="flex items-center space-x-2">
                       <Checkbox checked={isProficient} disabled />
                       <span className="text-sm capitalize">{key}</span>
+                      {isProficient && (
+                        <span className="text-xs text-blue-600">({character.class_name})</span>
+                      )}
                     </div>
                     <span className="text-sm font-medium">
                       {getSavingThrow(key) >= 0 ? '+' : ''}{getSavingThrow(key)}

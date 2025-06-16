@@ -36,10 +36,6 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
     setCharacter({ ...character, level: parseInt(value) });
   };
 
-  const handleClassChange = (value: string) => {
-    setCharacter({ ...character, class: value });
-  };
-
   const handleDamage = () => {
     const damage = parseInt(tempDamage);
     if (damage > 0) {
@@ -97,25 +93,15 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
               </SelectContent>
             </Select>
             
-            <Select value={character.class} onValueChange={handleClassChange}>
-              <SelectTrigger className="flex-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Barbarian">Barbarian</SelectItem>
-                <SelectItem value="Bard">Bard</SelectItem>
-                <SelectItem value="Cleric">Cleric</SelectItem>
-                <SelectItem value="Druid">Druid</SelectItem>
-                <SelectItem value="Fighter">Fighter</SelectItem>
-                <SelectItem value="Monk">Monk</SelectItem>
-                <SelectItem value="Paladin">Paladin</SelectItem>
-                <SelectItem value="Ranger">Ranger</SelectItem>
-                <SelectItem value="Rogue">Rogue</SelectItem>
-                <SelectItem value="Sorcerer">Sorcerer</SelectItem>
-                <SelectItem value="Warlock">Warlock</SelectItem>
-                <SelectItem value="Wizard">Wizard</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Class is now read-only, showing the class from character creation */}
+            <div className="flex-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm">
+              {character.class_name || 'Unknown Class'}
+              {character.species_name && (
+                <span className="text-gray-600 ml-1">
+                  ({character.species_name})
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
