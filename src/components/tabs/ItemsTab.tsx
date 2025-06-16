@@ -1,22 +1,20 @@
 
 import { useState, useMemo } from 'react';
-import { Search, Filter, LoaderCircle } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useOpen5eData } from '../../hooks/useOpen5eData';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import { open5eApi, Open5eEquipment } from '../../services/open5eApi';
 import LoadingSpinner from '../character-creation/LoadingSpinner';
 import ErrorMessage from '../character-creation/ErrorMessage';
+import ItemsHeader from './items/ItemsHeader';
+import ItemsList from './items/ItemsList';
+import ItemDetailModal from './items/ItemDetailModal';
+import CharacterSelectModal from './items/CharacterSelectModal';
 
 const ItemsTab = () => {
   const { equipment, isLoading, error, refresh } = useOpen5eData();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<Open5eEquipment | null>(null);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'name' | 'rarity' | 'type'>('rarity');
 
@@ -101,23 +99,6 @@ const ItemsTab = () => {
     itemsPerPage: 100
   });
 
-  const getSourceDisplayName = (source: string) => {
-    const sourceMap: Record<string, string> = {
-      'wotc-srd': 'Core Rules (SRD)',
-      'cc': 'Core Rules (CC)',
-      'kp': 'Kobold Press',
-      'xge': "Xanathar's Guide",
-      'tce': "Tasha's Cauldron",
-      'vgm': "Volo's Guide",
-      'mtf': "Mordenkainen's Tome",
-      'vom': 'Vault of Magic',
-      'toh': 'Tome of Heroes',
-      'a5e': 'Advanced 5th Edition',
-      'taldorei': 'Tal\'Dorei Campaign Setting'
-    };
-    return sourceMap[source] || source.toUpperCase();
-  };
-
   const handleSourceFilterChange = (source: string, checked: boolean) => {
     setSelectedSources(prev => 
       checked 
@@ -136,238 +117,39 @@ const ItemsTab = () => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header with search and filter */}
-      <div className="bg-[#4a4a4a] p-4 border-b border-gray-600">
-        <div className="text-center mb-4">
-          <h1 className="text-2xl font-bold text-white mb-2">Equipment & Items</h1>
-          <p className="text-gray-300">Browse equipment from D&D 5e sources</p>
-        </div>
+      <ItemsHeader
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        selectedSources={selectedSources}
+        onSourceFilterChange={handleSourceFilterChange}
+        availableSources={availableSources}
+        displayedCount={displayedEquipment.length}
+        filteredCount={filteredEquipment.length}
+        totalCount={equipment.length}
+      />
 
-        {/* Search and Filter Controls */}
-        <div className="space-y-3">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search equipment..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2"
-            >
-              <Filter className="h-4 w-4" />
-              Filters
-            </Button>
-            
-            <Select value={sortBy} onValueChange={(value: 'name' | 'rarity' | 'type') => setSortBy(value)}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="rarity">Rarity</SelectItem>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="type">Type</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      <ItemsList
+        displayedEquipment={displayedEquipment}
+        isLoadingMore={isLoadingMore}
+        hasMore={hasMore}
+        handleScroll={handleScroll}
+        onItemSelect={setSelectedItem}
+        onAddToCharacter={() => setShowCharacterSelect(true)}
+        filteredCount={filteredEquipment.length}
+        totalCount={equipment.length}
+      />
 
-          {/* Filter Panel */}
-          {showFilters && (
-            <Card className="p-4">
-              <h3 className="font-semibold mb-3 text-gray-900">Filter by Source</h3>
-              {availableSources.length > 0 ? (
-                <>
-                  <div className="grid grid-cols-2 gap-2">
-                    {availableSources.map(source => (
-                      <label key={source} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedSources.includes(source)}
-                          onChange={(e) => handleSourceFilterChange(source, e.target.checked)}
-                          className="rounded"
-                        />
-                        <span className="text-sm text-gray-700">{getSourceDisplayName(source)}</span>
-                      </label>
-                    ))}
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedSources(availableSources)}
-                    >
-                      Select All
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedSources([])}
-                    >
-                      Clear All
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <p className="text-gray-500">No filter options available</p>
-              )}
-            </Card>
-          )}
-        </div>
+      <ItemDetailModal
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+      />
 
-        {/* Results Summary */}
-        <div className="text-sm text-gray-300 mt-4">
-          Showing {displayedEquipment.length} of {filteredEquipment.length} items
-          {filteredEquipment.length !== equipment.length && ` (${equipment.length} total)`}
-        </div>
-      </div>
-
-      {/* Scrollable Content - Make sure this has proper height and overflow */}
-      <div 
-        className="flex-1 overflow-y-auto p-4" 
-        onScroll={handleScroll}
-        style={{ maxHeight: 'calc(100vh - 300px)' }}
-      >
-        {/* Equipment List */}
-        <div className="space-y-2">
-          {displayedEquipment.map((item) => (
-            <Card 
-              key={item.slug}
-              className="cursor-pointer transition-colors hover:bg-gray-50"
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div 
-                    className="flex-1 cursor-pointer"
-                    onClick={() => setSelectedItem(item)}
-                  >
-                    <h4 className="font-bold text-gray-900">{item.name}</h4>
-                    <p className="text-sm text-gray-600">{item.type}</p>
-                    <p className="text-sm text-gray-600 capitalize">{item.rarity}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      {item.cost && (
-                        <span className="text-xs text-gray-500">
-                          Cost: {item.cost.quantity} {item.cost.unit}
-                        </span>
-                      )}
-                      {item.weight && (
-                        <span className="text-xs text-gray-500">Weight: {item.weight} lb</span>
-                      )}
-                      {item.requires_attunement && (
-                        <span className="text-xs text-blue-600">Requires Attunement</span>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowCharacterSelect(true)}
-                    className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                  >
-                    +
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Loading indicator */}
-        {isLoadingMore && (
-          <div className="flex flex-col items-center justify-center py-8">
-            <LoaderCircle className="h-8 w-8 animate-spin text-white mb-2" />
-            <p className="text-white text-sm">Loading more equipment...</p>
-          </div>
-        )}
-
-        {/* End of results indicator */}
-        {!hasMore && displayedEquipment.length > 0 && (
-          <div className="text-center py-4">
-            <p className="text-gray-300">You've reached the end of the results</p>
-          </div>
-        )}
-
-        {filteredEquipment.length === 0 && equipment.length > 0 && (
-          <div className="text-center py-8">
-            <p className="text-white">No equipment found matching your search.</p>
-            <p className="text-xs text-gray-400 mt-2">
-              Try adjusting your search terms or filter settings.
-            </p>
-          </div>
-        )}
-
-        {equipment.length === 0 && !isLoading && (
-          <div className="text-center py-8">
-            <p className="text-white">No equipment data available.</p>
-            <p className="text-xs text-gray-400 mt-2">
-              Equipment data may still be loading or there was an error fetching it.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Item Detail Modal */}
-      {selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-md p-6 max-h-[80vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">{selectedItem.name}</h3>
-            <p className="text-gray-600 mb-2"><strong>Type:</strong> {selectedItem.type}</p>
-            <p className="text-gray-600 mb-2"><strong>Rarity:</strong> <span className="capitalize">{selectedItem.rarity}</span></p>
-            {selectedItem.cost && (
-              <p className="text-gray-600 mb-2"><strong>Cost:</strong> {selectedItem.cost.quantity} {selectedItem.cost.unit}</p>
-            )}
-            {selectedItem.weight && (
-              <p className="text-gray-600 mb-2"><strong>Weight:</strong> {selectedItem.weight} lb</p>
-            )}
-            {selectedItem.requires_attunement && (
-              <p className="text-gray-600 mb-4"><strong>Requires Attunement:</strong> Yes</p>
-            )}
-            
-            {selectedItem.desc && (
-              <div className="mb-4">
-                <strong className="text-gray-600">Description:</strong>
-                <p className="text-gray-600 mt-1" dangerouslySetInnerHTML={{ __html: selectedItem.desc }} />
-              </div>
-            )}
-            
-            <button
-              onClick={() => setSelectedItem(null)}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      {showCharacterSelect && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-sm p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Add to Character</h3>
-            <div className="space-y-2 mb-4">
-              <button className="w-full text-left p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-                Thalara Brightbranch
-              </button>
-              <button className="w-full text-left p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-                Magnus Ironmantle
-              </button>
-              <button className="w-full text-left p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-                Ziri Shadowveil
-              </button>
-            </div>
-            <button
-              onClick={() => setShowCharacterSelect(false)}
-              className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 rounded-lg"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+      <CharacterSelectModal
+        isOpen={showCharacterSelect}
+        onClose={() => setShowCharacterSelect(false)}
+      />
     </div>
   );
 };
