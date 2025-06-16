@@ -56,18 +56,26 @@ const SpellsSection = ({ character }: SpellsSectionProps) => {
     return slots;
   };
 
-  // Get character's spells
+  // Get character's spells - handle both array format and the new spell objects
   const getCharacterSpells = () => {
     if (!character.spells || !isSpellcaster()) return {};
     
     const spellsByLevel: { [key: number]: any[] } = {};
     
-    character.spells.forEach((spell: any) => {
-      const level = spell.level || 0;
+    // Handle array of spell objects
+    const spellsArray = Array.isArray(character.spells) ? character.spells : [];
+    
+    spellsArray.forEach((spell: any) => {
+      // Handle both string level and number level
+      const level = typeof spell.level === 'string' ? parseInt(spell.level) || 0 : (spell.level || 0);
       if (!spellsByLevel[level]) {
         spellsByLevel[level] = [];
       }
-      spellsByLevel[level].push(spell);
+      spellsByLevel[level].push({
+        ...spell,
+        // Ensure prepared is a boolean
+        prepared: spell.prepared === true || spell.prepared === 'true'
+      });
     });
     
     return spellsByLevel;
@@ -209,6 +217,9 @@ const SpellsSection = ({ character }: SpellsSectionProps) => {
                             </span>
                           )}
                         </h4>
+                        {spell.school && (
+                          <p className="text-xs text-gray-500">{spell.school}</p>
+                        )}
                       </div>
                     </div>
                     

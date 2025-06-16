@@ -8,11 +8,12 @@ import SpeciesScreen from '../components/character-creation/SpeciesScreen';
 import ClassScreen from '../components/character-creation/ClassScreen';
 import AbilitiesScreen from '../components/character-creation/AbilitiesScreen';
 import BackgroundScreen from '../components/character-creation/BackgroundScreen';
+import SpellSelectionScreen from '../components/character-creation/SpellSelectionScreen';
 import EquipmentScreen from '../components/character-creation/EquipmentScreen';
 import SummaryScreen from '../components/character-creation/SummaryScreen';
 import { useCharacters } from '@/hooks/useCharacters';
 
-export type CreationStep = 'setup' | 'species' | 'class' | 'abilities' | 'background' | 'equipment' | 'summary';
+export type CreationStep = 'setup' | 'species' | 'class' | 'abilities' | 'background' | 'spells' | 'equipment' | 'summary';
 
 const CharacterCreation = () => {
   const navigate = useNavigate();
@@ -38,20 +39,43 @@ const CharacterCreation = () => {
     spells: []
   });
 
-  const steps: { id: CreationStep; label: string }[] = [
-    { id: 'setup', label: 'Setup' },
-    { id: 'species', label: 'Species' },
-    { id: 'class', label: 'Class' },
-    { id: 'abilities', label: 'Abilities' },
-    { id: 'background', label: 'Background' },
-    { id: 'equipment', label: 'Equipment' },
-    { id: 'summary', label: 'Summary' }
-  ];
+  // Check if current class is a spellcaster
+  const isSpellcaster = () => {
+    if (!characterData.class) return false;
+    return !!characterData.class.spellcastingAbility;
+  };
 
+  // Get steps based on whether character is a spellcaster
+  const getSteps = () => {
+    const baseSteps = [
+      { id: 'setup' as CreationStep, label: 'Setup' },
+      { id: 'species' as CreationStep, label: 'Species' },
+      { id: 'class' as CreationStep, label: 'Class' },
+      { id: 'abilities' as CreationStep, label: 'Abilities' },
+      { id: 'background' as CreationStep, label: 'Background' },
+    ];
+
+    // Add spells step only for spellcasters
+    if (isSpellcaster()) {
+      baseSteps.push({ id: 'spells' as CreationStep, label: 'Spells' });
+    }
+
+    baseSteps.push(
+      { id: 'equipment' as CreationStep, label: 'Equipment' },
+      { id: 'summary' as CreationStep, label: 'Summary' }
+    );
+
+    return baseSteps;
+  };
+
+  const steps = getSteps();
   const currentStepIndex = steps.findIndex(step => step.id === currentStep);
 
   const goToStep = (step: CreationStep) => {
-    setCurrentStep(step);
+    // Only allow going to steps that exist in current flow
+    if (steps.some(s => s.id === step)) {
+      setCurrentStep(step);
+    }
   };
 
   const goToPreviousStep = () => {
@@ -97,6 +121,8 @@ const CharacterCreation = () => {
         return <AbilitiesScreen data={characterData} onUpdate={updateCharacterData} />;
       case 'background':
         return <BackgroundScreen data={characterData} onUpdate={updateCharacterData} />;
+      case 'spells':
+        return <SpellSelectionScreen data={characterData} onUpdate={updateCharacterData} />;
       case 'equipment':
         return <EquipmentScreen data={characterData} onUpdate={updateCharacterData} />;
       case 'summary':
