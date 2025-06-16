@@ -8,6 +8,7 @@ import { useOpen5eData } from '../../hooks/useOpen5eData';
 import { open5eApi, Open5eClass } from '../../services/open5eApi';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
+import ClassDetailModal from './ClassDetailModal';
 
 interface ClassScreenProps {
   data: any;
@@ -19,6 +20,8 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
   const [selectedClass, setSelectedClass] = useState<Open5eClass | null>(data.class);
+  const [detailModalClass, setDetailModalClass] = useState<Open5eClass | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const filteredClasses = useMemo(() => {
     console.log('All classes:', classes.length);
@@ -118,11 +121,17 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
     setExpandedSources(newState);
   };
 
-  const handleSelectClass = (cls: Open5eClass) => {
+  const handleClassClick = (cls: Open5eClass) => {
+    setDetailModalClass(cls);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleSelectClass = (cls: Open5eClass, subclass?: string) => {
     setSelectedClass(cls);
     onUpdate({ 
       class: {
         name: cls.name,
+        subclass: subclass,
         description: cls.desc,
         hitDie: cls.hit_die,
         proficiencies: {
@@ -226,7 +235,7 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
                     className={`cursor-pointer transition-colors hover:bg-gray-50 ${
                       selectedClass?.slug === cls.slug ? 'ring-2 ring-red-600 bg-red-50' : ''
                     }`}
-                    onClick={() => handleSelectClass(cls)}
+                    onClick={() => handleClassClick(cls)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start space-x-3">
@@ -263,6 +272,14 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
           </p>
         </div>
       )}
+
+      {/* Class Detail Modal */}
+      <ClassDetailModal
+        classData={detailModalClass}
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        onSelect={handleSelectClass}
+      />
     </div>
   );
 };

@@ -8,6 +8,7 @@ import { useOpen5eData } from '../../hooks/useOpen5eData';
 import { open5eApi, Open5eRace } from '../../services/open5eApi';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
+import SpeciesDetailModal from './SpeciesDetailModal';
 
 interface SpeciesScreenProps {
   data: any;
@@ -19,6 +20,8 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
   const [selectedRace, setSelectedRace] = useState<Open5eRace | null>(data.species);
+  const [detailModalSpecies, setDetailModalSpecies] = useState<Open5eRace | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const filteredRaces = useMemo(() => {
     console.log('All races:', races.length);
@@ -111,11 +114,17 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
     setExpandedSources(newState);
   };
 
-  const handleSelectRace = (race: Open5eRace) => {
+  const handleSpeciesClick = (race: Open5eRace) => {
+    setDetailModalSpecies(race);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleSelectRace = (race: Open5eRace, subspecies?: string) => {
     setSelectedRace(race);
     onUpdate({ 
       species: {
         name: race.name,
+        subspecies: subspecies,
         description: race.desc,
         traits: [race.traits, race.proficiencies].filter(Boolean),
         source: race.document__slug,
@@ -211,7 +220,7 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
                   className={`cursor-pointer transition-colors hover:bg-gray-50 ${
                     selectedRace?.slug === race.slug ? 'ring-2 ring-red-600 bg-red-50' : ''
                   }`}
-                  onClick={() => handleSelectRace(race)}
+                  onClick={() => handleSpeciesClick(race)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
@@ -250,6 +259,14 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
           </p>
         </div>
       )}
+
+      {/* Species Detail Modal */}
+      <SpeciesDetailModal
+        species={detailModalSpecies}
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        onSelect={handleSelectRace}
+      />
     </div>
   );
 };
