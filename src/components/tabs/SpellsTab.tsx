@@ -14,6 +14,7 @@ const SpellsTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpell, setSelectedSpell] = useState<Open5eSpell | null>(null);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
+  const [spellToAdd, setSpellToAdd] = useState<Open5eSpell | null>(null);
   const [filters, setFilters] = useState({
     levels: [] as string[],
     schools: [] as string[],
@@ -31,6 +32,16 @@ const SpellsTab = () => {
 
   const clearFilters = () => {
     setFilters({ levels: [], schools: [], classes: [] });
+  };
+
+  const handleAddToCharacter = (spell: Open5eSpell) => {
+    setSpellToAdd(spell);
+    setShowCharacterSelect(true);
+  };
+
+  const handleCloseCharacterSelect = () => {
+    setShowCharacterSelect(false);
+    setSpellToAdd(null);
   };
 
   if (isLoading) {
@@ -57,7 +68,7 @@ const SpellsTab = () => {
         searchTerm={searchTerm}
         filters={filters}
         onSpellSelect={setSelectedSpell}
-        onAddToCharacter={() => setShowCharacterSelect(true)}
+        onAddToCharacter={handleAddToCharacter}
       />
 
       {selectedSpell && (
@@ -69,7 +80,8 @@ const SpellsTab = () => {
 
       {showCharacterSelect && (
         <CharacterSelectModal
-          onClose={() => setShowCharacterSelect(false)}
+          onClose={handleCloseCharacterSelect}
+          selectedSpell={spellToAdd}
         />
       )}
     </div>

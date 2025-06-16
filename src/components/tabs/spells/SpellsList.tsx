@@ -14,7 +14,7 @@ interface SpellsListProps {
     classes: string[];
   };
   onSpellSelect: (spell: Open5eSpell) => void;
-  onAddToCharacter: () => void;
+  onAddToCharacter: (spell: Open5eSpell) => void;
 }
 
 const SpellsList = ({
@@ -145,7 +145,7 @@ const SpellsList = ({
                       </p>
                     </div>
                     <button
-                      onClick={onAddToCharacter}
+                      onClick={() => onAddToCharacter(spell)}
                       className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
                     >
                       +

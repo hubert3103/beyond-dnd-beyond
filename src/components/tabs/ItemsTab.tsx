@@ -15,6 +15,7 @@ const ItemsTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<Open5eEquipment | null>(null);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
+  const [itemToAdd, setItemToAdd] = useState<Open5eEquipment | null>(null);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'name' | 'rarity' | 'type'>('rarity');
 
@@ -107,6 +108,16 @@ const ItemsTab = () => {
     );
   };
 
+  const handleAddToCharacter = (item: Open5eEquipment) => {
+    setItemToAdd(item);
+    setShowCharacterSelect(true);
+  };
+
+  const handleCloseCharacterSelect = () => {
+    setShowCharacterSelect(false);
+    setItemToAdd(null);
+  };
+
   if (isLoading) {
     return <LoadingSpinner message="Loading equipment data..." />;
   }
@@ -136,7 +147,7 @@ const ItemsTab = () => {
         hasMore={hasMore}
         handleScroll={handleScroll}
         onItemSelect={setSelectedItem}
-        onAddToCharacter={() => setShowCharacterSelect(true)}
+        onAddToCharacter={handleAddToCharacter}
         filteredCount={filteredEquipment.length}
         totalCount={equipment.length}
       />
@@ -148,7 +159,8 @@ const ItemsTab = () => {
 
       <CharacterSelectModal
         isOpen={showCharacterSelect}
-        onClose={() => setShowCharacterSelect(false)}
+        onClose={handleCloseCharacterSelect}
+        selectedItem={itemToAdd}
       />
     </div>
   );

@@ -9,7 +9,7 @@ interface ItemsListProps {
   hasMore: boolean;
   handleScroll: (e: React.UIEvent<HTMLDivElement>) => void;
   onItemSelect: (item: Open5eEquipment) => void;
-  onAddToCharacter: () => void;
+  onAddToCharacter: (item: Open5eEquipment) => void;
   filteredCount: number;
   totalCount: number;
 }
@@ -65,7 +65,7 @@ const ItemsList = ({
                   </div>
                 </div>
                 <button
-                  onClick={onAddToCharacter}
+                  onClick={() => onAddToCharacter(item)}
                   className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
                 >
                   +
