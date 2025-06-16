@@ -18,7 +18,7 @@ const SpeciesDetailModal = ({ species, isOpen, onClose, onSelect }: SpeciesDetai
 
   if (!species) return null;
 
-  // Extract subspecies from the species data with descriptions
+  // Comprehensive subspecies data for all major species
   const getSubspeciesData = (speciesName: string) => {
     const subspeciesData: Record<string, Array<{name: string, description: string, bonuses?: string, abilityBonus?: Record<string, number>}>> = {
       'Elf': [
@@ -66,6 +66,20 @@ const SpeciesDetailModal = ({ species, isOpen, onClose, onSelect }: SpeciesDetai
           name: 'Stout Halfling',
           description: 'Stout halflings are hardier than other halflings and resistant to poison.',
           bonuses: '+1 Constitution, Stout Resilience',
+          abilityBonus: { con: 1 }
+        }
+      ],
+      'Gnome': [
+        {
+          name: 'Forest Gnome',
+          description: 'Forest gnomes have a natural knack for illusion and inherent communion with beasts.',
+          bonuses: '+1 Dexterity, Natural Illusionist, Speak with Small Beasts',
+          abilityBonus: { dex: 1 }
+        },
+        {
+          name: 'Rock Gnome',
+          description: 'Rock gnomes are natural inventors and have an affinity for crafting.',
+          bonuses: '+1 Constitution, Artificer\'s Lore, Tinker',
           abilityBonus: { con: 1 }
         }
       ],
@@ -129,6 +143,26 @@ const SpeciesDetailModal = ({ species, isOpen, onClose, onSelect }: SpeciesDetai
           description: 'Dragonborn with white dragon ancestry, wielding cold breath.',
           bonuses: 'Cold Breath Weapon, Cold Resistance',
           abilityBonus: {}
+        }
+      ],
+      'Tiefling': [
+        {
+          name: 'Asmodeus Tiefling',
+          description: 'Tieflings with a bloodline tied to Asmodeus, the Lord of the Nine Hells.',
+          bonuses: '+1 Charisma, Thaumaturgy cantrip, Hellish Rebuke spell',
+          abilityBonus: { cha: 1 }
+        },
+        {
+          name: 'Baalzebul Tiefling',
+          description: 'Tieflings descended from the archdevil Baalzebul.',
+          bonuses: '+1 Intelligence, Thaumaturgy cantrip, Ray of Sickness spell',
+          abilityBonus: { int: 1 }
+        },
+        {
+          name: 'Dispater Tiefling',
+          description: 'Tieflings with a connection to Dispater, the Iron Duke.',
+          bonuses: '+1 Dexterity, Thaumaturgy cantrip, Disguise Self spell',
+          abilityBonus: { dex: 1 }
         }
       ]
     };
@@ -233,7 +267,7 @@ const SpeciesDetailModal = ({ species, isOpen, onClose, onSelect }: SpeciesDetai
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a subspecies (optional)" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white z-50">
                   {subspeciesData.map((sub) => (
                     <SelectItem key={sub.name} value={sub.name}>
                       {sub.name}
@@ -279,17 +313,6 @@ const SpeciesDetailModal = ({ species, isOpen, onClose, onSelect }: SpeciesDetai
       </DialogContent>
     </Dialog>
   );
-};
-
-const cleanDescription = (desc: string) => {
-  return desc.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, ' ');
-};
-
-const parseAbilityScoreIncrease = (asi: any) => {
-  if (!asi || !Array.isArray(asi)) return 'None specified';
-  return asi.map(increase => 
-    `${increase.attributes?.join(', ') || 'Unknown'} +${increase.value || 0}`
-  ).join(', ');
 };
 
 export default SpeciesDetailModal;

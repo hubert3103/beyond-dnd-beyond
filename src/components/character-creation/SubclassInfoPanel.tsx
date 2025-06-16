@@ -1,6 +1,6 @@
 
 import { Badge } from '@/components/ui/badge';
-import { SubclassInfo } from '../../data/subclassData';
+import { SubclassInfo } from '../../data/classArchetypes';
 
 interface SubclassInfoPanelProps {
   subclass: SubclassInfo;
@@ -9,9 +9,19 @@ interface SubclassInfoPanelProps {
 const SubclassInfoPanel = ({ subclass }: SubclassInfoPanelProps) => {
   return (
     <div className="border-t border-gray-200 pt-4 space-y-3">
-      <div>
-        <h4 className="font-semibold text-gray-900 mb-2">{subclass.name}</h4>
-        <p className="text-sm text-gray-600">{subclass.description}</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h4 className="font-semibold text-gray-900 mb-2">{subclass.name}</h4>
+          <p className="text-sm text-gray-600">{subclass.description}</p>
+        </div>
+        <div className="flex gap-2">
+          <Badge variant="outline" className="text-xs">
+            Level {subclass.availableAtLevel}
+          </Badge>
+          <Badge variant="secondary" className="text-xs">
+            {subclass.source}
+          </Badge>
+        </div>
       </div>
       
       {subclass.keyAbilities.length > 0 && (
