@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useOpen5eData } from '../../hooks/useOpen5eData';
+import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import { Open5eSpell } from '../../services/open5eApi';
 import LoadingSpinner from '../character-creation/LoadingSpinner';
 import ErrorMessage from '../character-creation/ErrorMessage';
@@ -84,15 +85,21 @@ const SpellsTab = () => {
     return filtered;
   }, [spells, searchTerm, filters]);
 
+  // Use infinite scroll hook
+  const { displayedItems: displayedSpells, isLoading: isLoadingMore, hasMore, handleScroll } = useInfiniteScroll({
+    items: filteredAndSortedSpells,
+    itemsPerPage: 100
+  });
+
   // Group spells by level - memoized separately for better performance
   const groupedSpells = useMemo(() => {
-    return filteredAndSortedSpells.reduce((acc, spell) => {
+    return displayedSpells.reduce((acc, spell) => {
       const levelKey = spell.level === '0' ? 'Cantrips' : `Level ${spell.level}`;
       if (!acc[levelKey]) acc[levelKey] = [];
       acc[levelKey].push(spell);
       return acc;
     }, {} as Record<string, Open5eSpell[]>);
-  }, [filteredAndSortedSpells]);
+  }, [displayedSpells]);
 
   const handleFilterChange = (filterType: keyof typeof filters, value: string, checked: boolean) => {
     setFilters(prev => ({
@@ -228,14 +235,14 @@ const SpellsTab = () => {
 
         <div className="flex justify-between items-center mt-4">
           <span className="text-white font-medium">
-            Spells: {filteredAndSortedSpells.length}
-            {filteredAndSortedSpells.length !== spells.length && ` of ${spells.length}`}
+            Showing {displayedSpells.length} of {filteredAndSortedSpells.length} spells
+            {filteredAndSortedSpells.length !== spells.length && ` (${spells.length} total)`}
           </span>
         </div>
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4" onScroll={handleScroll}>
         {Object.entries(groupedSpells).map(([level, levelSpells]) => (
           <div key={level} className="mb-6">
             <h3 className="text-white font-bold mb-3">{level}</h3>
@@ -265,6 +272,21 @@ const SpellsTab = () => {
             </div>
           </div>
         ))}
+
+        {/* Loading indicator */}
+        {isLoadingMore && (
+          <div className="text-center py-4">
+            <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+            <p className="text-white mt-2">Loading more spells...</p>
+          </div>
+        )}
+
+        {/* End of results indicator */}
+        {!hasMore && displayedSpells.length > 0 && (
+          <div className="text-center py-4">
+            <p className="text-gray-300">You've reached the end of the results</p>
+          </div>
+        )}
 
         {filteredAndSortedSpells.length === 0 && (
           <div className="text-center py-8">
