@@ -4,12 +4,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useOpen5eData } from '../../hooks/useOpen5eData';
 import { open5eApi, Open5eClass } from '../../services/open5eApi';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import ClassDetailModal from './ClassDetailModal';
-import SkillSelector from './SkillSelector';
 
 interface ClassScreenProps {
   data: any;
@@ -196,16 +197,43 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
     });
   };
 
-  const handleSkillsChange = (skills: string[]) => {
-    setSelectedSkills(skills);
-    if (selectedClass) {
-      onUpdate({
-        class: {
-          ...data.class,
-          selectedSkills: skills
-        }
-      });
+  const handleSkillSelect = (skillName: string) => {
+    if (!selectedClass) return;
+    
+    const skillInfo = getClassSkillInfo(selectedClass.name);
+    const isAlreadySelected = selectedSkills.includes(skillName);
+    let newSelectedSkills: string[];
+
+    if (isAlreadySelected) {
+      // Remove skill
+      newSelectedSkills = selectedSkills.filter(s => s !== skillName);
+    } else {
+      // Add skill if under limit
+      if (selectedSkills.length < skillInfo.count) {
+        newSelectedSkills = [...selectedSkills, skillName];
+      } else {
+        return; // Don't add if at limit
+      }
     }
+
+    setSelectedSkills(newSelectedSkills);
+    onUpdate({
+      class: {
+        ...data.class,
+        selectedSkills: newSelectedSkills
+      }
+    });
+  };
+
+  const removeSkill = (skillToRemove: string) => {
+    const newSelectedSkills = selectedSkills.filter(s => s !== skillToRemove);
+    setSelectedSkills(newSelectedSkills);
+    onUpdate({
+      class: {
+        ...data.class,
+        selectedSkills: newSelectedSkills
+      }
+    });
   };
 
   if (isLoading) {
@@ -323,7 +351,7 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
         ))}
       </div>
 
-      {/* Skill Selection */}
+      {/* Skill Selection with Dropdown */}
       {selectedClass && (
         <Card className="mt-6">
           <CardHeader>
@@ -336,19 +364,68 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
                 return <p className="text-gray-600">This class does not grant skill proficiencies.</p>;
               }
               
-              const availableSkills = allSkills.filter(skill => 
-                skillInfo.skills.includes(skill.name)
+              const availableSkills = skillInfo.skills.filter(skillName => 
+                !selectedSkills.includes(skillName)
               );
               
               return (
-                <SkillSelector
-                  availableSkills={availableSkills}
-                  maxSelections={skillInfo.count}
-                  selectedSkills={selectedSkills}
-                  onSkillsChange={handleSkillsChange}
-                  title="Class Skill Proficiencies"
-                  source={`your ${selectedClass.name} class`}
-                />
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600">
+                    Choose {skillInfo.count} skill{skillInfo.count > 1 ? 's' : ''} from your {selectedClass.name} class
+                    {selectedSkills.length > 0 && ` (${selectedSkills.length}/${skillInfo.count} selected)`}
+                  </p>
+                  
+                  {/* Selected Skills */}
+                  {selectedSkills.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium text-gray-700">Selected Skills:</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedSkills.map(skill => (
+                          <Badge key={skill} variant="secondary" className="flex items-center gap-1">
+                            {skill}
+                            <button
+                              onClick={() => removeSkill(skill)}
+                              className="ml-1 text-xs hover:text-red-600"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Skill Selection Dropdown */}
+                  {selectedSkills.length < skillInfo.count && availableSkills.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium text-gray-700">Add Skill:</h4>
+                      <Select onValueChange={handleSkillSelect}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a skill proficiency" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white z-50">
+                          {availableSkills.map(skillName => {
+                            const skillData = allSkills.find(s => s.name === skillName);
+                            return (
+                              <SelectItem key={skillName} value={skillName}>
+                                <div className="flex justify-between items-center w-full">
+                                  <span>{skillName}</span>
+                                  <span className="text-xs text-gray-500 ml-2">
+                                    ({skillData?.ability.substring(0, 3).toUpperCase()})
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  {selectedSkills.length === skillInfo.count && (
+                    <p className="text-sm text-green-600">✓ All skill proficiencies selected</p>
+                  )}
+                </div>
               );
             })()}
           </CardContent>
