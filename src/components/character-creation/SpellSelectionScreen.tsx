@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { useOpen5eData } from '../../hooks/useOpen5eData';
 import { Open5eSpell } from '../../services/open5eApi';
@@ -42,6 +43,18 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
   };
 
   const spellcastingInfo = getSpellcastingInfo();
+
+  // Helper function to check if a spell is a cantrip
+  const isCantrip = (spell: Open5eSpell) => {
+    return spell.level === '0' || spell.level.toLowerCase().includes('cantrip');
+  };
+
+  // Helper function to get spell level as number
+  const getSpellLevelNumber = (spell: Open5eSpell) => {
+    if (isCantrip(spell)) return 0;
+    const levelMatch = spell.level.match(/(\d+)/);
+    return levelMatch ? parseInt(levelMatch[1]) : 1;
+  };
 
   // Helper function to check if a spell is available to a class
   const isSpellAvailableToClass = (spell: Open5eSpell, className: string) => {
@@ -111,15 +124,8 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
       // Filter by search term
       const matchesSearch = !searchTerm || spell.name.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Normalize spell level - handle different formats
-      let spellLevel = 0;
-      if (spell.level === '0' || spell.level.toLowerCase() === 'cantrip') {
-        spellLevel = 0;
-      } else {
-        // Extract number from strings like "1st-level", "2nd-level", etc.
-        const levelMatch = spell.level.match(/(\d+)/);
-        spellLevel = levelMatch ? parseInt(levelMatch[1]) : 0;
-      }
+      // Get spell level as number
+      const spellLevel = getSpellLevelNumber(spell);
       
       // Filter by level (only show cantrips and 1st level spells for level 1 characters)
       const appropriateLevel = spellLevel === 0 || (spellcastingInfo && spellLevel <= spellcastingInfo.maxLevel);
@@ -153,9 +159,8 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
     const grouped: Record<string, Open5eSpell[]> = {};
     availableSpells.forEach(spell => {
       let level = 'Cantrips';
-      if (spell.level !== '0' && !spell.level.toLowerCase().includes('cantrip')) {
-        const levelMatch = spell.level.match(/(\d+)/);
-        const levelNum = levelMatch ? parseInt(levelMatch[1]) : 1;
+      if (!isCantrip(spell)) {
+        const levelNum = getSpellLevelNumber(spell);
         level = `Level ${levelNum}`;
       }
       if (!grouped[level]) grouped[level] = [];
@@ -165,14 +170,13 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
   }, [availableSpells]);
 
   const getSelectedCount = (level: string) => {
-    const spellLevel = level === 'Cantrips' ? '0' : level.split(' ')[1];
     return selectedSpells.filter(spell => {
       if (level === 'Cantrips') {
-        return spell.level === '0' || spell.level.toLowerCase().includes('cantrip');
+        return isCantrip(spell);
       } else {
-        const levelMatch = spell.level.match(/(\d+)/);
-        const levelNum = levelMatch ? levelMatch[1] : '1';
-        return levelNum === spellLevel;
+        const levelNum = level.split(' ')[1];
+        const spellLevelNum = getSpellLevelNumber(spell);
+        return spellLevelNum.toString() === levelNum;
       }
     }).length;
   };
@@ -187,9 +191,8 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
     if (isAlreadySelected) return false;
     
     let level = 'Cantrips';
-    if (spell.level !== '0' && !spell.level.toLowerCase().includes('cantrip')) {
-      const levelMatch = spell.level.match(/(\d+)/);
-      const levelNum = levelMatch ? parseInt(levelMatch[1]) : 1;
+    if (!isCantrip(spell)) {
+      const levelNum = getSpellLevelNumber(spell);
       level = `Level ${levelNum}`;
     }
     
@@ -291,6 +294,9 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
           </p>
           <p className="text-xs text-gray-500 mt-1">
             Note: Using fallback spell mapping due to API data issues
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Cantrips selected: {getSelectedCount('Cantrips')}, Level 1 spells selected: {getSelectedCount('Level 1')}
           </p>
         </CardContent>
       </Card>
