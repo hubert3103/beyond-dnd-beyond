@@ -33,12 +33,15 @@ const AbilitiesSection = ({ character, setCharacter }: AbilitiesSectionProps) =>
   };
 
   const getSavingThrow = (abilityKey: string) => {
+    if (!character?.abilities?.[abilityKey]) return 0;
     const ability = character.abilities[abilityKey];
-    const modifier = getModifier(ability.score);
-    return ability.proficient ? modifier + character.proficiencyBonus : modifier;
+    const modifier = getModifier(ability.score || 10);
+    return ability.proficient ? modifier + (character.proficiencyBonus || 2) : modifier;
   };
 
   const handleAbilityScoreChange = (abilityKey: string, newScore: number) => {
+    if (!character?.abilities) return;
+    
     setCharacter({
       ...character,
       abilities: {
@@ -53,6 +56,8 @@ const AbilitiesSection = ({ character, setCharacter }: AbilitiesSectionProps) =>
   };
 
   const handleProficiencyChange = (abilityKey: string, proficient: boolean) => {
+    if (!character?.abilities) return;
+    
     setCharacter({
       ...character,
       abilities: {
@@ -65,6 +70,15 @@ const AbilitiesSection = ({ character, setCharacter }: AbilitiesSectionProps) =>
     });
   };
 
+  // Safety check for character and abilities
+  if (!character?.abilities) {
+    return (
+      <div className="bg-white rounded-lg p-4">
+        <p className="text-gray-500">Loading abilities...</p>
+      </div>
+    );
+  }
+
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div className="bg-white rounded-lg overflow-hidden">
@@ -76,7 +90,7 @@ const AbilitiesSection = ({ character, setCharacter }: AbilitiesSectionProps) =>
             <div className="flex items-center space-x-2">
               <span className="text-lg font-semibold">Abilities</span>
               <span className="text-sm text-gray-600">
-                (Proficiency Bonus: +{character.proficiencyBonus})
+                (Proficiency Bonus: +{character.proficiencyBonus || 2})
               </span>
             </div>
             {isOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
@@ -87,7 +101,28 @@ const AbilitiesSection = ({ character, setCharacter }: AbilitiesSectionProps) =>
           <div className="grid grid-cols-3 gap-3">
             {abilities.map((ability) => {
               const abilityData = character.abilities[ability.key];
+              
+              // Safety check for individual ability data
+              if (!abilityData) {
+                return (
+                  <div key={ability.key} className="space-y-2">
+                    <Button
+                      variant="outline"
+                      className="w-full h-auto p-3 flex flex-col items-center space-y-1"
+                    >
+                      <span className="text-xs font-medium text-gray-600">
+                        {ability.name}
+                      </span>
+                      <span className="text-lg font-bold">10</span>
+                      <span className="text-sm text-gray-600">+0</span>
+                    </Button>
+                  </div>
+                );
+              }
+
               const isExpanded = expandedAbility === ability.key;
+              const score = abilityData.score || 10;
+              const modifier = getModifier(score);
               
               return (
                 <div key={ability.key} className="space-y-2">
@@ -100,10 +135,10 @@ const AbilitiesSection = ({ character, setCharacter }: AbilitiesSectionProps) =>
                       {ability.name}
                     </span>
                     <span className="text-lg font-bold">
-                      {abilityData.score}
+                      {score}
                     </span>
                     <span className="text-sm text-gray-600">
-                      {abilityData.modifier >= 0 ? '+' : ''}{abilityData.modifier}
+                      {modifier >= 0 ? '+' : ''}{modifier}
                     </span>
                   </Button>
                   
@@ -117,7 +152,7 @@ const AbilitiesSection = ({ character, setCharacter }: AbilitiesSectionProps) =>
                           type="number"
                           min="1"
                           max="30"
-                          value={abilityData.score}
+                          value={score}
                           onChange={(e) => handleAbilityScoreChange(ability.key, parseInt(e.target.value) || 0)}
                           className="h-8 text-sm"
                         />
@@ -126,11 +161,11 @@ const AbilitiesSection = ({ character, setCharacter }: AbilitiesSectionProps) =>
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id={`${ability.key}-prof`}
-                          checked={abilityData.proficient}
+                          checked={abilityData.proficient || false}
                           onCheckedChange={(checked) => handleProficiencyChange(ability.key, checked as boolean)}
                         />
                         <label htmlFor={`${ability.key}-prof`} className="text-xs">
-                          Proficient (+{character.proficiencyBonus})
+                          Proficient (+{character.proficiencyBonus || 2})
                         </label>
                       </div>
                       

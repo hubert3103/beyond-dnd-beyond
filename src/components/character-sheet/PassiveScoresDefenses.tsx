@@ -22,13 +22,15 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
   };
 
   const getPassivePerception = () => {
-    const wisModifier = getModifier(character.abilities.wisdom.score);
-    const proficiencyBonus = character.proficiencyBonus; // Assuming proficient in Perception
+    if (!character?.abilities?.wisdom) return 10;
+    const wisModifier = getModifier(character.abilities.wisdom.score || 10);
+    const proficiencyBonus = character.proficiencyBonus || 2; // Assuming proficient in Perception
     return 10 + wisModifier + proficiencyBonus;
   };
 
   const getPassiveInvestigation = () => {
-    const intModifier = getModifier(character.abilities.intelligence.score);
+    if (!character?.abilities?.intelligence) return 10;
+    const intModifier = getModifier(character.abilities.intelligence.score || 10);
     return 10 + intModifier;
   };
 
@@ -39,6 +41,15 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
   const handleSpeedChange = (value: string) => {
     setCharacter({ ...character, speed: parseInt(value) || 0 });
   };
+
+  // Safety check for character data
+  if (!character) {
+    return (
+      <div className="bg-white rounded-lg p-4">
+        <p className="text-gray-500">Loading character data...</p>
+      </div>
+    );
+  }
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -72,7 +83,7 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
               <label className="text-xs text-gray-600">Armor Class</label>
               <Input
                 type="number"
-                value={character.armorClass}
+                value={character.armorClass || 10}
                 onChange={(e) => handleArmorClassChange(e.target.value)}
                 className="text-center font-bold"
               />
@@ -80,14 +91,14 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
             <div className="bg-gray-50 rounded-lg p-3 text-center">
               <div className="text-xs text-gray-600 mb-1">Initiative</div>
               <div className="text-lg font-bold">
-                {character.initiative >= 0 ? '+' : ''}{character.initiative}
+                {(character.initiative || 0) >= 0 ? '+' : ''}{character.initiative || 0}
               </div>
             </div>
             <div className="space-y-1">
               <label className="text-xs text-gray-600">Speed</label>
               <Input
                 type="number"
-                value={character.speed}
+                value={character.speed || 30}
                 onChange={(e) => handleSpeedChange(e.target.value)}
                 className="text-center font-bold"
               />
