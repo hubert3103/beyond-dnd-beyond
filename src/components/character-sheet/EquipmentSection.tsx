@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Package, Sword, Shield, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,11 +38,11 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEquipmentItem, setSelectedEquipmentItem] = useState<any>(null);
   
-  const { equipment, isLoading: equipmentLoading } = useOpen5eData();
+  const { equipment: apiEquipment, isLoading: equipmentLoading } = useOpen5eData();
   
   // Get equipment from character's starting equipment and inventory
   const getCharacterEquipment = () => {
-    const equipment = [];
+    const characterEquipment = [];
     
     console.log('Getting equipment for character:', character.equipment);
     
@@ -49,7 +50,7 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
     if (character.equipment?.starting_equipment) {
       console.log('Found starting equipment:', character.equipment.starting_equipment);
       character.equipment.starting_equipment.forEach((item: any) => {
-        equipment.push({
+        characterEquipment.push({
           id: item.name || item.index,
           name: item.name,
           quantity: item.quantity || 1,
@@ -66,7 +67,7 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
     if (character.equipment?.inventory) {
       console.log('Found inventory:', character.equipment.inventory);
       character.equipment.inventory.forEach((item: any) => {
-        equipment.push({
+        characterEquipment.push({
           id: item.name || item.index,
           name: item.name,
           quantity: item.quantity || 1,
@@ -79,8 +80,8 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
       });
     }
 
-    console.log('Final equipment list:', equipment);
-    return equipment;
+    console.log('Final equipment list:', characterEquipment);
+    return characterEquipment;
   };
 
   const equipment = getCharacterEquipment();
@@ -93,9 +94,9 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
 
   // Get filtered equipment suggestions based on category and search term
   const getEquipmentSuggestions = () => {
-    if (!equipment || equipmentLoading) return [];
+    if (!apiEquipment || equipmentLoading) return [];
     
-    let filtered = equipment.filter((item: any) => {
+    let filtered = apiEquipment.filter((item: any) => {
       // Filter by category if not 'adventuring-gear' (which includes everything)
       if (newItemType !== 'adventuring-gear') {
         if (newItemType === 'weapon' && item.type !== 'weapon') return false;
