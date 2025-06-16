@@ -46,11 +46,13 @@ const RestButtons = ({ character, setCharacter }: RestButtonsProps) => {
         temporary: 0,
         hit_dice_remaining: character.level
       },
-      spellSlots: resetSpellSlots
+      spellSlots: resetSpellSlots,
+      // Preserve spells with their preparation states
+      spells: character.spells || []
     };
     
     setCharacter(updatedCharacter);
-    console.log('Long rest completed - HP and spell slots restored');
+    console.log('Long rest completed - HP and spell slots restored, spells preserved');
   };
 
   const takeShortRest = () => {
@@ -71,7 +73,9 @@ const RestButtons = ({ character, setCharacter }: RestButtonsProps) => {
     
     const updatedCharacter = {
       ...character,
-      spellSlots: updatedSpellSlots
+      spellSlots: updatedSpellSlots,
+      // Preserve spells with their preparation states
+      spells: character.spells || []
     };
     
     setCharacter(updatedCharacter);
@@ -96,7 +100,9 @@ const RestButtons = ({ character, setCharacter }: RestButtonsProps) => {
         ...character.hit_points,
         current: newHP,
         hit_dice_remaining: remainingHitDice
-      }
+      },
+      // Preserve spells with their preparation states
+      spells: character.spells || []
     };
     
     setCharacter(updatedCharacter);
