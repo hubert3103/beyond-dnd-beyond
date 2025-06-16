@@ -228,8 +228,12 @@ const ItemsTab = () => {
         </div>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-4" onScroll={handleScroll}>
+      {/* Scrollable Content - Make sure this has proper height and overflow */}
+      <div 
+        className="flex-1 overflow-y-auto p-4" 
+        onScroll={handleScroll}
+        style={{ maxHeight: 'calc(100vh - 300px)' }}
+      >
         {/* Equipment List */}
         <div className="space-y-2">
           {displayedEquipment.map((item) => (
@@ -340,7 +344,6 @@ const ItemsTab = () => {
         </div>
       )}
 
-      {/* Character Select Modal */}
       {showCharacterSelect && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg w-full max-w-sm p-6">

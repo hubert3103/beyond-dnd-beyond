@@ -56,6 +56,8 @@ export const useInfiniteScroll = ({ items, itemsPerPage = 100 }: UseInfiniteScro
   }, [items, currentPage, itemsPerPage, isLoading, hasMore]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    console.log('🔥 SCROLL EVENT FIRED!'); // Debug line to confirm scroll events
+    
     const element = e.currentTarget;
     const { scrollTop, scrollHeight, clientHeight } = element;
     
