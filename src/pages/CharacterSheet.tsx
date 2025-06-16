@@ -47,6 +47,43 @@ const CharacterSheet = () => {
         
         if (characterData) {
           console.log('Character data loaded:', characterData);
+          
+          // Helper functions to calculate derived stats
+          const calculateInitialHP = (characterData: any) => {
+            if (!characterData.class_data) return 1;
+            const conModifier = Math.floor(((characterData.abilities?.constitution?.score || 10) - 10) / 2);
+            if (characterData.hit_point_type === 'fixed') {
+              return (characterData.class_data.hit_die || 8) + conModifier;
+            }
+            return characterData.hit_points?.max || ((characterData.class_data.hit_die || 8) + conModifier);
+          };
+
+          const calculateArmorClass = (characterData: any) => {
+            const dexModifier = Math.floor(((characterData.abilities?.dexterity?.score || 10) - 10) / 2);
+            let baseAC = 10 + dexModifier;
+            
+            // Check for armor in equipment
+            if (characterData.equipment?.starting_equipment) {
+              const armor = characterData.equipment.starting_equipment.find((item: any) => 
+                item.category === 'armor' && item.equipped
+              );
+              if (armor && armor.ac) {
+                baseAC = armor.ac + (armor.dex_bonus ? Math.min(dexModifier, armor.max_dex_bonus || dexModifier) : 0);
+              }
+            }
+            
+            return baseAC;
+          };
+
+          const calculateSpeed = (characterData: any) => {
+            // Default speed, could be modified by species
+            let speed = 30;
+            if (characterData.species_data?.speed) {
+              speed = characterData.species_data.speed;
+            }
+            return speed;
+          };
+
           // Convert database character to the format expected by the character sheet
           const formattedCharacter = {
             id: characterData.id,
@@ -60,8 +97,8 @@ const CharacterSheet = () => {
             background_data: characterData.background_data,
             avatar: '/avatarPlaceholder.svg',
             // Use stored hit points or calculate them
-            currentHP: characterData.hit_points?.current || this.calculateInitialHP(characterData),
-            maxHP: characterData.hit_points?.max || this.calculateInitialHP(characterData),
+            currentHP: characterData.hit_points?.current || calculateInitialHP(characterData),
+            maxHP: characterData.hit_points?.max || calculateInitialHP(characterData),
             tempHP: characterData.hit_points?.temporary || 0,
             hit_points: characterData.hit_points,
             hit_point_type: characterData.hit_point_type,
@@ -69,9 +106,9 @@ const CharacterSheet = () => {
             abilities: characterData.abilities,
             equipment: characterData.equipment,
             spells: characterData.spells || [],
-            armorClass: this.calculateArmorClass(characterData),
-            initiative: Math.floor((characterData.abilities?.dex?.total || 10 - 10) / 2),
-            speed: this.calculateSpeed(characterData)
+            armorClass: calculateArmorClass(characterData),
+            initiative: Math.floor(((characterData.abilities?.dexterity?.score || 10) - 10) / 2),
+            speed: calculateSpeed(characterData)
           };
           
           setCharacter(formattedCharacter);
@@ -98,44 +135,8 @@ const CharacterSheet = () => {
       }
     };
 
-    // Helper functions to calculate derived stats
-    const calculateInitialHP = (characterData: any) => {
-      if (!characterData.class_data) return 1;
-      const conModifier = Math.floor((characterData.abilities?.con?.total || 10 - 10) / 2);
-      if (characterData.hit_point_type === 'fixed') {
-        return (characterData.class_data.hit_die || 8) + conModifier;
-      }
-      return characterData.hit_points?.max || ((characterData.class_data.hit_die || 8) + conModifier);
-    };
-
-    const calculateArmorClass = (characterData: any) => {
-      const dexModifier = Math.floor((characterData.abilities?.dex?.total || 10 - 10) / 2);
-      let baseAC = 10 + dexModifier;
-      
-      // Check for armor in equipment
-      if (characterData.equipment?.starting_equipment) {
-        const armor = characterData.equipment.starting_equipment.find((item: any) => 
-          item.category === 'armor' && item.equipped
-        );
-        if (armor && armor.ac) {
-          baseAC = armor.ac + (armor.dex_bonus ? Math.min(dexModifier, armor.max_dex_bonus || dexModifier) : 0);
-        }
-      }
-      
-      return baseAC;
-    };
-
-    const calculateSpeed = (characterData: any) => {
-      // Default speed, could be modified by species
-      let speed = 30;
-      if (characterData.species_data?.speed) {
-        speed = characterData.species_data.speed;
-      }
-      return speed;
-    };
-
     loadCharacter();
-  }, [id]); // Removed getCharacter, navigate, toast from dependencies to prevent infinite loops
+  }, [id, getCharacter, navigate, toast]);
 
   const handleBack = () => {
     navigate('/player');
