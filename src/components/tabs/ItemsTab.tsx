@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -136,8 +135,8 @@ const ItemsTab = () => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Sticky Header with search and filter */}
-      <div className="sticky top-0 z-10 bg-[#4a4a4a] p-4 border-b border-gray-600">
+      {/* Header with search and filter */}
+      <div className="bg-[#4a4a4a] p-4 border-b border-gray-600">
         <div className="text-center mb-4">
           <h1 className="text-2xl font-bold text-white mb-2">Equipment & Items</h1>
           <p className="text-gray-300">Browse equipment from D&D 5e sources</p>
