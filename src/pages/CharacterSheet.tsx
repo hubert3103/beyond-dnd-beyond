@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, MoreVertical, Loader2 } from 'lucide-react';
@@ -55,6 +56,11 @@ const CharacterSheet = () => {
         // Update abilities if they exist
         if (updatedCharacter.abilities) {
           updateData.abilities = updatedCharacter.abilities;
+        }
+        
+        // Update spells if they exist
+        if (updatedCharacter.spells) {
+          updateData.spells = updatedCharacter.spells;
         }
         
         console.log('Updating character in database with data:', updateData);
