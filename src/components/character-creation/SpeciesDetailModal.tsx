@@ -20,46 +20,115 @@ const SpeciesDetailModal = ({ species, isOpen, onClose, onSelect }: SpeciesDetai
 
   // Extract subspecies from the species data with descriptions
   const getSubspeciesData = (speciesName: string) => {
-    const subspeciesData: Record<string, Array<{name: string, description: string, bonuses?: string}>> = {
+    const subspeciesData: Record<string, Array<{name: string, description: string, bonuses?: string, abilityBonus?: Record<string, number>}>> = {
       'Elf': [
         {
           name: 'High Elf',
           description: 'High elves are graceful warriors and wizards who originated from the realm of Faerie.',
-          bonuses: '+1 Intelligence, Cantrip, Longsword proficiency'
+          bonuses: '+1 Intelligence, Cantrip, Longsword proficiency',
+          abilityBonus: { int: 1 }
         },
         {
           name: 'Wood Elf',
           description: 'Wood elves are keen hunters with fey ancestry and a fierce love of freedom.',
-          bonuses: '+1 Wisdom, Longbow proficiency, Mask of the Wild'
+          bonuses: '+1 Wisdom, Longbow proficiency, Mask of the Wild',
+          abilityBonus: { wis: 1 }
         },
         {
           name: 'Dark Elf (Drow)',
           description: 'Dark elves were banished from the surface world for following the goddess Lolth.',
-          bonuses: '+1 Charisma, Superior Darkvision, Drow Magic'
+          bonuses: '+1 Charisma, Superior Darkvision, Drow Magic',
+          abilityBonus: { cha: 1 }
         }
       ],
       'Dwarf': [
         {
           name: 'Mountain Dwarf',
           description: 'Mountain dwarves are strong and hardy, adapted to difficult terrain.',
-          bonuses: '+2 Strength, Armor proficiency'
+          bonuses: '+2 Strength, Armor proficiency',
+          abilityBonus: { str: 2 }
         },
         {
           name: 'Hill Dwarf',
           description: 'Hill dwarves are especially wise and tough, with keen senses.',
-          bonuses: '+1 Wisdom, Extra hit points'
+          bonuses: '+1 Wisdom, Extra hit points',
+          abilityBonus: { wis: 1 }
         }
       ],
       'Halfling': [
         {
           name: 'Lightfoot Halfling',
           description: 'Lightfoot halflings can easily hide and are naturally stealthy.',
-          bonuses: '+1 Charisma, Naturally Stealthy'
+          bonuses: '+1 Charisma, Naturally Stealthy',
+          abilityBonus: { cha: 1 }
         },
         {
           name: 'Stout Halfling',
           description: 'Stout halflings are hardier than other halflings and resistant to poison.',
-          bonuses: '+1 Constitution, Stout Resilience'
+          bonuses: '+1 Constitution, Stout Resilience',
+          abilityBonus: { con: 1 }
+        }
+      ],
+      'Dragonborn': [
+        {
+          name: 'Black Dragonborn',
+          description: 'Dragonborn with black dragon ancestry, wielding acid breath.',
+          bonuses: 'Acid Breath Weapon, Acid Resistance',
+          abilityBonus: {}
+        },
+        {
+          name: 'Blue Dragonborn',
+          description: 'Dragonborn with blue dragon ancestry, wielding lightning breath.',
+          bonuses: 'Lightning Breath Weapon, Lightning Resistance',
+          abilityBonus: {}
+        },
+        {
+          name: 'Brass Dragonborn',
+          description: 'Dragonborn with brass dragon ancestry, wielding fire breath.',
+          bonuses: 'Fire Breath Weapon, Fire Resistance',
+          abilityBonus: {}
+        },
+        {
+          name: 'Bronze Dragonborn',
+          description: 'Dragonborn with bronze dragon ancestry, wielding lightning breath.',
+          bonuses: 'Lightning Breath Weapon, Lightning Resistance',
+          abilityBonus: {}
+        },
+        {
+          name: 'Copper Dragonborn',
+          description: 'Dragonborn with copper dragon ancestry, wielding acid breath.',
+          bonuses: 'Acid Breath Weapon, Acid Resistance',
+          abilityBonus: {}
+        },
+        {
+          name: 'Gold Dragonborn',
+          description: 'Dragonborn with gold dragon ancestry, wielding fire breath.',
+          bonuses: 'Fire Breath Weapon, Fire Resistance',
+          abilityBonus: {}
+        },
+        {
+          name: 'Green Dragonborn',
+          description: 'Dragonborn with green dragon ancestry, wielding poison breath.',
+          bonuses: 'Poison Breath Weapon, Poison Resistance',
+          abilityBonus: {}
+        },
+        {
+          name: 'Red Dragonborn',
+          description: 'Dragonborn with red dragon ancestry, wielding fire breath.',
+          bonuses: 'Fire Breath Weapon, Fire Resistance',
+          abilityBonus: {}
+        },
+        {
+          name: 'Silver Dragonborn',
+          description: 'Dragonborn with silver dragon ancestry, wielding cold breath.',
+          bonuses: 'Cold Breath Weapon, Cold Resistance',
+          abilityBonus: {}
+        },
+        {
+          name: 'White Dragonborn',
+          description: 'Dragonborn with white dragon ancestry, wielding cold breath.',
+          bonuses: 'Cold Breath Weapon, Cold Resistance',
+          abilityBonus: {}
         }
       ]
     };
@@ -71,6 +140,7 @@ const SpeciesDetailModal = ({ species, isOpen, onClose, onSelect }: SpeciesDetai
   const selectedSubspeciesData = subspeciesData.find(sub => sub.name === selectedSubspecies);
 
   const handleSelect = () => {
+    const selectedSubspeciesInfo = subspeciesData.find(sub => sub.name === selectedSubspecies);
     onSelect(species, selectedSubspecies || undefined);
     onClose();
   };
@@ -209,6 +279,17 @@ const SpeciesDetailModal = ({ species, isOpen, onClose, onSelect }: SpeciesDetai
       </DialogContent>
     </Dialog>
   );
+};
+
+const cleanDescription = (desc: string) => {
+  return desc.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, ' ');
+};
+
+const parseAbilityScoreIncrease = (asi: any) => {
+  if (!asi || !Array.isArray(asi)) return 'None specified';
+  return asi.map(increase => 
+    `${increase.attributes?.join(', ') || 'Unknown'} +${increase.value || 0}`
+  ).join(', ');
 };
 
 export default SpeciesDetailModal;

@@ -19,7 +19,7 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
   const { races, isLoading, error, refresh } = useOpen5eData();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
-  const [selectedRace, setSelectedRace] = useState<Open5eRace | null>(data.species);
+  const [selectedRace, setSelectedRace] = useState<Open5eRace | null>(data.species?.apiData || null);
   const [detailModalSpecies, setDetailModalSpecies] = useState<Open5eRace | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
@@ -121,6 +121,32 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
 
   const handleSelectRace = (race: Open5eRace, subspecies?: string) => {
     setSelectedRace(race);
+    
+    // Get subspecies ability bonuses
+    const getSubspeciesAbilityBonus = (speciesName: string, subspeciesName?: string) => {
+      if (!subspeciesName) return {};
+      
+      const subspeciesData: Record<string, Record<string, Record<string, number>>> = {
+        'Elf': {
+          'High Elf': { int: 1 },
+          'Wood Elf': { wis: 1 },
+          'Dark Elf (Drow)': { cha: 1 }
+        },
+        'Dwarf': {
+          'Mountain Dwarf': { str: 2 },
+          'Hill Dwarf': { wis: 1 }
+        },
+        'Halfling': {
+          'Lightfoot Halfling': { cha: 1 },
+          'Stout Halfling': { con: 1 }
+        }
+      };
+      
+      return subspeciesData[speciesName]?.[subspeciesName] || {};
+    };
+
+    const subspeciesBonus = getSubspeciesAbilityBonus(race.name, subspecies);
+    
     onUpdate({ 
       species: {
         name: race.name,
@@ -131,7 +157,9 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
         abilityScoreIncrease: race.asi,
         speed: race.speed,
         languages: race.languages,
-        size: race.size
+        size: race.size,
+        subspeciesAbilityBonus: subspeciesBonus,
+        apiData: race // Store the API data for persistence
       }
     });
   };

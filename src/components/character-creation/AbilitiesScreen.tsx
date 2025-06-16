@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -26,11 +25,11 @@ const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
     { id: 'cha', name: 'CHARISMA', shortName: 'CHA' }
   ];
 
-  // Calculate racial bonuses
+  // Calculate racial bonuses including subspecies
   const getRacialBonus = (abilityId: string) => {
     if (!data.species) return 0;
     
-    // This is a simplified example - in a real implementation you'd parse the species ASI data
+    // Base racial bonuses
     const racialBonuses: Record<string, Record<string, number>> = {
       'Human': { str: 1, dex: 1, con: 1, int: 1, wis: 1, cha: 1 },
       'Elf': { dex: 2 },
@@ -43,7 +42,10 @@ const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
       'Tiefling': { int: 1, cha: 2 }
     };
     
-    return racialBonuses[data.species.name]?.[abilityId] || 0;
+    const baseBonus = racialBonuses[data.species.name]?.[abilityId] || 0;
+    const subspeciesBonus = data.species.subspeciesAbilityBonus?.[abilityId] || 0;
+    
+    return baseBonus + subspeciesBonus;
   };
 
   // Update abilities with racial bonuses when species changes

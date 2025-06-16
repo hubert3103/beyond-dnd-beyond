@@ -54,6 +54,42 @@ export const subclassData: Record<string, SubclassInfo[]> = {
       description: 'Protective magic specialists who excel at warding and counterspelling.',
       features: ['Abjuration Savant', 'Arcane Ward', 'Projected Ward'],
       keyAbilities: ['Intelligence']
+    },
+    {
+      name: 'School of Conjuration',
+      description: 'Masters of summoning creatures and creating objects from thin air.',
+      features: ['Conjuration Savant', 'Minor Conjuration', 'Benign Transposition'],
+      keyAbilities: ['Intelligence']
+    },
+    {
+      name: 'School of Divination',
+      description: 'Seers who use magic to uncover secrets and predict the future.',
+      features: ['Divination Savant', 'Portent', 'Expert Divination'],
+      keyAbilities: ['Intelligence']
+    },
+    {
+      name: 'School of Enchantment',
+      description: 'Masters of charm and mind control magic.',
+      features: ['Enchantment Savant', 'Hypnotic Gaze', 'Charming Words'],
+      keyAbilities: ['Intelligence']
+    },
+    {
+      name: 'School of Illusion',
+      description: 'Specialists in deception and misdirection through magical illusions.',
+      features: ['Illusion Savant', 'Improved Minor Illusion', 'Malleable Illusions'],
+      keyAbilities: ['Intelligence']
+    },
+    {
+      name: 'School of Necromancy',
+      description: 'Masters of death magic and the undead.',
+      features: ['Necromancy Savant', 'Grim Harvest', 'Undead Thralls'],
+      keyAbilities: ['Intelligence']
+    },
+    {
+      name: 'School of Transmutation',
+      description: 'Specialists in changing and transforming matter and energy.',
+      features: ['Transmutation Savant', 'Minor Alchemy', 'Transmuter\'s Stone'],
+      keyAbilities: ['Intelligence']
     }
   ],
   'Rogue': [
