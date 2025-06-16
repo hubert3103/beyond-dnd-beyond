@@ -81,11 +81,14 @@ const SpellsList = ({
     return filtered;
   }, [spells, searchTerm, filters]);
 
-  // Use infinite scroll hook
-  const { displayedItems: displayedSpells, isLoading: isLoadingMore, hasMore, handleScroll } = useInfiniteScroll({
+  // Use infinite scroll hook with proper typing
+  const { displayedItems, isLoading: isLoadingMore, hasMore, handleScroll } = useInfiniteScroll({
     items: filteredAndSortedSpells,
     itemsPerPage: 100
   });
+
+  // Type assert the displayedItems to be Open5eSpell[]
+  const displayedSpells = displayedItems as Open5eSpell[];
 
   // Group spells by level - memoized separately for better performance
   const groupedSpells = useMemo(() => {
