@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Package, Sword, Shield, Search } from 'lucide-react';
+import { ChevronDown, ChevronRight, Package, Sword, Shield, Search, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -166,6 +165,20 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
     setCharacter(updatedCharacter);
   };
 
+  const deleteItem = (itemId: string, source: string) => {
+    if (!setCharacter) return;
+
+    const updatedCharacter = { ...character };
+    
+    // Only allow deletion from inventory (not starting equipment)
+    if (source === 'Inventory' && updatedCharacter.equipment?.inventory) {
+      updatedCharacter.equipment.inventory = updatedCharacter.equipment.inventory.filter((item: any) => 
+        (item.name || item.index) !== itemId
+      );
+      setCharacter(updatedCharacter);
+    }
+  };
+
   const addNewItem = () => {
     if (!setCharacter || !newItemName.trim()) return;
 
@@ -314,6 +327,16 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
                         onClick={() => toggleEquipped(item.id)}
                       >
                         {item.equipped ? 'Unequip' : 'Equip'}
+                      </Button>
+                    )}
+                    {item.source === 'Inventory' && setCharacter && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => deleteItem(item.id, item.source)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     )}
                   </div>

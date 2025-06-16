@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Sword, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,7 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
       name: 'Unarmed Strike',
       type: 'weapon',
       attackBonus: `+${strModifier + character.proficiencyBonus}`,
-      damage: `1 + ${strModifier >= 0 ? '+' : ''}${strModifier}`,
+      damage: `1${strModifier >= 0 ? '+' : ''}${strModifier}`,
       damageType: 'bludgeoning',
       uses: null
     });
@@ -98,6 +99,33 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
       else if (item.damage_die) {
         damage = item.damage_die;
         damageType = item.damage_type || 'bludgeoning';
+      }
+      
+      // Special handling for known weapons by name if damage data is missing
+      if (damage === '1d4' && item.name) {
+        const weaponName = item.name.toLowerCase();
+        if (weaponName.includes('greataxe')) {
+          damage = '1d12';
+          damageType = 'slashing';
+        } else if (weaponName.includes('battleaxe')) {
+          damage = '1d8';
+          damageType = 'slashing';
+        } else if (weaponName.includes('longsword')) {
+          damage = '1d8';
+          damageType = 'slashing';
+        } else if (weaponName.includes('shortsword')) {
+          damage = '1d6';
+          damageType = 'piercing';
+        } else if (weaponName.includes('dagger')) {
+          damage = '1d4';
+          damageType = 'piercing';
+        } else if (weaponName.includes('club') || weaponName.includes('mace')) {
+          damage = '1d4';
+          damageType = 'bludgeoning';
+        } else if (weaponName.includes('warhammer')) {
+          damage = '1d8';
+          damageType = 'bludgeoning';
+        }
       }
       
       // Add ability modifier to damage if it's not already included
