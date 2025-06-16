@@ -9,7 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      "Spells 5e": {
+        Row: {
+          cast_time: string | null
+          classes: string | null
+          description: string | null
+          duration: string | null
+          level: string | null
+          material: string | null
+          material_cost: string | null
+          name: string
+          range: string | null
+          school: string | null
+          somatic: number | null
+          verbal: number | null
+        }
+        Insert: {
+          cast_time?: string | null
+          classes?: string | null
+          description?: string | null
+          duration?: string | null
+          level?: string | null
+          material?: string | null
+          material_cost?: string | null
+          name: string
+          range?: string | null
+          school?: string | null
+          somatic?: number | null
+          verbal?: number | null
+        }
+        Update: {
+          cast_time?: string | null
+          classes?: string | null
+          description?: string | null
+          duration?: string | null
+          level?: string | null
+          material?: string | null
+          material_cost?: string | null
+          name?: string
+          range?: string | null
+          school?: string | null
+          somatic?: number | null
+          verbal?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

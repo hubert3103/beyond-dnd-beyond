@@ -63,7 +63,7 @@ const SummaryScreen = ({ data }: SummaryScreenProps) => {
             <div className="flex justify-between">
               <span className="font-medium">Sources:</span>
               <span>
-                {Object.entries(data.sources)
+                {Object.entries(data.sources || {})
                   .filter(([_, enabled]) => enabled)
                   .map(([source, _]) => source === 'coreRules' ? 'Core Rules' : 
                                        source === 'expansions' ? 'Expansions' : 'Homebrew')
@@ -120,7 +120,7 @@ const SummaryScreen = ({ data }: SummaryScreenProps) => {
             <CardTitle className="text-lg">Equipment</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {data.equipment.startingEquipment.length > 0 ? (
+            {data.equipment?.startingEquipment && data.equipment.startingEquipment.length > 0 ? (
               <div>
                 <div className="font-medium mb-2">Starting Equipment:</div>
                 <ul className="list-disc list-inside space-y-1 text-sm">
@@ -133,12 +133,12 @@ const SummaryScreen = ({ data }: SummaryScreenProps) => {
               <div className="text-gray-500">No equipment selected</div>
             )}
             
-            {Object.values(data.equipment.currency).some(amount => amount > 0) && (
+            {data.equipment?.currency && Object.values(data.equipment.currency).some((amount: any) => Number(amount) > 0) && (
               <div>
                 <div className="font-medium mb-2">Starting Currency:</div>
                 <div className="text-sm">
                   {Object.entries(data.equipment.currency)
-                    .filter(([_, amount]) => amount > 0)
+                    .filter(([_, amount]) => Number(amount) > 0)
                     .map(([type, amount]) => `${amount} ${type.toUpperCase()}`)
                     .join(', ')}
                 </div>
