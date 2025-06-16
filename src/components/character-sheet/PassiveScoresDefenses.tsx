@@ -33,8 +33,16 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
     if (character.equipment?.starting_equipment) {
       console.log('Checking starting equipment:', character.equipment.starting_equipment);
       equippedArmor = character.equipment.starting_equipment.find((item: any) => {
-        console.log('Checking item:', item.name, 'category:', item.category, 'equipped:', item.equipped);
-        return item.category === 'armor' && item.equipped;
+        console.log('Checking item:', {
+          name: item.name,
+          category: item.category,
+          type: item.type,
+          equipped: item.equipped,
+          ac: item.ac,
+          ac_base: item.ac_base,
+          weight: item.weight
+        });
+        return (item.category === 'armor' || item.type?.includes('armor')) && item.equipped;
       });
       if (equippedArmor) console.log('Found equipped armor in starting equipment:', equippedArmor);
     }
@@ -43,8 +51,16 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
     if (!equippedArmor && character.equipment?.inventory) {
       console.log('Checking inventory:', character.equipment.inventory);
       equippedArmor = character.equipment.inventory.find((item: any) => {
-        console.log('Checking inventory item:', item.name, 'category:', item.category, 'equipped:', item.equipped);
-        return item.category === 'armor' && item.equipped;
+        console.log('Checking inventory item:', {
+          name: item.name,
+          category: item.category,
+          type: item.type,
+          equipped: item.equipped,
+          ac: item.ac,
+          ac_base: item.ac_base,
+          weight: item.weight
+        });
+        return (item.category === 'armor' || item.type?.includes('armor')) && item.equipped;
       });
       if (equippedArmor) console.log('Found equipped armor in inventory:', equippedArmor);
     }
@@ -58,7 +74,7 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
       console.log('Armor dex_bonus:', equippedArmor.dex_bonus);
       console.log('Armor max_dex_bonus:', equippedArmor.max_dex_bonus);
       
-      if (armorAC) {
+      if (armorAC && armorAC > 0) {
         if (equippedArmor.dex_bonus !== false) {
           const maxDexBonus = equippedArmor.max_dex_bonus || 999;
           baseAC = armorAC + Math.min(dexModifier, maxDexBonus);
@@ -68,7 +84,7 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
           console.log('AC without dex bonus:', baseAC);
         }
       } else {
-        console.log('No AC value found on armor item');
+        console.log('No valid AC value found on armor item');
       }
     } else {
       console.log('No equipped armor found');

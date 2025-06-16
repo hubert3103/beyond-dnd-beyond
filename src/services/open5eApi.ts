@@ -217,28 +217,48 @@ class Open5eApiService {
 
       // Add armor (convert to equipment format with proper AC properties)
       if (armor.status === 'fulfilled') {
-        const armorEquipment: Open5eEquipment[] = armor.value.map(armorItem => ({
-          slug: armorItem.slug,
-          name: armorItem.name,
-          type: armorItem.type || 'armor',
-          rarity: 'common',
-          requires_attunement: false,
-          cost: armorItem.cost,
-          weight: armorItem.weight,
-          desc: armorItem.desc,
-          document__slug: armorItem.document__slug,
-          // Preserve armor-specific properties
-          ac: armorItem.ac_base, // Map ac_base to ac for consistency
-          ac_base: armorItem.ac_base,
-          dex_bonus: armorItem.ac_add_dex !== false, // Convert to boolean
-          max_dex_bonus: armorItem.ac_cap_dex,
-          category: armorItem.category
-        }));
+        console.log('=== ARMOR API PROCESSING ===');
+        console.log('Raw armor data sample:', armor.value.slice(0, 3));
+        
+        const armorEquipment: Open5eEquipment[] = armor.value.map(armorItem => {
+          console.log('Processing armor item:', {
+            name: armorItem.name,
+            type: armorItem.type,
+            category: armorItem.category,
+            ac_base: armorItem.ac_base,
+            weight: armorItem.weight,
+            ac_add_dex: armorItem.ac_add_dex,
+            ac_cap_dex: armorItem.ac_cap_dex
+          });
+          
+          const mappedArmor = {
+            slug: armorItem.slug,
+            name: armorItem.name,
+            type: armorItem.type || 'armor',
+            rarity: 'common',
+            requires_attunement: false,
+            cost: armorItem.cost,
+            weight: armorItem.weight || 0, // Ensure weight is preserved
+            desc: armorItem.desc,
+            document__slug: armorItem.document__slug,
+            // Preserve armor-specific properties with better mapping
+            ac: armorItem.ac_base || 10, // Ensure AC is always set
+            ac_base: armorItem.ac_base || 10,
+            dex_bonus: armorItem.ac_add_dex !== false, // Convert to boolean, default true
+            max_dex_bonus: armorItem.ac_cap_dex || 999, // Default to no limit
+            category: 'armor' // Ensure all armor has 'armor' category
+          };
+          
+          console.log('Mapped armor result:', mappedArmor);
+          return mappedArmor;
+        });
         combinedEquipment.push(...armorEquipment);
+        console.log('=== END ARMOR PROCESSING ===');
       }
 
       console.log(`Combined equipment: ${combinedEquipment.length} items`);
-      console.log('Sample armor item:', combinedEquipment.find(item => item.type.includes('armor')));
+      const sampleArmor = combinedEquipment.find(item => item.type.includes('armor'));
+      console.log('Sample armor item after processing:', sampleArmor);
       this.cache.set('/equipment-combined', combinedEquipment);
       return combinedEquipment;
     } catch (error) {

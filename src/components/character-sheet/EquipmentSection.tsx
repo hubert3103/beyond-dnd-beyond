@@ -50,6 +50,15 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
     if (character.equipment?.starting_equipment) {
       console.log('Found starting equipment:', character.equipment.starting_equipment);
       character.equipment.starting_equipment.forEach((item: any) => {
+        console.log('Processing starting equipment item:', {
+          name: item.name,
+          weight: item.weight,
+          ac: item.ac,
+          ac_base: item.ac_base,
+          category: item.category,
+          type: item.type
+        });
+        
         characterEquipment.push({
           id: item.name || item.index,
           name: item.name,
@@ -57,7 +66,7 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
           weight: item.weight || 0,
           equipped: item.equipped || false,
           source: 'Starting Equipment',
-          category: item.category || 'adventuring-gear',
+          category: item.category || item.type || 'adventuring-gear',
           ...item
         });
       });
@@ -67,6 +76,15 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
     if (character.equipment?.inventory) {
       console.log('Found inventory:', character.equipment.inventory);
       character.equipment.inventory.forEach((item: any) => {
+        console.log('Processing inventory item:', {
+          name: item.name,
+          weight: item.weight,
+          ac: item.ac,
+          ac_base: item.ac_base,
+          category: item.category,
+          type: item.type
+        });
+        
         characterEquipment.push({
           id: item.name || item.index,
           name: item.name,
@@ -74,13 +92,13 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
           weight: item.weight || 0,
           equipped: item.equipped || false,
           source: 'Inventory',
-          category: item.category || 'adventuring-gear',
+          category: item.category || item.type || 'adventuring-gear',
           ...item
         });
       });
     }
 
-    console.log('Final equipment list:', characterEquipment);
+    console.log('Final equipment list with detailed info:', characterEquipment);
     return characterEquipment;
   };
 
