@@ -20,6 +20,7 @@ import SpellsSection from '../components/character-sheet/SpellsSection';
 import FeaturesTraits from '../components/character-sheet/FeaturesTraits';
 import CurrencyNotes from '../components/character-sheet/CurrencyNotes';
 import RestButtons from '../components/character-sheet/RestButtons';
+import BackgroundAppearance from '../components/character-sheet/BackgroundAppearance';
 import { TabType } from './PlayerDashboard';
 import { useCharacters } from '@/hooks/useCharacters';
 import { useToast } from '@/hooks/use-toast';
@@ -433,7 +434,8 @@ const CharacterSheet = () => {
         <EquipmentSection character={character} setCharacter={handleCharacterUpdate} />
         <SpellsSection character={character} setCharacter={handleCharacterUpdate} />
         <FeaturesTraits character={character} />
-        <CurrencyNotes />
+        <BackgroundAppearance character={character} />
+        <CurrencyNotes character={character} setCharacter={handleCharacterUpdate} />
       </main>
 
       {/* Bottom Navigation */}

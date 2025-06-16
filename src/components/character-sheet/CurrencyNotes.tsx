@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Coins, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,24 +10,75 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 
-const CurrencyNotes = () => {
+interface CurrencyNotesProps {
+  character: any;
+  setCharacter: (character: any) => void;
+}
+
+const CurrencyNotes = ({ character, setCharacter }: CurrencyNotesProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Initialize currency from character data
   const [currency, setCurrency] = useState({
-    cp: 23,
-    sp: 15,
-    ep: 2,
-    gp: 150,
-    pp: 3
+    cp: 0,
+    sp: 0,
+    ep: 0,
+    gp: 0,
+    pp: 0
   });
-  const [notes, setNotes] = useState(
-    "- Saved the village of Greenhill from goblin raiders\n- Has a standing invitation to stay at the Silver Stag Inn\n- Owes a favor to the ranger Kael Brightwood\n- Investigating strange magical disturbances in the Whispering Woods"
-  );
+  
+  const [notes, setNotes] = useState('');
+
+  // Load currency and notes from character data on mount
+  useEffect(() => {
+    if (character?.equipment?.currency) {
+      setCurrency({
+        cp: character.equipment.currency.cp || 0,
+        sp: character.equipment.currency.sp || 0,
+        ep: character.equipment.currency.ep || 0,
+        gp: character.equipment.currency.gp || 0,
+        pp: character.equipment.currency.pp || 0
+      });
+    }
+    
+    // Set notes from character background or default
+    if (character?.background_data?.notes) {
+      setNotes(character.background_data.notes);
+    } else {
+      setNotes('');
+    }
+  }, [character]);
 
   const handleCurrencyChange = (type: keyof typeof currency, value: string) => {
-    setCurrency({
+    const newCurrency = {
       ...currency,
       [type]: parseInt(value) || 0
-    });
+    };
+    setCurrency(newCurrency);
+    
+    // Update character data
+    const updatedCharacter = {
+      ...character,
+      equipment: {
+        ...character.equipment,
+        currency: newCurrency
+      }
+    };
+    setCharacter(updatedCharacter);
+  };
+
+  const handleNotesChange = (value: string) => {
+    setNotes(value);
+    
+    // Update character data
+    const updatedCharacter = {
+      ...character,
+      background_data: {
+        ...character.background_data,
+        notes: value
+      }
+    };
+    setCharacter(updatedCharacter);
   };
 
   const totalGoldValue = currency.cp * 0.01 + currency.sp * 0.1 + currency.ep * 0.5 + currency.gp + currency.pp * 10;
@@ -94,7 +145,7 @@ const CurrencyNotes = () => {
             
             <Textarea
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => handleNotesChange(e.target.value)}
               placeholder="Character notes, backstory, goals, important NPCs..."
               className="min-h-32 resize-none"
             />
