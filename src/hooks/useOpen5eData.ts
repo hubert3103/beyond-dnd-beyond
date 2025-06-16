@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { open5eApi, Open5eSpell, Open5eEquipment, Open5eRace, Open5eClass, Open5eBackground } from '../services/open5eApi';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Open5eData {
   spells: Open5eSpell[];
@@ -11,10 +12,11 @@ interface Open5eData {
   isLoading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
+  populateData: (type: string) => Promise<void>;
 }
 
 export const useOpen5eData = (): Open5eData => {
-  const [data, setData] = useState<Omit<Open5eData, 'refresh'>>({
+  const [data, setData] = useState<Omit<Open5eData, 'refresh' | 'populateData'>>({
     spells: [],
     equipment: [],
     races: [],
@@ -28,38 +30,31 @@ export const useOpen5eData = (): Open5eData => {
     try {
       setData(prev => ({ ...prev, isLoading: true, error: null }));
       
-      console.log('Starting to fetch Open5e data...');
+      console.log('Starting to fetch Open5e data from local database...');
       
-      // Fetch each resource individually to better handle failures
-      const [spells, races, classes, backgrounds] = await Promise.allSettled([
+      // Fetch all data in parallel since it's now from our local database
+      const [spells, equipment, races, classes, backgrounds] = await Promise.all([
         open5eApi.fetchSpells(),
+        open5eApi.fetchEquipment(),
         open5eApi.fetchRaces(),
         open5eApi.fetchClasses(),
         open5eApi.fetchBackgrounds(),
       ]);
 
-      // Try equipment separately since it's failing
-      let equipment: Open5eEquipment[] = [];
-      try {
-        equipment = await open5eApi.fetchEquipment();
-      } catch (equipmentError) {
-        console.warn('Equipment fetch failed, continuing without equipment data:', equipmentError);
-      }
-
       console.log('Fetch results:', {
-        spells: spells.status === 'fulfilled' ? spells.value.length : 'failed',
-        races: races.status === 'fulfilled' ? races.value.length : 'failed',
-        classes: classes.status === 'fulfilled' ? classes.value.length : 'failed',
-        backgrounds: backgrounds.status === 'fulfilled' ? backgrounds.value.length : 'failed',
-        equipment: equipment.length
+        spells: spells.length,
+        equipment: equipment.length,
+        races: races.length,
+        classes: classes.length,
+        backgrounds: backgrounds.length
       });
 
       setData({
-        spells: spells.status === 'fulfilled' ? spells.value : [],
+        spells,
         equipment,
-        races: races.status === 'fulfilled' ? races.value : [],
-        classes: classes.status === 'fulfilled' ? classes.value : [],
-        backgrounds: backgrounds.status === 'fulfilled' ? backgrounds.value : [],
+        races,
+        classes,
+        backgrounds,
         isLoading: false,
         error: null,
       });
@@ -70,6 +65,29 @@ export const useOpen5eData = (): Open5eData => {
         isLoading: false,
         error: 'Failed to load character data. Please try again.',
       }));
+    }
+  };
+
+  const populateData = async (type: string) => {
+    try {
+      console.log(`Starting data population for: ${type}`);
+      
+      const { data: functionData, error } = await supabase.functions.invoke('populate-open5e-data', {
+        body: { type }
+      });
+
+      if (error) {
+        console.error('Error calling populate function:', error);
+        throw error;
+      }
+
+      console.log('Population result:', functionData);
+      
+      // Refresh data after population
+      await refresh();
+    } catch (error) {
+      console.error('Error populating data:', error);
+      throw error;
     }
   };
 
@@ -85,5 +103,6 @@ export const useOpen5eData = (): Open5eData => {
   return {
     ...data,
     refresh,
+    populateData,
   };
 };
