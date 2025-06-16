@@ -36,15 +36,37 @@ const CharacterSheet = () => {
   const handleCharacterUpdate = async (updatedCharacter: any) => {
     setCharacter(updatedCharacter);
     
-    // Update the database with the new hit points
-    if (id && updatedCharacter.hit_points) {
+    // Update the database with the updated character data
+    if (id) {
       try {
-        await updateCharacter(id, {
-          hit_points: updatedCharacter.hit_points
-        });
-        console.log('Character HP updated in database');
+        const updateData: any = {};
+        
+        // Always update hit points if they exist
+        if (updatedCharacter.hit_points) {
+          updateData.hit_points = updatedCharacter.hit_points;
+        }
+        
+        // Update equipment if it exists
+        if (updatedCharacter.equipment) {
+          updateData.equipment = updatedCharacter.equipment;
+        }
+        
+        // Update abilities if they exist
+        if (updatedCharacter.abilities) {
+          updateData.abilities = updatedCharacter.abilities;
+        }
+        
+        console.log('Updating character in database with data:', updateData);
+        
+        await updateCharacter(id, updateData);
+        console.log('Character updated successfully in database');
       } catch (error) {
         console.error('Failed to update character in database:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save character changes",
+          variant: "destructive",
+        });
       }
     }
   };
