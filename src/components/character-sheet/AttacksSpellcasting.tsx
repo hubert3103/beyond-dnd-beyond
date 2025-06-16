@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Sword, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -70,24 +69,50 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
         Math.floor((character.abilities.dexterity.score - 10) / 2) :
         Math.floor((character.abilities.strength.score - 10) / 2);
       
-      // Get damage - try multiple possible formats
-      let damage = item.damage || item.damage_dice || '1d4';
-      if (typeof damage === 'object' && damage.damage_dice) {
-        damage = damage.damage_dice;
+      // Get damage - handle multiple possible API data structures
+      let damage = '1d4'; // Default fallback
+      let damageType = 'bludgeoning'; // Default fallback
+      
+      console.log('Item damage structure:', item.damage);
+      
+      // Check for Open5e API weapon structure
+      if (item.damage && typeof item.damage === 'object') {
+        if (item.damage.damage_dice) {
+          damage = item.damage.damage_dice;
+        }
+        if (item.damage.damage_type) {
+          damageType = item.damage.damage_type;
+        }
+      } 
+      // Check for direct damage_dice property
+      else if (item.damage_dice) {
+        damage = item.damage_dice;
+        damageType = item.damage_type || 'bludgeoning';
+      }
+      // Check for simple damage property
+      else if (item.damage && typeof item.damage === 'string') {
+        damage = item.damage;
+        damageType = item.damage_type || 'bludgeoning';
+      }
+      // Check if damage is stored at root level with different naming
+      else if (item.damage_die) {
+        damage = item.damage_die;
+        damageType = item.damage_type || 'bludgeoning';
       }
       
-      // Get damage type
-      let damageType = item.damage_type || 'bludgeoning';
-      if (typeof damageType === 'object' && damageType.damage_type) {
-        damageType = damageType.damage_type;
-      }
+      // Add ability modifier to damage if it's not already included
+      const finalDamage = damage.includes('+') || damage.includes('-') ? 
+        damage : 
+        `${damage}${abilityModifier >= 0 ? '+' : ''}${abilityModifier}`;
+      
+      console.log('Final weapon damage:', finalDamage, 'type:', damageType);
       
       return {
         id: item.index || item.name,
         name: item.name,
         type: 'weapon',
         attackBonus: `+${abilityModifier + character.proficiencyBonus}`,
-        damage: damage,
+        damage: finalDamage,
         damageType: damageType,
         uses: null
       };
