@@ -52,7 +52,7 @@ export const useCharacters = () => {
       // Map the data to ensure spell_slots is always defined
       const mappedData = (data || []).map(character => ({
         ...character,
-        spell_slots: character.spell_slots || {} // Ensure spell_slots always exists, default to empty object
+        spell_slots: (character as any).spell_slots || {} // Use type assertion to access spell_slots
       }));
       
       setCharacters(mappedData);
@@ -182,10 +182,10 @@ export const useCharacters = () => {
 
       if (error) throw error;
       
-      // Ensure spell_slots exists in the returned character
+      // Ensure spell_slots exists in the returned character using type assertion
       return {
         ...data,
-        spell_slots: data.spell_slots || {}
+        spell_slots: (data as any).spell_slots || {}
       };
     } catch (error) {
       console.error('Error fetching character:', error);
