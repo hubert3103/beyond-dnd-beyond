@@ -18,23 +18,29 @@ export const useInfiniteScroll = ({ items, itemsPerPage = 100 }: UseInfiniteScro
     setDisplayedItems(initialItems);
     setCurrentPage(1);
     setHasMore(items.length > itemsPerPage);
+    setIsLoading(false);
   }, [items, itemsPerPage]);
 
   const loadMore = useCallback(() => {
-    if (isLoading || !hasMore) return;
+    if (isLoading || !hasMore) {
+      console.log('Load more blocked:', { isLoading, hasMore });
+      return;
+    }
 
+    console.log('Loading more items...', { currentPage, totalItems: items.length });
     setIsLoading(true);
     
     // Simulate a small delay to show loading state
     setTimeout(() => {
-      const nextPage = currentPage + 1;
-      const startIndex = nextPage * itemsPerPage;
+      const startIndex = currentPage * itemsPerPage;
       const endIndex = startIndex + itemsPerPage;
-      const newItems = items.slice(itemsPerPage * currentPage, endIndex);
+      const newItems = items.slice(startIndex, endIndex);
+      
+      console.log('New items loaded:', { startIndex, endIndex, newItemsCount: newItems.length });
       
       if (newItems.length > 0) {
         setDisplayedItems(prev => [...prev, ...newItems]);
-        setCurrentPage(nextPage);
+        setCurrentPage(prev => prev + 1);
         setHasMore(endIndex < items.length);
       } else {
         setHasMore(false);
@@ -46,12 +52,16 @@ export const useInfiniteScroll = ({ items, itemsPerPage = 100 }: UseInfiniteScro
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    const threshold = 100; // Load more when 100px from bottom
+    const threshold = 200; // Load more when 200px from bottom
     
-    if (scrollHeight - scrollTop <= clientHeight + threshold) {
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    console.log('Scroll event:', { scrollTop, scrollHeight, clientHeight, distanceFromBottom, threshold });
+    
+    if (distanceFromBottom <= threshold && !isLoading && hasMore) {
+      console.log('Triggering load more...');
       loadMore();
     }
-  }, [loadMore]);
+  }, [loadMore, isLoading, hasMore]);
 
   return {
     displayedItems,
