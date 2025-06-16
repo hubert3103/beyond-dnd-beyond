@@ -52,48 +52,26 @@ const CharacterSheet = () => {
             id: characterData.id,
             name: characterData.name,
             level: characterData.level,
-            class: characterData.class_name || 'Unknown',
-            race: characterData.species_name || 'Unknown',
+            class_name: characterData.class_name,
+            class_data: characterData.class_data,
+            species_name: characterData.species_name,
+            species_data: characterData.species_data,
+            background_name: characterData.background_name,
+            background_data: characterData.background_data,
             avatar: '/avatarPlaceholder.svg',
-            currentHP: characterData.hit_points?.current || 78,
-            maxHP: characterData.hit_points?.max || 85,
+            // Use stored hit points or calculate them
+            currentHP: characterData.hit_points?.current || this.calculateInitialHP(characterData),
+            maxHP: characterData.hit_points?.max || this.calculateInitialHP(characterData),
             tempHP: characterData.hit_points?.temporary || 0,
+            hit_points: characterData.hit_points,
+            hit_point_type: characterData.hit_point_type,
             proficiencyBonus: Math.ceil(characterData.level / 4) + 1,
-            abilities: {
-              strength: { 
-                score: characterData.abilities?.str?.total || 10, 
-                modifier: Math.floor((characterData.abilities?.str?.total || 10 - 10) / 2), 
-                proficient: false 
-              },
-              dexterity: { 
-                score: characterData.abilities?.dex?.total || 10, 
-                modifier: Math.floor((characterData.abilities?.dex?.total || 10 - 10) / 2), 
-                proficient: true 
-              },
-              constitution: { 
-                score: characterData.abilities?.con?.total || 10, 
-                modifier: Math.floor((characterData.abilities?.con?.total || 10 - 10) / 2), 
-                proficient: false 
-              },
-              intelligence: { 
-                score: characterData.abilities?.int?.total || 10, 
-                modifier: Math.floor((characterData.abilities?.int?.total || 10 - 10) / 2), 
-                proficient: false 
-              },
-              wisdom: { 
-                score: characterData.abilities?.wis?.total || 10, 
-                modifier: Math.floor((characterData.abilities?.wis?.total || 10 - 10) / 2), 
-                proficient: true 
-              },
-              charisma: { 
-                score: characterData.abilities?.cha?.total || 10, 
-                modifier: Math.floor((characterData.abilities?.cha?.total || 10 - 10) / 2), 
-                proficient: false 
-              }
-            },
-            armorClass: 16,
+            abilities: characterData.abilities,
+            equipment: characterData.equipment,
+            spells: characterData.spells || [],
+            armorClass: this.calculateArmorClass(characterData),
             initiative: Math.floor((characterData.abilities?.dex?.total || 10 - 10) / 2),
-            speed: 30
+            speed: this.calculateSpeed(characterData)
           };
           
           setCharacter(formattedCharacter);
@@ -118,6 +96,42 @@ const CharacterSheet = () => {
       } finally {
         setIsLoading(false);
       }
+    };
+
+    // Helper functions to calculate derived stats
+    const calculateInitialHP = (characterData: any) => {
+      if (!characterData.class_data) return 1;
+      const conModifier = Math.floor((characterData.abilities?.con?.total || 10 - 10) / 2);
+      if (characterData.hit_point_type === 'fixed') {
+        return (characterData.class_data.hit_die || 8) + conModifier;
+      }
+      return characterData.hit_points?.max || ((characterData.class_data.hit_die || 8) + conModifier);
+    };
+
+    const calculateArmorClass = (characterData: any) => {
+      const dexModifier = Math.floor((characterData.abilities?.dex?.total || 10 - 10) / 2);
+      let baseAC = 10 + dexModifier;
+      
+      // Check for armor in equipment
+      if (characterData.equipment?.starting_equipment) {
+        const armor = characterData.equipment.starting_equipment.find((item: any) => 
+          item.category === 'armor' && item.equipped
+        );
+        if (armor && armor.ac) {
+          baseAC = armor.ac + (armor.dex_bonus ? Math.min(dexModifier, armor.max_dex_bonus || dexModifier) : 0);
+        }
+      }
+      
+      return baseAC;
+    };
+
+    const calculateSpeed = (characterData: any) => {
+      // Default speed, could be modified by species
+      let speed = 30;
+      if (characterData.species_data?.speed) {
+        speed = characterData.species_data.speed;
+      }
+      return speed;
     };
 
     loadCharacter();
@@ -233,10 +247,10 @@ const CharacterSheet = () => {
         <SavingThrowsSkills character={character} />
         <PassiveScoresDefenses character={character} setCharacter={setCharacter} />
         <HitPointsHitDice character={character} setCharacter={setCharacter} />
-        <AttacksSpellcasting />
-        <EquipmentSection />
-        <SpellsSection />
-        <FeaturesTraits />
+        <AttacksSpellcasting character={character} />
+        <EquipmentSection character={character} />
+        <SpellsSection character={character} />
+        <FeaturesTraits character={character} />
         <CurrencyNotes />
       </main>
 

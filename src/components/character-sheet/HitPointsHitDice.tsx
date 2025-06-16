@@ -15,21 +15,63 @@ interface HitPointsHitDiceProps {
 
 const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Calculate hit points based on character creation choices
+  const calculateMaxHP = () => {
+    if (!character.class_data) return 1;
+    
+    const classData = character.class_data;
+    const conModifier = Math.floor((character.abilities.constitution.score - 10) / 2);
+    let maxHP = 0;
+
+    // Base HP at level 1
+    if (character.hit_point_type === 'fixed') {
+      maxHP = classData.hit_die + conModifier;
+    } else {
+      // For rolled or manual entry, use stored value or calculate average
+      maxHP = character.hit_points?.max || Math.floor(classData.hit_die / 2) + 1 + conModifier;
+    }
+
+    // Add HP for additional levels (if above level 1)
+    for (let level = 2; level <= character.level; level++) {
+      if (character.hit_point_type === 'fixed') {
+        maxHP += Math.floor(classData.hit_die / 2) + 1 + conModifier;
+      } else {
+        // For other methods, use stored progression or calculate average
+        maxHP += Math.floor(classData.hit_die / 2) + 1 + conModifier;
+      }
+    }
+
+    return Math.max(1, maxHP);
+  };
+
+  const maxHP = calculateMaxHP();
+  const currentHP = character.hit_points?.current || maxHP;
+  const tempHP = character.hit_points?.temporary || 0;
+
   const [hitDice] = useState({
     total: character.level,
-    remaining: Math.floor(character.level * 0.6), // Mock remaining dice
-    dieType: 'd8' // For Druids
+    remaining: character.hit_points?.hit_dice_remaining || character.level,
+    dieType: character.class_data?.hit_die ? `d${character.class_data.hit_die}` : 'd8'
   });
 
   const rollHitDie = () => {
     if (hitDice.remaining > 0) {
-      // Simulate rolling a hit die + CON modifier
-      const roll = Math.floor(Math.random() * 8) + 1;
+      const dieSize = character.class_data?.hit_die || 8;
+      const roll = Math.floor(Math.random() * dieSize) + 1;
       const conModifier = Math.floor((character.abilities.constitution.score - 10) / 2);
-      const healing = roll + conModifier;
+      const healing = Math.max(1, roll + conModifier); // Minimum 1 HP
       
-      const newHP = Math.min(character.maxHP, character.currentHP + healing);
-      setCharacter({ ...character, currentHP: newHP });
+      const newHP = Math.min(maxHP, currentHP + healing);
+      const updatedCharacter = {
+        ...character,
+        hit_points: {
+          ...character.hit_points,
+          current: newHP,
+          hit_dice_remaining: hitDice.remaining - 1
+        }
+      };
+      setCharacter(updatedCharacter);
       
       console.log(`Rolled ${roll} + ${conModifier} CON = ${healing} healing`);
     }
@@ -53,15 +95,15 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-gray-50 rounded-lg p-3 text-center">
               <div className="text-xs text-gray-600 mb-1">Current HP</div>
-              <div className="text-xl font-bold text-red-600">{character.currentHP}</div>
+              <div className="text-xl font-bold text-red-600">{currentHP}</div>
             </div>
             <div className="bg-gray-50 rounded-lg p-3 text-center">
               <div className="text-xs text-gray-600 mb-1">Max HP</div>
-              <div className="text-xl font-bold">{character.maxHP}</div>
+              <div className="text-xl font-bold">{maxHP}</div>
             </div>
             <div className="bg-gray-50 rounded-lg p-3 text-center">
               <div className="text-xs text-gray-600 mb-1">Temp HP</div>
-              <div className="text-xl font-bold text-blue-600">{character.tempHP}</div>
+              <div className="text-xl font-bold text-blue-600">{tempHP}</div>
             </div>
           </div>
 
@@ -99,7 +141,7 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
           </div>
 
           {/* Death Saves (if HP is 0) */}
-          {character.currentHP === 0 && (
+          {currentHP === 0 && (
             <div className="space-y-3">
               <h3 className="font-medium text-gray-700">Death Saving Throws</h3>
               <div className="grid grid-cols-2 gap-4">

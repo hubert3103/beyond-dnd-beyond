@@ -8,51 +8,98 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 
-const SpellsSection = () => {
+interface SpellsSectionProps {
+  character: any;
+}
+
+const SpellsSection = ({ character }: SpellsSectionProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState(0);
   
-  // Mock spell data
-  const [spellSlots] = useState({
-    0: { max: 4, used: 0 }, // Cantrips
-    1: { max: 4, used: 1 },
-    2: { max: 3, used: 2 },
-    3: { max: 3, used: 0 },
-    4: { max: 3, used: 1 },
-    5: { max: 1, used: 0 }
-  });
+  // Check if character is a spellcaster
+  const isSpellcaster = () => {
+    const spellcasterClasses = ['wizard', 'sorcerer', 'warlock', 'bard', 'cleric', 'druid', 'artificer', 'paladin', 'ranger'];
+    return spellcasterClasses.includes(character.class_name?.toLowerCase() || '');
+  };
 
-  const [spells] = useState({
-    0: [ // Cantrips
-      { name: 'Druidcraft', prepared: true },
-      { name: 'Thorn Whip', prepared: true },
-      { name: 'Guidance', prepared: true },
-      { name: 'Mending', prepared: true }
-    ],
-    1: [
-      { name: 'Cure Wounds', prepared: true },
-      { name: 'Entangle', prepared: true },
-      { name: 'Faerie Fire', prepared: true },
-      { name: 'Goodberry', prepared: false }
-    ],
-    2: [
-      { name: 'Heat Metal', prepared: true },
-      { name: 'Pass without Trace', prepared: true },
-      { name: 'Barkskin', prepared: false }
-    ],
-    3: [
-      { name: 'Call Lightning', prepared: true },
-      { name: 'Conjure Animals', prepared: true },
-      { name: 'Dispel Magic', prepared: false }
-    ],
-    4: [
-      { name: 'Wall of Fire', prepared: true },
-      { name: 'Ice Storm', prepared: false }
-    ],
-    5: [
-      { name: 'Tree Stride', prepared: true }
-    ]
-  });
+  // Get spell slots based on class and level
+  const getSpellSlots = () => {
+    if (!isSpellcaster()) return {};
+    
+    const className = character.class_name?.toLowerCase();
+    const level = character.level;
+    
+    // Simplified spell slot calculation - this would need to be more comprehensive
+    const slots: { [key: number]: { max: number; used: number } } = {};
+    
+    if (level >= 1) {
+      switch (className) {
+        case 'wizard':
+        case 'sorcerer':
+        case 'bard':
+        case 'cleric':
+        case 'druid':
+          if (level >= 1) slots[1] = { max: 2, used: 0 };
+          if (level >= 3) slots[2] = { max: 1, used: 0 };
+          if (level >= 5) slots[3] = { max: 1, used: 0 };
+          break;
+        case 'warlock':
+          slots[1] = { max: 1, used: 0 };
+          break;
+        case 'paladin':
+        case 'ranger':
+          if (level >= 2) slots[1] = { max: 2, used: 0 };
+          break;
+      }
+    }
+    
+    return slots;
+  };
+
+  // Get character's spells
+  const getCharacterSpells = () => {
+    if (!character.spells || !isSpellcaster()) return {};
+    
+    const spellsByLevel: { [key: number]: any[] } = {};
+    
+    character.spells.forEach((spell: any) => {
+      const level = spell.level || 0;
+      if (!spellsByLevel[level]) {
+        spellsByLevel[level] = [];
+      }
+      spellsByLevel[level].push(spell);
+    });
+    
+    return spellsByLevel;
+  };
+
+  if (!isSpellcaster()) {
+    return (
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <div className="bg-white rounded-lg overflow-hidden">
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="ghost"
+              className="w-full p-4 flex items-center justify-between hover:bg-gray-50"
+            >
+              <span className="text-lg font-semibold">Spells</span>
+              {isOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+            </Button>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent className="px-4 pb-4">
+            <div className="text-center py-8 text-gray-500">
+              <p>This character is not a spellcaster</p>
+              <p className="text-sm">{character.class_name} does not have spellcasting abilities</p>
+            </div>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+    );
+  }
+
+  const spellSlots = getSpellSlots();
+  const characterSpells = getCharacterSpells();
 
   const spellLevels = [
     { level: 0, name: 'Cantrips' },
@@ -61,12 +108,12 @@ const SpellsSection = () => {
     { level: 3, name: '3rd Level' },
     { level: 4, name: '4th Level' },
     { level: 5, name: '5th Level' }
-  ];
+  ].filter(level => level.level === 0 || spellSlots[level.level] || characterSpells[level.level]);
 
   const castSpell = (spellLevel: number) => {
     if (spellLevel === 0) return; // Cantrips don't use slots
     
-    const slots = spellSlots[spellLevel as keyof typeof spellSlots];
+    const slots = spellSlots[spellLevel];
     if (slots && slots.used < slots.max) {
       console.log(`Cast spell using level ${spellLevel} slot`);
       // In real implementation, would update spell slots
@@ -87,90 +134,103 @@ const SpellsSection = () => {
         </CollapsibleTrigger>
         
         <CollapsibleContent className="px-4 pb-4 space-y-4">
-          {/* Spell Level Tabs */}
-          <div className="flex overflow-x-auto space-x-2 pb-2">
-            {spellLevels.map((level) => (
-              <Button
-                key={level.level}
-                variant={selectedLevel === level.level ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedLevel(level.level)}
-                className="whitespace-nowrap"
-              >
-                {level.name}
-                {level.level > 0 && spellSlots[level.level as keyof typeof spellSlots] && (
-                  <span className="ml-1 text-xs">
-                    ({spellSlots[level.level as keyof typeof spellSlots].max - spellSlots[level.level as keyof typeof spellSlots].used})
-                  </span>
-                )}
-              </Button>
-            ))}
-          </div>
-
-          {/* Spell Slots Display (for leveled spells) */}
-          {selectedLevel > 0 && spellSlots[selectedLevel as keyof typeof spellSlots] && (
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">
-                  {spellLevels.find(l => l.level === selectedLevel)?.name} Spell Slots
-                </span>
-                <span className="text-sm text-gray-600">
-                  {spellSlots[selectedLevel as keyof typeof spellSlots].max - spellSlots[selectedLevel as keyof typeof spellSlots].used} / {spellSlots[selectedLevel as keyof typeof spellSlots].max}
-                </span>
-              </div>
-              <div className="flex space-x-1">
-                {Array.from({ length: spellSlots[selectedLevel as keyof typeof spellSlots].max }, (_, i) => (
-                  <Circle
-                    key={i}
-                    className={`h-4 w-4 ${
-                      i < spellSlots[selectedLevel as keyof typeof spellSlots].used
-                        ? 'fill-gray-400 text-gray-400'
-                        : 'fill-blue-600 text-blue-600'
-                    }`}
-                  />
+          {spellLevels.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No spells known</p>
+              <p className="text-sm">Learn spells to see them here</p>
+            </div>
+          ) : (
+            <>
+              {/* Spell Level Tabs */}
+              <div className="flex overflow-x-auto space-x-2 pb-2">
+                {spellLevels.map((level) => (
+                  <Button
+                    key={level.level}
+                    variant={selectedLevel === level.level ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedLevel(level.level)}
+                    className="whitespace-nowrap"
+                  >
+                    {level.name}
+                    {level.level > 0 && spellSlots[level.level] && (
+                      <span className="ml-1 text-xs">
+                        ({spellSlots[level.level].max - spellSlots[level.level].used})
+                      </span>
+                    )}
+                  </Button>
                 ))}
               </div>
-            </div>
-          )}
 
-          {/* Spells List */}
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {spells[selectedLevel as keyof typeof spells]?.map((spell, index) => (
-              <div
-                key={index}
-                className={`border rounded-lg p-3 flex items-center justify-between ${
-                  spell.prepared ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
-                } transition-colors`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="text-gray-600">
-                    <Zap className="h-4 w-4" />
+              {/* Spell Slots Display (for leveled spells) */}
+              {selectedLevel > 0 && spellSlots[selectedLevel] && (
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">
+                      {spellLevels.find(l => l.level === selectedLevel)?.name} Spell Slots
+                    </span>
+                    <span className="text-sm text-gray-600">
+                      {spellSlots[selectedLevel].max - spellSlots[selectedLevel].used} / {spellSlots[selectedLevel].max}
+                    </span>
                   </div>
-                  <div>
-                    <h4 className="font-medium text-gray-900 flex items-center space-x-2">
-                      <span>{spell.name}</span>
-                      {spell.prepared && (
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                          Prepared
-                        </span>
-                      )}
-                    </h4>
+                  <div className="flex space-x-1">
+                    {Array.from({ length: spellSlots[selectedLevel].max }, (_, i) => (
+                      <Circle
+                        key={i}
+                        className={`h-4 w-4 ${
+                          i < spellSlots[selectedLevel].used
+                            ? 'fill-gray-400 text-gray-400'
+                            : 'fill-blue-600 text-blue-600'
+                        }`}
+                      />
+                    ))}
                   </div>
                 </div>
-                
-                {spell.prepared && (
-                  <Button
-                    size="sm"
-                    className="bg-red-600 hover:bg-red-700"
-                    onClick={() => castSpell(selectedLevel)}
-                    disabled={selectedLevel > 0 && spellSlots[selectedLevel as keyof typeof spellSlots]?.used >= spellSlots[selectedLevel as keyof typeof spellSlots]?.max}
+              )}
+
+              {/* Spells List */}
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {characterSpells[selectedLevel]?.map((spell, index) => (
+                  <div
+                    key={index}
+                    className={`border rounded-lg p-3 flex items-center justify-between ${
+                      spell.prepared ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+                    } transition-colors`}
                   >
-                    Cast
-                  </Button>
+                    <div className="flex items-center space-x-3">
+                      <div className="text-gray-600">
+                        <Zap className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900 flex items-center space-x-2">
+                          <span>{spell.name}</span>
+                          {spell.prepared && (
+                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                              Prepared
+                            </span>
+                          )}
+                        </h4>
+                      </div>
+                    </div>
+                    
+                    {spell.prepared && (
+                      <Button
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700"
+                        onClick={() => castSpell(selectedLevel)}
+                        disabled={selectedLevel > 0 && spellSlots[selectedLevel]?.used >= spellSlots[selectedLevel]?.max}
+                      >
+                        Cast
+                      </Button>
+                    )}
+                  </div>
+                )) || (
+                  <div className="text-center py-4 text-gray-500">
+                    <p>No spells at this level</p>
+                  </div>
                 )}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </CollapsibleContent>
       </div>
     </Collapsible>

@@ -8,23 +8,54 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 
-const EquipmentSection = () => {
+interface EquipmentSectionProps {
+  character: any;
+}
+
+const EquipmentSection = ({ character }: EquipmentSectionProps) => {
   const [isOpen, setIsOpen] = useState(false);
   
-  // Mock equipment data
-  const [equipment] = useState([
-    { id: 1, name: 'Leather Armor', quantity: 1, weight: 10, equipped: true },
-    { id: 2, name: 'Scimitar', quantity: 1, weight: 3, equipped: true },
-    { id: 3, name: 'Longbow', quantity: 1, weight: 2, equipped: true },
-    { id: 4, name: 'Arrows', quantity: 60, weight: 3, equipped: false },
-    { id: 5, name: 'Explorer\'s Pack', quantity: 1, weight: 10, equipped: false },
-    { id: 6, name: 'Thieves\' Tools', quantity: 1, weight: 1, equipped: false },
-    { id: 7, name: 'Gold Pieces', quantity: 150, weight: 0, equipped: false },
-    { id: 8, name: 'Healing Potion', quantity: 3, weight: 1.5, equipped: false }
-  ]);
+  // Get equipment from character's starting equipment and inventory
+  const getCharacterEquipment = () => {
+    const equipment = [];
+    
+    // Add starting equipment
+    if (character.equipment?.starting_equipment) {
+      character.equipment.starting_equipment.forEach((item: any) => {
+        equipment.push({
+          id: item.name || item.index,
+          name: item.name,
+          quantity: item.quantity || 1,
+          weight: item.weight || 0,
+          equipped: item.equipped || false,
+          source: 'Starting Equipment'
+        });
+      });
+    }
 
+    // Add inventory items
+    if (character.equipment?.inventory) {
+      character.equipment.inventory.forEach((item: any) => {
+        equipment.push({
+          id: item.name || item.index,
+          name: item.name,
+          quantity: item.quantity || 1,
+          weight: item.weight || 0,
+          equipped: item.equipped || false,
+          source: 'Inventory'
+        });
+      });
+    }
+
+    return equipment;
+  };
+
+  const equipment = getCharacterEquipment();
   const totalWeight = equipment.reduce((sum, item) => sum + (item.weight * item.quantity), 0);
-  const carryingCapacity = 180; // Example for STR 12
+  
+  // Calculate carrying capacity based on Strength score
+  const strScore = character.abilities.strength.score;
+  const carryingCapacity = strScore * 15; // Base carrying capacity
   const isEncumbered = totalWeight > carryingCapacity;
 
   return (
@@ -66,41 +97,48 @@ const EquipmentSection = () => {
           </div>
 
           {/* Equipment List */}
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {equipment.map((item) => (
-              <div
-                key={item.id}
-                className={`border rounded-lg p-3 flex items-center justify-between ${
-                  item.equipped ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
-                } transition-colors`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="text-gray-600">
-                    <Package className="h-4 w-4" />
+          {equipment.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No equipment found</p>
+              <p className="text-sm">Equipment from character creation will appear here</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {equipment.map((item) => (
+                <div
+                  key={`${item.id}-${item.source}`}
+                  className={`border rounded-lg p-3 flex items-center justify-between ${
+                    item.equipped ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
+                  } transition-colors`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="text-gray-600">
+                      <Package className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900 flex items-center space-x-2">
+                        <span>{item.name}</span>
+                        {item.equipped && (
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                            Equipped
+                          </span>
+                        )}
+                      </h4>
+                      <div className="text-sm text-gray-600">
+                        Qty: {item.quantity} • Weight: {item.weight} lbs each • {item.source}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-medium text-gray-900 flex items-center space-x-2">
-                      <span>{item.name}</span>
-                      {item.equipped && (
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                          Equipped
-                        </span>
-                      )}
-                    </h4>
-                    <div className="text-sm text-gray-600">
-                      Qty: {item.quantity} • Weight: {item.weight} lbs each
+                  
+                  <div className="text-right">
+                    <div className="text-sm font-medium">
+                      {(item.weight * item.quantity).toFixed(1)} lbs
                     </div>
                   </div>
                 </div>
-                
-                <div className="text-right">
-                  <div className="text-sm font-medium">
-                    {(item.weight * item.quantity).toFixed(1)} lbs
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
           
           <Button
             variant="outline"
