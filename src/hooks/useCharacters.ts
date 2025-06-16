@@ -19,7 +19,7 @@ export interface Character {
   hit_points: any;
   equipment: any;
   spells: any;
-  spell_slots: any;
+  spell_slots?: any; // Make this optional since it might not exist in all records
   sources: any;
   advancement_type: string | null;
   hit_point_type: string | null;
@@ -48,7 +48,14 @@ export const useCharacters = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCharacters(data || []);
+      
+      // Map the data to ensure spell_slots is always defined
+      const mappedData = (data || []).map(character => ({
+        ...character,
+        spell_slots: character.spell_slots || {} // Ensure spell_slots always exists, default to empty object
+      }));
+      
+      setCharacters(mappedData);
     } catch (error) {
       console.error('Error fetching characters:', error);
       toast({
@@ -87,6 +94,7 @@ export const useCharacters = () => {
         hit_points: characterData.hitPoints || null,
         equipment: characterData.equipment || null,
         spells: characterData.spells || null,
+        spell_slots: characterData.spellSlots || {}, // Include spell_slots in new characters
         sources: characterData.sources || null,
         advancement_type: characterData.advancementType || null,
         hit_point_type: characterData.hitPointType || null,
@@ -173,7 +181,12 @@ export const useCharacters = () => {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      // Ensure spell_slots exists in the returned character
+      return {
+        ...data,
+        spell_slots: data.spell_slots || {}
+      };
     } catch (error) {
       console.error('Error fetching character:', error);
       return null;
