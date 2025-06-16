@@ -36,10 +36,10 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
       const availableSources = open5eApi.getAvailableSources(classes);
       console.log('Available sources in classes:', availableSources);
       
-      // Define source categories based on actual document slugs
-      const coreRuleSources = ['5esrd', 'cc'];  // Core rule sources
-      const expansionSources = ['xge', 'tce', 'vgm', 'mtf'];  // Expansion sources
-      const homebrewSources = ['kp'];  // Homebrew/third-party sources
+      // Define source categories based on actual document slugs from the API
+      const coreRuleSources = ['wotc-srd'];  // This is what's actually in the API
+      const expansionSources = ['toh'];  // Tome of Heroes appears to be expansion content
+      const homebrewSources = ['kp'];  // Kobold Press - third party
       
       let allowedSources: string[] = [];
       
@@ -85,8 +85,8 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
 
   const getSourceDisplayName = (source: string) => {
     switch (source) {
-      case '5esrd': return 'Core Rules (SRD)';
-      case 'cc': return 'Core Rules (CC)';
+      case 'wotc-srd': return 'Core Rules (SRD)';
+      case 'toh': return 'Tome of Heroes';
       case 'kp': return 'Kobold Press';
       case 'xge': return "Xanathar's Guide";
       case 'tce': return "Tasha's Cauldron";
