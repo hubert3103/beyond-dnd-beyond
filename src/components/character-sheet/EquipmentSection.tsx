@@ -19,8 +19,11 @@ const EquipmentSection = ({ character }: EquipmentSectionProps) => {
   const getCharacterEquipment = () => {
     const equipment = [];
     
+    console.log('Getting equipment for character:', character.equipment);
+    
     // Add starting equipment
     if (character.equipment?.starting_equipment) {
+      console.log('Found starting equipment:', character.equipment.starting_equipment);
       character.equipment.starting_equipment.forEach((item: any) => {
         equipment.push({
           id: item.name || item.index,
@@ -35,6 +38,7 @@ const EquipmentSection = ({ character }: EquipmentSectionProps) => {
 
     // Add inventory items
     if (character.equipment?.inventory) {
+      console.log('Found inventory:', character.equipment.inventory);
       character.equipment.inventory.forEach((item: any) => {
         equipment.push({
           id: item.name || item.index,
@@ -47,6 +51,7 @@ const EquipmentSection = ({ character }: EquipmentSectionProps) => {
       });
     }
 
+    console.log('Final equipment list:', equipment);
     return equipment;
   };
 

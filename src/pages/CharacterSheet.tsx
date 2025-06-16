@@ -144,13 +144,24 @@ const CharacterSheet = () => {
             const dexModifier = formattedAbilities.dexterity.modifier;
             let baseAC = 10 + dexModifier;
             
+            console.log('Calculating AC with equipment:', characterData.equipment);
+            
             // Check for armor in equipment
             if (characterData.equipment?.starting_equipment) {
               const armor = characterData.equipment.starting_equipment.find((item: any) => 
                 item.category === 'armor' && item.equipped
               );
+              
+              console.log('Found armor:', armor);
+              
               if (armor && armor.ac) {
-                baseAC = armor.ac + (armor.dex_bonus ? Math.min(dexModifier, armor.max_dex_bonus || dexModifier) : 0);
+                if (armor.dex_bonus !== false) {
+                  const maxDexBonus = armor.max_dex_bonus || 999;
+                  baseAC = armor.ac + Math.min(dexModifier, maxDexBonus);
+                } else {
+                  baseAC = armor.ac;
+                }
+                console.log('Calculated AC with armor:', baseAC);
               }
             }
             
@@ -199,6 +210,10 @@ const CharacterSheet = () => {
           const maxHP = characterData.hit_points?.max || calculateInitialHP(characterData, formattedAbilities);
           const currentHP = characterData.hit_points?.current !== undefined ? characterData.hit_points.current : maxHP;
 
+          // Calculate armor class with equipment
+          const calculatedAC = calculateArmorClass(characterData, formattedAbilities);
+          console.log('Final calculated AC:', calculatedAC);
+
           // Convert database character to the format expected by the character sheet
           const formattedCharacter = {
             id: characterData.id,
@@ -226,12 +241,12 @@ const CharacterSheet = () => {
             abilities: formattedAbilities,
             equipment: characterData.equipment,
             spells: characterData.spells || [],
-            armorClass: calculateArmorClass(characterData, formattedAbilities),
+            armorClass: calculatedAC,
             initiative: formattedAbilities.dexterity.modifier,
             speed: calculatedSpeed
           };
           
-          console.log('Final formatted character with speed:', formattedCharacter.speed);
+          console.log('Final formatted character with AC:', formattedCharacter.armorClass);
           setCharacter(formattedCharacter);
           console.log('Character formatted and set:', formattedCharacter);
         } else {

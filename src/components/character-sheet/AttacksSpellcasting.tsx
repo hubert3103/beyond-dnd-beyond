@@ -19,16 +19,28 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
   const getCharacterAttacks = () => {
     const attacks = [];
     
+    // Always add unarmed attack
+    const strModifier = Math.floor((character.abilities.strength.score - 10) / 2);
+    attacks.push({
+      id: 'unarmed',
+      name: 'Unarmed Strike',
+      type: 'weapon',
+      attackBonus: `+${strModifier + character.proficiencyBonus}`,
+      damage: `1 + ${strModifier >= 0 ? '+' : ''}${strModifier}`,
+      damageType: 'bludgeoning',
+      uses: null
+    });
+    
     // Add weapon attacks from equipment
     if (character.equipment?.starting_equipment) {
       character.equipment.starting_equipment.forEach((item: any) => {
-        if (item.category === 'weapon') {
+        if (item.category === 'weapon' && item.equipped) {
           const abilityModifier = item.finesse || item.ranged ? 
             Math.floor((character.abilities.dexterity.score - 10) / 2) :
             Math.floor((character.abilities.strength.score - 10) / 2);
           
           attacks.push({
-            id: item.name,
+            id: item.index || item.name,
             name: item.name,
             type: 'weapon',
             attackBonus: `+${abilityModifier + character.proficiencyBonus}`,

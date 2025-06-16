@@ -205,7 +205,51 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
   const updateEquipmentData = (updates: any) => {
     const newData = { ...equipmentData, ...updates };
     setEquipmentData(newData);
-    onUpdate({ equipment: newData });
+    
+    // Format equipment for character sheet
+    const formattedEquipment = {
+      starting_equipment: [
+        // Add weapons with proper formatting
+        ...newData.selectedWeapons.map((weapon: any) => ({
+          name: weapon.name,
+          index: weapon.slug,
+          category: 'weapon',
+          weight: parseFloat(weapon.weight) || 0,
+          equipped: true,
+          quantity: 1,
+          damage: weapon.damage_dice || '1d4',
+          damage_type: weapon.damage_type || 'bludgeoning',
+          finesse: weapon.properties?.includes('finesse') || false,
+          ranged: weapon.category === 'ranged' || weapon.properties?.includes('ranged') || false
+        })),
+        // Add armor with proper formatting
+        ...newData.selectedArmor.map((armor: any) => ({
+          name: armor.name,
+          index: armor.slug,
+          category: 'armor',
+          weight: parseFloat(armor.weight) || 0,
+          equipped: true,
+          quantity: 1,
+          ac: armor.ac || 10,
+          armor_type: armor.type || 'light',
+          dex_bonus: armor.dex_bonus !== false,
+          max_dex_bonus: armor.max_dex_bonus || null
+        })),
+        // Add inventory items
+        ...newData.inventory.map((item: any) => ({
+          name: item.name,
+          index: item.name.toLowerCase().replace(/\s+/g, '-'),
+          category: 'adventuring-gear',
+          weight: parseFloat(item.weight) || 0,
+          equipped: false,
+          quantity: item.quantity || 1
+        }))
+      ],
+      inventory: [],
+      currency: newData.currency
+    };
+    
+    onUpdate({ equipment: formattedEquipment });
   };
 
   const addWeapon = (weaponSlug: string) => {
