@@ -1,10 +1,9 @@
 
 import { useState, useMemo } from 'react';
-import { Search, ChevronDown, ChevronRight, Filter } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useOpen5eData } from '../../hooks/useOpen5eData';
 import { open5eApi, Open5eEquipment } from '../../services/open5eApi';
@@ -14,7 +13,6 @@ import ErrorMessage from '../character-creation/ErrorMessage';
 const ItemsTab = () => {
   const { equipment, isLoading, error, refresh } = useOpen5eData();
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
   const [selectedItem, setSelectedItem] = useState<Open5eEquipment | null>(null);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -90,18 +88,6 @@ const ItemsTab = () => {
     return filtered;
   }, [equipment, selectedSources, searchTerm, sortBy]);
 
-  const equipmentBySource = useMemo(() => {
-    const grouped: Record<string, Open5eEquipment[]> = {};
-    filteredEquipment.forEach(item => {
-      const source = item.document__slug;
-      if (!grouped[source]) {
-        grouped[source] = [];
-      }
-      grouped[source].push(item);
-    });
-    return grouped;
-  }, [filteredEquipment]);
-
   const availableSources = useMemo(() => {
     return open5eApi.getAvailableSources(equipment);
   }, [equipment]);
@@ -117,21 +103,6 @@ const ItemsTab = () => {
       case 'mtf': return "Mordenkainen's Tome";
       default: return source.toUpperCase();
     }
-  };
-
-  const toggleSource = (source: string) => {
-    setExpandedSources(prev => ({
-      ...prev,
-      [source]: !prev[source]
-    }));
-  };
-
-  const toggleAllSources = (expand: boolean) => {
-    const newState: Record<string, boolean> = {};
-    Object.keys(equipmentBySource).forEach(source => {
-      newState[source] = expand;
-    });
-    setExpandedSources(newState);
   };
 
   const handleSourceFilterChange = (source: string, checked: boolean) => {
@@ -234,84 +205,38 @@ const ItemsTab = () => {
         Showing {filteredEquipment.length} of {equipment.length} items
       </div>
 
-      {/* Expand/Collapse All */}
-      <div className="flex space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => toggleAllSources(true)}
-          className="flex-1"
-        >
-          Expand All
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => toggleAllSources(false)}
-          className="flex-1"
-        >
-          Collapse All
-        </Button>
-      </div>
-
-      {/* Equipment by Source */}
-      <div className="space-y-4">
-        {Object.entries(equipmentBySource).map(([source, sourceEquipment]) => (
-          <Collapsible
-            key={source}
-            open={expandedSources[source]}
-            onOpenChange={() => toggleSource(source)}
+      {/* Equipment List */}
+      <div className="space-y-2">
+        {filteredEquipment.map((item) => (
+          <Card 
+            key={item.slug}
+            className="cursor-pointer transition-colors hover:bg-gray-50"
           >
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                className="w-full justify-between p-4 h-auto border border-gray-200 rounded-lg hover:bg-gray-50 text-white hover:text-gray-900"
-              >
-                <div className="text-left">
-                  <div className="font-semibold">{getSourceDisplayName(source)}</div>
-                  <div className="text-sm opacity-75">{sourceEquipment.length} items available</div>
-                </div>
-                {expandedSources[source] ? 
-                  <ChevronDown className="h-5 w-5" /> : 
-                  <ChevronRight className="h-5 w-5" />
-                }
-              </Button>
-            </CollapsibleTrigger>
-
-            <CollapsibleContent className="mt-2 space-y-2">
-              {sourceEquipment.map((item) => (
-                <Card 
-                  key={item.slug}
-                  className="cursor-pointer transition-colors hover:bg-gray-50"
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div 
+                  className="flex-1 cursor-pointer"
+                  onClick={() => setSelectedItem(item)}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div 
-                        className="flex-1 cursor-pointer"
-                        onClick={() => setSelectedItem(item)}
-                      >
-                        <h4 className="font-bold text-gray-900">{item.name}</h4>
-                        <p className="text-sm text-gray-600">{item.equipment_category}</p>
-                        <p className="text-sm text-gray-600">{getRarityFromCost(item.cost)}</p>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-gray-500">
-                            Cost: {item.cost.quantity} {item.cost.unit}
-                          </span>
-                          <span className="text-xs text-gray-500">Weight: {item.weight} lb</span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setShowCharacterSelect(true)}
-                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
+                  <h4 className="font-bold text-gray-900">{item.name}</h4>
+                  <p className="text-sm text-gray-600">{item.equipment_category}</p>
+                  <p className="text-sm text-gray-600">{getRarityFromCost(item.cost)}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-gray-500">
+                      Cost: {item.cost.quantity} {item.cost.unit}
+                    </span>
+                    <span className="text-xs text-gray-500">Weight: {item.weight} lb</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowCharacterSelect(true)}
+                  className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                >
+                  +
+                </button>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
