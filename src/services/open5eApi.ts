@@ -44,6 +44,43 @@ interface Open5eEquipment {
   document__slug: string;
 }
 
+interface Open5eWeapon {
+  slug: string;
+  name: string;
+  type: string;
+  category: string;
+  cost?: {
+    quantity: number;
+    unit: string;
+  };
+  damage?: {
+    damage_dice: string;
+    damage_type: string;
+  };
+  weight?: number;
+  properties?: string[];
+  desc: string;
+  document__slug: string;
+}
+
+interface Open5eArmor {
+  slug: string;
+  name: string;
+  type: string;
+  category: string;
+  cost?: {
+    quantity: number;
+    unit: string;
+  };
+  ac_base?: number;
+  ac_add_dex?: boolean;
+  ac_cap_dex?: number;
+  weight?: number;
+  stealth_disadvantage?: boolean;
+  desc: string;
+  document__slug: string;
+}
+
 interface Open5eRace {
   slug: string;
   name: string;
@@ -131,7 +168,68 @@ class Open5eApiService {
   }
 
   async fetchEquipment(): Promise<Open5eEquipment[]> {
-    return this.fetchWithCache<Open5eEquipment>('/magicitems');
+    try {
+      // Try to fetch from multiple endpoints and combine results
+      const [magicItems, weapons, armor] = await Promise.allSettled([
+        this.fetchWithCache<Open5eEquipment>('/magicitems'),
+        this.fetchWithCache<Open5eWeapon>('/weapons'),
+        this.fetchWithCache<Open5eArmor>('/armor')
+      ]);
+
+      let combinedEquipment: Open5eEquipment[] = [];
+
+      // Add magic items
+      if (magicItems.status === 'fulfilled') {
+        combinedEquipment.push(...magicItems.value);
+      }
+
+      // Add weapons (convert to equipment format)
+      if (weapons.status === 'fulfilled') {
+        const weaponEquipment: Open5eEquipment[] = weapons.value.map(weapon => ({
+          slug: weapon.slug,
+          name: weapon.name,
+          type: 'weapon',
+          rarity: 'common',
+          requires_attunement: false,
+          cost: weapon.cost,
+          weight: weapon.weight,
+          desc: weapon.desc,
+          document__slug: weapon.document__slug
+        }));
+        combinedEquipment.push(...weaponEquipment);
+      }
+
+      // Add armor (convert to equipment format)
+      if (armor.status === 'fulfilled') {
+        const armorEquipment: Open5eEquipment[] = armor.value.map(armorItem => ({
+          slug: armorItem.slug,
+          name: armorItem.name,
+          type: armorItem.type || 'armor',
+          rarity: 'common',
+          requires_attunement: false,
+          cost: armorItem.cost,
+          weight: armorItem.weight,
+          desc: armorItem.desc,
+          document__slug: armorItem.document__slug
+        }));
+        combinedEquipment.push(...armorEquipment);
+      }
+
+      console.log(`Combined equipment: ${combinedEquipment.length} items`);
+      this.cache.set('/equipment-combined', combinedEquipment);
+      return combinedEquipment;
+    } catch (error) {
+      console.warn('Equipment fetch failed, returning empty array:', error);
+      return [];
+    }
+  }
+
+  async fetchWeapons(): Promise<Open5eWeapon[]> {
+    return this.fetchWithCache<Open5eWeapon>('/weapons');
+  }
+
+  async fetchArmor(): Promise<Open5eArmor[]> {
+    return this.fetchWithCache<Open5eArmor>('/armor');
   }
 
   async fetchRaces(): Promise<Open5eRace[]> {
@@ -166,6 +264,8 @@ export const open5eApi = new Open5eApiService();
 export type {
   Open5eSpell,
   Open5eEquipment,
+  Open5eWeapon,
+  Open5eArmor,
   Open5eRace,
   Open5eClass,
   Open5eBackground
