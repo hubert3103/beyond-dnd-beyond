@@ -247,7 +247,7 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
                         </div>
                       </div>
                     </CardContent>
-                  </Collapsible>
+                  </Card>
                 );
               })}
             </CollapsibleContent>
