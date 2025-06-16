@@ -50,16 +50,13 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
   const currentHP = character.hit_points?.current !== undefined ? character.hit_points.current : character.currentHP !== undefined ? character.currentHP : maxHP;
   const tempHP = character.hit_points?.temporary || character.tempHP || 0;
 
-  const [hitDice] = useState({
-    total: character.level,
-    remaining: character.hit_points?.hit_dice_remaining || character.level,
-    dieType: character.class_data?.hit_die ? `d${character.class_data.hit_die}` : 'd8'
-  });
+  // Get hit die information from class data
+  const hitDie = character.class_data?.hit_die || 8;
+  const hitDiceRemaining = character.hit_points?.hit_dice_remaining !== undefined ? character.hit_points.hit_dice_remaining : character.level;
 
   const rollHitDie = () => {
-    if (hitDice.remaining > 0) {
-      const dieSize = character.class_data?.hit_die || 8;
-      const roll = Math.floor(Math.random() * dieSize) + 1;
+    if (hitDiceRemaining > 0) {
+      const roll = Math.floor(Math.random() * hitDie) + 1;
       const conModifier = Math.floor((character.abilities.constitution.score - 10) / 2);
       const healing = Math.max(1, roll + conModifier); // Minimum 1 HP
       
@@ -70,12 +67,12 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
         hit_points: {
           ...character.hit_points,
           current: newHP,
-          hit_dice_remaining: hitDice.remaining - 1
+          hit_dice_remaining: hitDiceRemaining - 1
         }
       };
       setCharacter(updatedCharacter);
       
-      console.log(`Rolled ${roll} + ${conModifier} CON = ${healing} healing`);
+      console.log(`Rolled ${roll} on d${hitDie} + ${conModifier} CON = ${healing} healing`);
     }
   };
 
@@ -116,15 +113,15 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <div className="text-sm font-medium">
-                    {hitDice.dieType} Hit Dice
+                    d{hitDie} Hit Dice
                   </div>
                   <div className="text-xs text-gray-600">
-                    {hitDice.remaining} / {hitDice.total} remaining
+                    {hitDiceRemaining} / {character.level} remaining
                   </div>
                 </div>
                 <Button
                   onClick={rollHitDie}
-                  disabled={hitDice.remaining === 0}
+                  disabled={hitDiceRemaining === 0}
                   className="bg-red-600 hover:bg-red-700"
                   size="sm"
                 >
@@ -136,7 +133,7 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
                   className="bg-red-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${(hitDice.remaining / hitDice.total) * 100}%` }}
+                  style={{ width: `${(hitDiceRemaining / character.level) * 100}%` }}
                 />
               </div>
             </div>
