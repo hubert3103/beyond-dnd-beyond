@@ -17,11 +17,54 @@ const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
   const [generationMethod, setGenerationMethod] = useState('standard-array');
   const [expandedAbilities, setExpandedAbilities] = useState<Record<string, boolean>>({});
 
+  // Ensure abilities data structure is properly initialized
+  const initializeAbilities = () => {
+    const defaultAbility = { base: 10, bonus: 0, total: 10 };
+    return {
+      str: data.abilities?.str || defaultAbility,
+      dex: data.abilities?.dex || defaultAbility,
+      con: data.abilities?.con || defaultAbility,
+      int: data.abilities?.int || defaultAbility,
+      wis: data.abilities?.wis || defaultAbility,
+      cha: data.abilities?.cha || defaultAbility
+    };
+  };
+
+  // Initialize abilities if they're not properly structured
+  useEffect(() => {
+    if (!data.abilities || Object.keys(data.abilities).length === 0) {
+      console.log('Initializing abilities data structure');
+      const initializedAbilities = initializeAbilities();
+      onUpdate({ abilities: initializedAbilities });
+    } else {
+      // Ensure all required properties exist for each ability
+      const updatedAbilities = { ...data.abilities };
+      let needsUpdate = false;
+      
+      Object.keys(initializeAbilities()).forEach(key => {
+        if (!updatedAbilities[key] || typeof updatedAbilities[key].total === 'undefined') {
+          console.log(`Fixing missing ability data for ${key}`);
+          updatedAbilities[key] = {
+            base: updatedAbilities[key]?.base || 10,
+            bonus: updatedAbilities[key]?.bonus || 0,
+            total: updatedAbilities[key]?.total || (updatedAbilities[key]?.base || 10) + (updatedAbilities[key]?.bonus || 0)
+          };
+          needsUpdate = true;
+        }
+      });
+      
+      if (needsUpdate) {
+        console.log('Updating abilities with missing properties');
+        onUpdate({ abilities: updatedAbilities });
+      }
+    }
+  }, []);
+
   // Initialize generation method based on existing character data
   useEffect(() => {
     if (data.abilities) {
       // Try to detect the generation method based on the ability scores
-      const abilityScores = Object.values(data.abilities).map((ability: any) => ability.base);
+      const abilityScores = Object.values(data.abilities).map((ability: any) => ability?.base || 10);
       const standardArrayValues = [15, 14, 13, 12, 10, 8];
       const sortedScores = [...abilityScores].sort((a, b) => b - a);
       const sortedStandardArray = [...standardArrayValues].sort((a, b) => b - a);
@@ -73,17 +116,27 @@ const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
 
   // Update abilities with racial bonuses when species changes
   useEffect(() => {
-    if (data.species) {
+    if (data.species && data.abilities) {
       const newAbilities = { ...data.abilities };
+      let hasChanges = false;
+      
       Object.keys(newAbilities).forEach(key => {
         const racialBonus = getRacialBonus(key);
-        newAbilities[key] = {
-          ...newAbilities[key],
-          bonus: racialBonus,
-          total: newAbilities[key].base + racialBonus
-        };
+        const currentAbility = newAbilities[key] || { base: 10, bonus: 0, total: 10 };
+        
+        if (currentAbility.bonus !== racialBonus) {
+          newAbilities[key] = {
+            ...currentAbility,
+            bonus: racialBonus,
+            total: currentAbility.base + racialBonus
+          };
+          hasChanges = true;
+        }
       });
-      onUpdate({ abilities: newAbilities });
+      
+      if (hasChanges) {
+        onUpdate({ abilities: newAbilities });
+      }
     }
   }, [data.species]);
 
@@ -97,10 +150,12 @@ const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
 
   const updateAbilityScore = (abilityId: string, field: 'base' | 'bonus', value: number) => {
     const newAbilities = { ...data.abilities };
+    const currentAbility = newAbilities[abilityId] || { base: 10, bonus: 0, total: 10 };
+    
     newAbilities[abilityId] = {
-      ...newAbilities[abilityId],
+      ...currentAbility,
       [field]: value,
-      total: field === 'base' ? value + newAbilities[abilityId].bonus : newAbilities[abilityId].base + value
+      total: field === 'base' ? value + currentAbility.bonus : currentAbility.base + value
     };
     onUpdate({ abilities: newAbilities });
   };
@@ -120,10 +175,12 @@ const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
       const newAbilities = { ...data.abilities };
       Object.keys(newAbilities).forEach(key => {
         const racialBonus = getRacialBonus(key);
+        const currentAbility = newAbilities[key] || { base: 10, bonus: 0, total: 10 };
+        
         // Only reset if the scores are at default values
-        if (newAbilities[key].base === 10) {
+        if (currentAbility.base === 10) {
           newAbilities[key] = {
-            ...newAbilities[key],
+            ...currentAbility,
             base: 8, // Default base
             bonus: racialBonus,
             total: 8 + racialBonus
@@ -133,6 +190,9 @@ const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
       onUpdate({ abilities: newAbilities });
     }
   };
+
+  // Ensure we have valid abilities data before rendering
+  const safeAbilities = data.abilities ? initializeAbilities() : initializeAbilities();
 
   return (
     <div className="p-4 space-y-6">
@@ -181,14 +241,14 @@ const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
       {/* Method-specific content */}
       {generationMethod === 'standard-array' && (
         <StandardArraySelector 
-          abilities={data.abilities} 
+          abilities={safeAbilities} 
           onUpdate={(abilities) => onUpdate({ abilities })}
         />
       )}
 
       {generationMethod === 'point-buy' && (
         <PointBuySelector 
-          abilities={data.abilities} 
+          abilities={safeAbilities} 
           onUpdate={(abilities) => onUpdate({ abilities })}
         />
       )}
@@ -210,7 +270,7 @@ const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
         <h3 className="font-semibold text-gray-900 mb-2">Current Ability Scores</h3>
         <div className="grid grid-cols-3 gap-4">
           {abilities.map((ability) => {
-            const abilityData = data.abilities[ability.id];
+            const abilityData = safeAbilities[ability.id];
             const modifier = getModifier(abilityData.total);
             const racialBonus = getRacialBonus(ability.id);
             
@@ -233,7 +293,7 @@ const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
         <div className="space-y-3">
           <h3 className="font-semibold text-gray-900">Manual Entry</h3>
           {abilities.map((ability) => {
-            const abilityData = data.abilities[ability.id];
+            const abilityData = safeAbilities[ability.id];
             const modifier = getModifier(abilityData.total);
             const racialBonus = getRacialBonus(ability.id);
             
