@@ -26,9 +26,13 @@ const ItemsList = ({
 }: ItemsListProps) => {
   return (
     <div 
-      className="flex-1 overflow-y-auto p-4" 
+      className="flex-1 overflow-y-auto scrollbar-hide p-4" 
       onScroll={handleScroll}
-      style={{ maxHeight: 'calc(100vh - 300px)' }}
+      style={{ 
+        maxHeight: 'calc(100vh - 300px)',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none'
+      }}
     >
       {/* Equipment List */}
       <div className="space-y-2">

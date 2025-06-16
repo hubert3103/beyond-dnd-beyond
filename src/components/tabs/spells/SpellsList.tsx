@@ -117,11 +117,15 @@ const SpellsList = ({
         </div>
       </div>
 
-      {/* Scrollable Content - Make sure this has proper height and overflow */}
+      {/* Scrollable Content with hidden scrollbars */}
       <div 
-        className="flex-1 overflow-y-auto p-4" 
+        className="flex-1 overflow-y-auto scrollbar-hide p-4" 
         onScroll={handleScroll}
-        style={{ maxHeight: 'calc(100vh - 200px)' }}
+        style={{ 
+          maxHeight: 'calc(100vh - 200px)',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}
       >
         {Object.entries(groupedSpells).map(([level, levelSpells]) => (
           <div key={level} className="mb-6">
