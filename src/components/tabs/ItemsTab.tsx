@@ -19,19 +19,29 @@ const ItemsTab = () => {
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'name' | 'rarity' | 'type'>('rarity');
 
+  // Memoize available sources for better performance
+  const availableSources = useMemo(() => {
+    const sources = open5eApi.getAvailableSources(equipment);
+    console.log('Available sources:', sources);
+    return sources;
+  }, [equipment]);
+
+  // Optimized rarity ordering function
   const getRarityOrder = (rarity: string) => {
-    switch (rarity.toLowerCase()) {
-      case 'common': return 1;
-      case 'uncommon': return 2;
-      case 'rare': return 3;
-      case 'very rare': return 4;
-      case 'legendary': return 5;
-      case 'artifact': return 6;
-      default: return 0;
-    }
+    const rarityMap: Record<string, number> = {
+      'common': 1,
+      'uncommon': 2,
+      'rare': 3,
+      'very rare': 4,
+      'legendary': 5,
+      'artifact': 6
+    };
+    return rarityMap[rarity.toLowerCase()] || 0;
   };
 
+  // Optimized filtering and sorting - only recalculates when dependencies change
   const filteredEquipment = useMemo(() => {
+    console.log('Filtering and sorting equipment...');
     console.log('All equipment:', equipment.length);
     console.log('Selected sources:', selectedSources);
     
@@ -47,10 +57,11 @@ const ItemsTab = () => {
     
     // Apply search filter
     if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(item => 
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.rarity.toLowerCase().includes(searchTerm.toLowerCase())
+        item.name.toLowerCase().includes(searchLower) ||
+        item.type.toLowerCase().includes(searchLower) ||
+        item.rarity.toLowerCase().includes(searchLower)
       );
       console.log('Filtered by search:', filtered.length);
     }
@@ -63,9 +74,17 @@ const ItemsTab = () => {
         case 'rarity':
           const rarityA = getRarityOrder(a.rarity);
           const rarityB = getRarityOrder(b.rarity);
-          return rarityA - rarityB;
+          if (rarityA !== rarityB) {
+            return rarityA - rarityB;
+          }
+          // If same rarity, sort alphabetically by name
+          return a.name.localeCompare(b.name);
         case 'type':
-          return a.type.localeCompare(b.type);
+          if (a.type !== b.type) {
+            return a.type.localeCompare(b.type);
+          }
+          // If same type, sort alphabetically by name
+          return a.name.localeCompare(b.name);
         default:
           return 0;
       }
@@ -75,23 +94,21 @@ const ItemsTab = () => {
     return filtered;
   }, [equipment, selectedSources, searchTerm, sortBy]);
 
-  const availableSources = useMemo(() => {
-    const sources = open5eApi.getAvailableSources(equipment);
-    console.log('Available sources:', sources);
-    return sources;
-  }, [equipment]);
-
   const getSourceDisplayName = (source: string) => {
-    switch (source) {
-      case 'wotc-srd': return 'Core Rules (SRD)';
-      case 'cc': return 'Core Rules (CC)';
-      case 'kp': return 'Kobold Press';
-      case 'xge': return "Xanathar's Guide";
-      case 'tce': return "Tasha's Cauldron";
-      case 'vgm': return "Volo's Guide";
-      case 'mtf': return "Mordenkainen's Tome";
-      default: return source.toUpperCase();
-    }
+    const sourceMap: Record<string, string> = {
+      'wotc-srd': 'Core Rules (SRD)',
+      'cc': 'Core Rules (CC)',
+      'kp': 'Kobold Press',
+      'xge': "Xanathar's Guide",
+      'tce': "Tasha's Cauldron",
+      'vgm': "Volo's Guide",
+      'mtf': "Mordenkainen's Tome",
+      'vom': 'Vault of Magic',
+      'toh': 'Tome of Heroes',
+      'a5e': 'Advanced 5th Edition',
+      'taldorei': 'Tal\'Dorei Campaign Setting'
+    };
+    return sourceMap[source] || source.toUpperCase();
   };
 
   const handleSourceFilterChange = (source: string, checked: boolean) => {
@@ -115,15 +132,6 @@ const ItemsTab = () => {
       <div className="text-center">
         <h1 className="text-2xl font-bold text-white mb-2">Equipment & Items</h1>
         <p className="text-gray-300">Browse equipment from D&D 5e sources</p>
-      </div>
-
-      {/* Debug info */}
-      <div className="text-sm text-gray-300 bg-gray-700 p-2 rounded">
-        Debug: {equipment.length} total equipment, {filteredEquipment.length} after filtering
-        <br />
-        Available sources: {availableSources.join(', ')}
-        <br />
-        Selected sources: {selectedSources.join(', ') || 'none'}
       </div>
 
       {/* Search and Filter Controls */}
@@ -224,7 +232,7 @@ const ItemsTab = () => {
                 >
                   <h4 className="font-bold text-gray-900">{item.name}</h4>
                   <p className="text-sm text-gray-600">{item.type}</p>
-                  <p className="text-sm text-gray-600">{item.rarity}</p>
+                  <p className="text-sm text-gray-600 capitalize">{item.rarity}</p>
                   <div className="flex items-center justify-between mt-2">
                     {item.cost && (
                       <span className="text-xs text-gray-500">
@@ -275,7 +283,7 @@ const ItemsTab = () => {
           <div className="bg-white rounded-lg w-full max-w-md p-6 max-h-[80vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-gray-900 mb-4">{selectedItem.name}</h3>
             <p className="text-gray-600 mb-2"><strong>Type:</strong> {selectedItem.type}</p>
-            <p className="text-gray-600 mb-2"><strong>Rarity:</strong> {selectedItem.rarity}</p>
+            <p className="text-gray-600 mb-2"><strong>Rarity:</strong> <span className="capitalize">{selectedItem.rarity}</span></p>
             {selectedItem.cost && (
               <p className="text-gray-600 mb-2"><strong>Cost:</strong> {selectedItem.cost.quantity} {selectedItem.cost.unit}</p>
             )}

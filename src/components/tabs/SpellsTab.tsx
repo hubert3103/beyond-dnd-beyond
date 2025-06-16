@@ -22,8 +22,26 @@ const SpellsTab = () => {
     classes: [] as string[],
   });
 
-  const filteredSpells = useMemo(() => {
-    return spells.filter(spell => {
+  // Get unique values for filters - memoized for performance
+  const filterOptions = useMemo(() => {
+    const levels = [...new Set(spells.map(s => s.level))].sort((a, b) => parseInt(a) - parseInt(b));
+    const schools = [...new Set(spells.map(s => s.school).filter(Boolean))].sort();
+    const classSet = new Set<string>();
+    spells.forEach(spell => {
+      if (spell.classes) {
+        spell.classes.forEach(cls => classSet.add(cls.name));
+      }
+    });
+    const classes = [...classSet].sort();
+
+    return { levels, schools, classes };
+  }, [spells]);
+
+  // Optimized filtering and sorting - only recalculates when dependencies change
+  const filteredAndSortedSpells = useMemo(() => {
+    console.log('Filtering and sorting spells...');
+    
+    let filtered = spells.filter(spell => {
       // Search filter
       if (searchTerm && !spell.name.toLowerCase().includes(searchTerm.toLowerCase())) {
         return false;
@@ -50,35 +68,31 @@ const SpellsTab = () => {
 
       return true;
     });
+
+    // Sort by spell level (cantrip to 9)
+    filtered.sort((a, b) => {
+      const levelA = parseInt(a.level);
+      const levelB = parseInt(b.level);
+      if (levelA !== levelB) {
+        return levelA - levelB;
+      }
+      // If same level, sort alphabetically by name
+      return a.name.localeCompare(b.name);
+    });
+
+    console.log(`Filtered ${filtered.length} spells from ${spells.length} total`);
+    return filtered;
   }, [spells, searchTerm, filters]);
 
+  // Group spells by level - memoized separately for better performance
   const groupedSpells = useMemo(() => {
-    return filteredSpells.reduce((acc, spell) => {
+    return filteredAndSortedSpells.reduce((acc, spell) => {
       const levelKey = spell.level === '0' ? 'Cantrips' : `Level ${spell.level}`;
       if (!acc[levelKey]) acc[levelKey] = [];
       acc[levelKey].push(spell);
       return acc;
     }, {} as Record<string, Open5eSpell[]>);
-  }, [filteredSpells]);
-
-  // Get unique values for filters
-  const availableLevels = useMemo(() => 
-    [...new Set(spells.map(s => s.level))].sort((a, b) => parseInt(a) - parseInt(b))
-  , [spells]);
-
-  const availableSchools = useMemo(() => 
-    [...new Set(spells.map(s => s.school).filter(Boolean))].sort()
-  , [spells]);
-
-  const availableClasses = useMemo(() => {
-    const classSet = new Set<string>();
-    spells.forEach(spell => {
-      if (spell.classes) {
-        spell.classes.forEach(cls => classSet.add(cls.name));
-      }
-    });
-    return [...classSet].sort();
-  }, [spells]);
+  }, [filteredAndSortedSpells]);
 
   const handleFilterChange = (filterType: keyof typeof filters, value: string, checked: boolean) => {
     setFilters(prev => ({
@@ -143,7 +157,7 @@ const SpellsTab = () => {
               <div>
                 <h3 className="font-medium mb-3">Spell Level</h3>
                 <div className="space-y-2">
-                  {availableLevels.map(level => (
+                  {filterOptions.levels.map(level => (
                     <div key={level} className="flex items-center space-x-2">
                       <Checkbox
                         id={`level-${level}`}
@@ -164,7 +178,7 @@ const SpellsTab = () => {
               <div>
                 <h3 className="font-medium mb-3">School</h3>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {availableSchools.map(school => (
+                  {filterOptions.schools.map(school => (
                     <div key={school} className="flex items-center space-x-2">
                       <Checkbox
                         id={`school-${school}`}
@@ -185,7 +199,7 @@ const SpellsTab = () => {
               <div>
                 <h3 className="font-medium mb-3">Classes</h3>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {availableClasses.map(cls => (
+                  {filterOptions.classes.map(cls => (
                     <div key={cls} className="flex items-center space-x-2">
                       <Checkbox
                         id={`class-${cls}`}
@@ -208,8 +222,8 @@ const SpellsTab = () => {
 
       <div className="flex justify-between items-center mb-4">
         <span className="text-white font-medium">
-          Spells: {filteredSpells.length}
-          {filteredSpells.length !== spells.length && ` of ${spells.length}`}
+          Spells: {filteredAndSortedSpells.length}
+          {filteredAndSortedSpells.length !== spells.length && ` of ${spells.length}`}
         </span>
       </div>
 
@@ -243,7 +257,7 @@ const SpellsTab = () => {
         </div>
       ))}
 
-      {filteredSpells.length === 0 && (
+      {filteredAndSortedSpells.length === 0 && (
         <div className="text-center py-8">
           <p className="text-gray-300">No spells found matching your criteria.</p>
         </div>
