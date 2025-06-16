@@ -19,6 +19,7 @@ export interface Character {
   hit_points: any;
   equipment: any;
   spells: any;
+  spell_slots: any;
   sources: any;
   advancement_type: string | null;
   hit_point_type: string | null;
