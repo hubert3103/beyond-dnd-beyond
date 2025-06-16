@@ -1,17 +1,16 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface User {
-  id: string;
-  email: string;
-  role: 'player' | 'dm' | null;
-}
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
+  session: Session | null;
+  login: (email: string, password: string) => Promise<{ error: any }>;
+  signup: (email: string, password: string, name: string) => Promise<{ error: any }>;
+  logout: () => Promise<void>;
   setRole: (role: 'player' | 'dm') => void;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,44 +25,95 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('dnd-user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('Auth state changed:', event, session);
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = (email: string, password: string) => {
-    // Mock login validation
-    if (email && password) {
-      const newUser: User = {
-        id: '1',
+  const login = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
         email,
-        role: null
-      };
-      setUser(newUser);
-      localStorage.setItem('dnd-user', JSON.stringify(newUser));
-      return true;
+        password,
+      });
+      return { error };
+    } catch (error) {
+      return { error };
     }
-    return false;
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('dnd-user');
+  const signup = async (email: string, password: string, name: string) => {
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            name: name,
+          }
+        }
+      });
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
   };
 
   const setRole = (role: 'player' | 'dm') => {
+    // For now, we'll store the role in localStorage
+    // In a real app, you might want to store this in the profiles table
     if (user) {
-      const updatedUser = { ...user, role };
-      setUser(updatedUser);
-      localStorage.setItem('dnd-user', JSON.stringify(updatedUser));
+      localStorage.setItem(`user-role-${user.id}`, role);
     }
   };
 
+  // Get user role from localStorage
+  const getUserRole = (): 'player' | 'dm' | null => {
+    if (user) {
+      return localStorage.getItem(`user-role-${user.id}`) as 'player' | 'dm' | null;
+    }
+    return null;
+  };
+
+  // Add role to user object for compatibility
+  const userWithRole = user ? { ...user, role: getUserRole() } : null;
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, setRole }}>
+    <AuthContext.Provider value={{ 
+      user: userWithRole, 
+      session, 
+      login, 
+      signup, 
+      logout, 
+      setRole, 
+      loading 
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Character {
   id: string;
@@ -29,8 +29,15 @@ export const useCharacters = () => {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const fetchCharacters = async () => {
+    if (!user) {
+      setCharacters([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -53,10 +60,16 @@ export const useCharacters = () => {
   };
 
   const saveCharacter = async (characterData: any) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create characters",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    try {
       const characterToSave = {
         user_id: user.id,
         name: characterData.name || 'Unnamed Character',
@@ -146,7 +159,7 @@ export const useCharacters = () => {
 
   useEffect(() => {
     fetchCharacters();
-  }, []);
+  }, [user]);
 
   return {
     characters,

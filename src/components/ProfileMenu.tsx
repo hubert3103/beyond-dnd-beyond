@@ -20,8 +20,8 @@ const ProfileMenu = ({ onClose }: ProfileMenuProps) => {
     onClose();
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
     onClose();
   };
@@ -30,6 +30,12 @@ const ProfileMenu = ({ onClose }: ProfileMenuProps) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg w-full max-w-sm p-6 space-y-4">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Account Menu</h2>
+        
+        {user?.email && (
+          <div className="text-sm text-gray-600 mb-4">
+            Signed in as: {user.email}
+          </div>
+        )}
         
         <Button
           onClick={handleRoleSwitch}
