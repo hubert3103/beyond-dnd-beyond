@@ -1,4 +1,3 @@
-
 interface Open5eResponse<T> {
   count: number;
   next: string | null;
@@ -176,7 +175,19 @@ class Open5eApiService {
   }
 
   async fetchSpells(): Promise<Open5eSpell[]> {
-    return this.fetchWithCache<Open5eSpell>('/spells');
+    const allSpells = await this.fetchWithCache<Open5eSpell>('/spells');
+    
+    // Deduplicate spells by name, keeping the first occurrence
+    const uniqueSpells = allSpells.reduce((acc: Open5eSpell[], spell: Open5eSpell) => {
+      const existingSpell = acc.find(s => s.name.toLowerCase() === spell.name.toLowerCase());
+      if (!existingSpell) {
+        acc.push(spell);
+      }
+      return acc;
+    }, []);
+    
+    console.log(`Deduplicated spells: ${allSpells.length} → ${uniqueSpells.length}`);
+    return uniqueSpells;
   }
 
   async fetchEquipment(): Promise<Open5eEquipment[]> {
