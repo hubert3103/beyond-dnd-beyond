@@ -18,24 +18,57 @@ const SpeciesDetailModal = ({ species, isOpen, onClose, onSelect }: SpeciesDetai
 
   if (!species) return null;
 
-  // Extract subspecies from the species data (this would need to be enhanced based on actual API structure)
-  const getSubspecies = (speciesName: string): string[] => {
-    const subspeciesMap: Record<string, string[]> = {
-      'Elf': ['High Elf', 'Wood Elf', 'Dark Elf (Drow)'],
-      'Dwarf': ['Mountain Dwarf', 'Hill Dwarf'],
-      'Halfling': ['Lightfoot Halfling', 'Stout Halfling'],
-      'Human': ['Variant Human', 'Standard Human'],
-      'Dragonborn': ['Brass Dragonborn', 'Bronze Dragonborn', 'Copper Dragonborn', 'Gold Dragonborn', 'Silver Dragonborn', 'Black Dragonborn', 'Blue Dragonborn', 'Green Dragonborn', 'Red Dragonborn', 'White Dragonborn'],
-      'Gnome': ['Forest Gnome', 'Rock Gnome'],
-      'Half-Elf': ['Half-Elf'],
-      'Half-Orc': ['Half-Orc'],
-      'Tiefling': ['Tiefling']
+  // Extract subspecies from the species data with descriptions
+  const getSubspeciesData = (speciesName: string) => {
+    const subspeciesData: Record<string, Array<{name: string, description: string, bonuses?: string}>> = {
+      'Elf': [
+        {
+          name: 'High Elf',
+          description: 'High elves are graceful warriors and wizards who originated from the realm of Faerie.',
+          bonuses: '+1 Intelligence, Cantrip, Longsword proficiency'
+        },
+        {
+          name: 'Wood Elf',
+          description: 'Wood elves are keen hunters with fey ancestry and a fierce love of freedom.',
+          bonuses: '+1 Wisdom, Longbow proficiency, Mask of the Wild'
+        },
+        {
+          name: 'Dark Elf (Drow)',
+          description: 'Dark elves were banished from the surface world for following the goddess Lolth.',
+          bonuses: '+1 Charisma, Superior Darkvision, Drow Magic'
+        }
+      ],
+      'Dwarf': [
+        {
+          name: 'Mountain Dwarf',
+          description: 'Mountain dwarves are strong and hardy, adapted to difficult terrain.',
+          bonuses: '+2 Strength, Armor proficiency'
+        },
+        {
+          name: 'Hill Dwarf',
+          description: 'Hill dwarves are especially wise and tough, with keen senses.',
+          bonuses: '+1 Wisdom, Extra hit points'
+        }
+      ],
+      'Halfling': [
+        {
+          name: 'Lightfoot Halfling',
+          description: 'Lightfoot halflings can easily hide and are naturally stealthy.',
+          bonuses: '+1 Charisma, Naturally Stealthy'
+        },
+        {
+          name: 'Stout Halfling',
+          description: 'Stout halflings are hardier than other halflings and resistant to poison.',
+          bonuses: '+1 Constitution, Stout Resilience'
+        }
+      ]
     };
-    return subspeciesMap[speciesName] || [];
+    return subspeciesData[speciesName] || [];
   };
 
-  const subspecies = getSubspecies(species.name);
-  const hasSubspecies = subspecies.length > 0;
+  const subspeciesData = getSubspeciesData(species.name);
+  const hasSubspecies = subspeciesData.length > 0;
+  const selectedSubspeciesData = subspeciesData.find(sub => sub.name === selectedSubspecies);
 
   const handleSelect = () => {
     onSelect(species, selectedSubspecies || undefined);
@@ -123,18 +156,38 @@ const SpeciesDetailModal = ({ species, isOpen, onClose, onSelect }: SpeciesDetai
           {hasSubspecies && (
             <div>
               <h4 className="font-semibold text-gray-900 mb-2">Subspecies</h4>
+              <p className="text-sm text-gray-500 mb-2">
+                Choose a subspecies to further customize your character's abilities and traits.
+              </p>
               <Select value={selectedSubspecies} onValueChange={setSelectedSubspecies}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a subspecies (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  {subspecies.map((sub) => (
-                    <SelectItem key={sub} value={sub}>
-                      {sub}
+                  {subspeciesData.map((sub) => (
+                    <SelectItem key={sub.name} value={sub.name}>
+                      {sub.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              
+              {/* Subspecies Information */}
+              {selectedSubspeciesData && (
+                <div className="border-t border-gray-200 pt-4 mt-4 space-y-3">
+                  <div>
+                    <h5 className="font-semibold text-gray-900">{selectedSubspeciesData.name}</h5>
+                    <p className="text-sm text-gray-600 mt-1">{selectedSubspeciesData.description}</p>
+                  </div>
+                  
+                  {selectedSubspeciesData.bonuses && (
+                    <div>
+                      <h6 className="text-sm font-medium text-gray-700">Additional Benefits</h6>
+                      <p className="text-sm text-gray-600">{selectedSubspeciesData.bonuses}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

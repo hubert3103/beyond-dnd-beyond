@@ -6,6 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Shield, Sword, Wand2 } from 'lucide-react';
 import { Open5eClass } from '../../services/open5eApi';
+import { subclassData, classData } from '../../data/subclassData';
+import ClassInfoPanel from './ClassInfoPanel';
+import SubclassInfoPanel from './SubclassInfoPanel';
 
 interface ClassDetailModalProps {
   classData: Open5eClass | null;
@@ -14,31 +17,16 @@ interface ClassDetailModalProps {
   onSelect: (classData: Open5eClass, subclass?: string) => void;
 }
 
-const ClassDetailModal = ({ classData, isOpen, onClose, onSelect }: ClassDetailModalProps) => {
+const ClassDetailModal = ({ classData: classDataProp, isOpen, onClose, onSelect }: ClassDetailModalProps) => {
   const [selectedSubclass, setSelectedSubclass] = useState<string>('');
 
-  if (!classData) return null;
+  if (!classDataProp) return null;
 
-  // Extract subclasses from the class data (this would need to be enhanced based on actual API structure)
-  const getSubclasses = (className: string): string[] => {
-    const subclassMap: Record<string, string[]> = {
-      'Fighter': ['Champion', 'Battle Master', 'Eldritch Knight'],
-      'Wizard': ['School of Evocation', 'School of Abjuration', 'School of Conjuration', 'School of Divination', 'School of Enchantment', 'School of Illusion', 'School of Necromancy', 'School of Transmutation'],
-      'Rogue': ['Thief', 'Assassin', 'Arcane Trickster'],
-      'Cleric': ['Life Domain', 'Light Domain', 'Nature Domain', 'Tempest Domain', 'Trickery Domain', 'War Domain', 'Knowledge Domain'],
-      'Ranger': ['Hunter', 'Beast Master'],
-      'Paladin': ['Oath of Devotion', 'Oath of the Ancients', 'Oath of Vengeance'],
-      'Barbarian': ['Path of the Berserker', 'Path of the Totem Warrior'],
-      'Bard': ['College of Lore', 'College of Valor'],
-      'Druid': ['Circle of the Land', 'Circle of the Moon'],
-      'Monk': ['Way of the Open Hand', 'Way of Shadow', 'Way of the Four Elements'],
-      'Sorcerer': ['Draconic Bloodline', 'Wild Magic'],
-      'Warlock': ['The Archfey', 'The Fiend', 'The Great Old One']
-    };
-    return subclassMap[className] || [];
-  };
-
-  const subclasses = getSubclasses(classData.name);
+  // Get subclasses and class info from our data
+  const subclasses = subclassData[classDataProp.name] || [];
+  const classInfo = classData[classDataProp.name];
+  const selectedSubclassInfo = subclasses.find(sub => sub.name === selectedSubclass);
+  
   const hasSubclasses = subclasses.length > 0;
 
   const getClassIcon = (className: string) => {
@@ -48,10 +36,10 @@ const ClassDetailModal = ({ classData, isOpen, onClose, onSelect }: ClassDetailM
     return Wand2;
   };
 
-  const IconComponent = getClassIcon(classData.name);
+  const IconComponent = getClassIcon(classDataProp.name);
 
   const handleSelect = () => {
-    onSelect(classData, selectedSubclass || undefined);
+    onSelect(classDataProp, selectedSubclass || undefined);
     onClose();
   };
 
@@ -65,7 +53,7 @@ const ClassDetailModal = ({ classData, isOpen, onClose, onSelect }: ClassDetailM
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-3">
             <IconComponent className="w-8 h-8" />
-            {classData.name}
+            {classDataProp.name}
           </DialogTitle>
         </DialogHeader>
 
@@ -75,71 +63,60 @@ const ClassDetailModal = ({ classData, isOpen, onClose, onSelect }: ClassDetailM
             <IconComponent className="w-16 h-16 text-gray-600" />
           </div>
 
-          {/* Basic Info */}
+          {/* Enhanced Class Information */}
+          {classInfo ? (
+            <ClassInfoPanel classInfo={classInfo} />
+          ) : (
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
+              <p className="text-gray-600 leading-relaxed">{cleanDescription(classDataProp.desc)}</p>
+            </div>
+          )}
+
+          {/* Basic Info from API */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <h4 className="font-semibold text-gray-900">Hit Die</h4>
-              <p className="text-gray-600">d{classData.hit_die}</p>
+              <p className="text-gray-600">d{classDataProp.hit_die}</p>
             </div>
             <div>
               <h4 className="font-semibold text-gray-900">Spellcaster</h4>
               <p className="text-gray-600">
-                {classData.spellcasting_ability ? `Yes (${classData.spellcasting_ability})` : 'No'}
+                {classDataProp.spellcasting_ability ? `Yes (${classDataProp.spellcasting_ability})` : 'No'}
               </p>
             </div>
           </div>
 
-          {/* Description */}
-          <div>
-            <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
-            <p className="text-gray-600 leading-relaxed">{cleanDescription(classData.desc)}</p>
-          </div>
-
           {/* Proficiencies */}
           <div className="space-y-3">
-            {classData.prof_armor && (
+            {classDataProp.prof_armor && (
               <div>
                 <h4 className="font-semibold text-gray-900">Armor Proficiencies</h4>
-                <p className="text-gray-600">{classData.prof_armor}</p>
+                <p className="text-gray-600">{classDataProp.prof_armor}</p>
               </div>
             )}
             
-            {classData.prof_weapons && (
+            {classDataProp.prof_weapons && (
               <div>
                 <h4 className="font-semibold text-gray-900">Weapon Proficiencies</h4>
-                <p className="text-gray-600">{classData.prof_weapons}</p>
+                <p className="text-gray-600">{classDataProp.prof_weapons}</p>
               </div>
             )}
 
-            {classData.prof_saving_throws && (
+            {classDataProp.prof_saving_throws && (
               <div>
                 <h4 className="font-semibold text-gray-900">Saving Throw Proficiencies</h4>
-                <p className="text-gray-600">{classData.prof_saving_throws}</p>
+                <p className="text-gray-600">{classDataProp.prof_saving_throws}</p>
               </div>
             )}
 
-            {classData.prof_skills && (
+            {classDataProp.prof_skills && (
               <div>
                 <h4 className="font-semibold text-gray-900">Skill Proficiencies</h4>
-                <p className="text-gray-600">{classData.prof_skills}</p>
-              </div>
-            )}
-
-            {classData.prof_tools && (
-              <div>
-                <h4 className="font-semibold text-gray-900">Tool Proficiencies</h4>
-                <p className="text-gray-600">{classData.prof_tools}</p>
+                <p className="text-gray-600">{classDataProp.prof_skills}</p>
               </div>
             )}
           </div>
-
-          {/* Starting Equipment */}
-          {classData.equipment && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Starting Equipment</h4>
-              <p className="text-gray-600">{cleanDescription(classData.equipment)}</p>
-            </div>
-          )}
 
           {/* Subclass Selection */}
           {hasSubclasses && (
@@ -154,18 +131,23 @@ const ClassDetailModal = ({ classData, isOpen, onClose, onSelect }: ClassDetailM
                 </SelectTrigger>
                 <SelectContent>
                   {subclasses.map((sub) => (
-                    <SelectItem key={sub} value={sub}>
-                      {sub}
+                    <SelectItem key={sub.name} value={sub.name}>
+                      {sub.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              
+              {/* Subclass Information */}
+              {selectedSubclassInfo && (
+                <SubclassInfoPanel subclass={selectedSubclassInfo} />
+              )}
             </div>
           )}
 
           {/* Source Badge */}
           <div>
-            <Badge variant="secondary">{classData.document__slug.toUpperCase()}</Badge>
+            <Badge variant="secondary">{classDataProp.document__slug.toUpperCase()}</Badge>
           </div>
 
           {/* Action Buttons */}
@@ -174,7 +156,7 @@ const ClassDetailModal = ({ classData, isOpen, onClose, onSelect }: ClassDetailM
               Close
             </Button>
             <Button onClick={handleSelect} className="flex-1">
-              Select {classData.name}
+              Select {classDataProp.name}
             </Button>
           </div>
         </div>
