@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { useOpen5eData } from '../../hooks/useOpen5eData';
 import { Open5eSpell } from '../../services/open5eApi';
@@ -41,6 +42,56 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
 
   const spellcastingInfo = getSpellcastingInfo();
 
+  // Helper function to check if a spell is available to a class
+  const isSpellAvailableToClass = (spell: Open5eSpell, className: string) => {
+    // Since the API data is malformed, let's use a hardcoded mapping for now
+    // This is a fallback solution until the API is fixed
+    const spellClassMapping: Record<string, string[]> = {
+      // Cantrips
+      'acid splash': ['sorcerer', 'wizard', 'artificer'],
+      'blade ward': ['bard', 'sorcerer', 'warlock', 'wizard'],
+      'chill touch': ['sorcerer', 'warlock', 'wizard'],
+      'dancing lights': ['bard', 'sorcerer', 'wizard'],
+      'fire bolt': ['sorcerer', 'wizard'],
+      'light': ['bard', 'cleric', 'sorcerer', 'wizard'],
+      'mage hand': ['bard', 'sorcerer', 'warlock', 'wizard'],
+      'minor illusion': ['bard', 'sorcerer', 'warlock', 'wizard'],
+      'poison spray': ['druid', 'sorcerer', 'warlock', 'wizard'],
+      'prestidigitation': ['bard', 'sorcerer', 'warlock', 'wizard'],
+      'ray of frost': ['sorcerer', 'wizard'],
+      'shocking grasp': ['sorcerer', 'wizard'],
+      
+      // 1st Level Spells
+      'burning hands': ['sorcerer', 'wizard'],
+      'charm person': ['bard', 'druid', 'sorcerer', 'warlock', 'wizard'],
+      'comprehend languages': ['bard', 'sorcerer', 'warlock', 'wizard'],
+      'detect magic': ['bard', 'cleric', 'druid', 'paladin', 'ranger', 'sorcerer', 'wizard'],
+      'disguise self': ['bard', 'sorcerer', 'wizard'],
+      'expeditious retreat': ['sorcerer', 'warlock', 'wizard'],
+      'false life': ['sorcerer', 'wizard'],
+      'feather fall': ['bard', 'sorcerer', 'wizard'],
+      'find familiar': ['wizard'],
+      'fog cloud': ['druid', 'ranger', 'sorcerer', 'wizard'],
+      'grease': ['wizard'],
+      'identify': ['bard', 'wizard'],
+      'jump': ['druid', 'ranger', 'sorcerer', 'wizard'],
+      'longstrider': ['bard', 'druid', 'ranger', 'wizard'],
+      'mage armor': ['sorcerer', 'wizard'],
+      'magic missile': ['sorcerer', 'wizard'],
+      'protection from evil and good': ['cleric', 'paladin', 'warlock', 'wizard'],
+      'shield': ['sorcerer', 'wizard'],
+      'silent image': ['bard', 'sorcerer', 'wizard'],
+      'sleep': ['bard', 'sorcerer', 'wizard'],
+      'thunderwave': ['bard', 'druid', 'sorcerer', 'wizard'],
+      'unseen servant': ['bard', 'warlock', 'wizard'],
+    };
+
+    const spellName = spell.name.toLowerCase();
+    const allowedClasses = spellClassMapping[spellName] || [];
+    
+    return allowedClasses.includes(className.toLowerCase());
+  };
+
   // Filter spells for the character's class
   const availableSpells = useMemo(() => {
     if (!data.class || !spells.length) {
@@ -52,36 +103,40 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
     console.log('Filtering spells for class:', className);
     console.log('Total spells available:', spells.length);
     
-    // Sample a few spells to see their structure
-    console.log('Sample spell structure:', spells.slice(0, 3).map(s => ({
-      name: s.name,
-      classes: s.classes,
-      level: s.level
-    })));
-    
     const filtered = spells.filter(spell => {
-      // Check if spell is available to this class
-      const spellClasses = spell.classes?.map(c => c.name?.toLowerCase()) || [];
-      const isAvailableToClass = spellClasses.includes(className);
+      // Use our custom mapping since API data is broken
+      const isAvailableToClass = isSpellAvailableToClass(spell, className);
       
       // Filter by search term
       const matchesSearch = !searchTerm || spell.name.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Filter by level (only show cantrips and 1st level spells for level 1 characters)
-      const appropriateLevel = spell.level === '0' || (spellcastingInfo && parseInt(spell.level) <= spellcastingInfo.maxLevel);
+      // Normalize spell level - handle different formats
+      let spellLevel = 0;
+      if (spell.level === '0' || spell.level.toLowerCase() === 'cantrip') {
+        spellLevel = 0;
+      } else {
+        // Extract number from strings like "1st-level", "2nd-level", etc.
+        const levelMatch = spell.level.match(/(\d+)/);
+        spellLevel = levelMatch ? parseInt(levelMatch[1]) : 0;
+      }
       
-      if (spell.name.toLowerCase().includes('fire') || spell.name.toLowerCase().includes('magic')) {
-        console.log('Sample spell check:', {
+      // Filter by level (only show cantrips and 1st level spells for level 1 characters)
+      const appropriateLevel = spellLevel === 0 || (spellcastingInfo && spellLevel <= spellcastingInfo.maxLevel);
+      
+      const shouldInclude = isAvailableToClass && matchesSearch && appropriateLevel;
+      
+      if (shouldInclude) {
+        console.log('Including spell:', {
           name: spell.name,
-          spellClasses,
+          level: spell.level,
+          normalizedLevel: spellLevel,
           isAvailableToClass,
           matchesSearch,
-          appropriateLevel,
-          level: spell.level
+          appropriateLevel
         });
       }
       
-      return isAvailableToClass && matchesSearch && appropriateLevel;
+      return shouldInclude;
     });
     
     console.log('Filtered spells count:', filtered.length);
@@ -96,7 +151,12 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
   const spellsByLevel = useMemo(() => {
     const grouped: Record<string, Open5eSpell[]> = {};
     availableSpells.forEach(spell => {
-      const level = spell.level === '0' ? 'Cantrips' : `Level ${spell.level}`;
+      let level = 'Cantrips';
+      if (spell.level !== '0' && !spell.level.toLowerCase().includes('cantrip')) {
+        const levelMatch = spell.level.match(/(\d+)/);
+        const levelNum = levelMatch ? parseInt(levelMatch[1]) : 1;
+        level = `Level ${levelNum}`;
+      }
       if (!grouped[level]) grouped[level] = [];
       grouped[level].push(spell);
     });
@@ -105,7 +165,15 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
 
   const getSelectedCount = (level: string) => {
     const spellLevel = level === 'Cantrips' ? '0' : level.split(' ')[1];
-    return selectedSpells.filter(spell => spell.level === spellLevel).length;
+    return selectedSpells.filter(spell => {
+      if (level === 'Cantrips') {
+        return spell.level === '0' || spell.level.toLowerCase().includes('cantrip');
+      } else {
+        const levelMatch = spell.level.match(/(\d+)/);
+        const levelNum = levelMatch ? levelMatch[1] : '1';
+        return levelNum === spellLevel;
+      }
+    }).length;
   };
 
   const getMaxAllowed = (level: string) => {
@@ -117,7 +185,13 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
     const isAlreadySelected = selectedSpells.some(s => s.slug === spell.slug);
     if (isAlreadySelected) return false;
     
-    const level = spell.level === '0' ? 'Cantrips' : `Level ${spell.level}`;
+    let level = 'Cantrips';
+    if (spell.level !== '0' && !spell.level.toLowerCase().includes('cantrip')) {
+      const levelMatch = spell.level.match(/(\d+)/);
+      const levelNum = levelMatch ? parseInt(levelMatch[1]) : 1;
+      level = `Level ${levelNum}`;
+    }
+    
     const currentCount = getSelectedCount(level);
     const maxAllowed = getMaxAllowed(level);
     
@@ -212,6 +286,9 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
         <CardContent className="p-4">
           <p className="text-sm text-gray-600">
             Debug: Found {availableSpells.length} spells for {data.class.name}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Note: Using fallback spell mapping due to API data issues
           </p>
         </CardContent>
       </Card>
