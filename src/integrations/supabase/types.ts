@@ -27,6 +27,7 @@ export type Database = {
           sources: Json | null
           species_data: Json | null
           species_name: string | null
+          spell_slots: Json | null
           spells: Json | null
           subclass_name: string | null
           updated_at: string
@@ -49,6 +50,7 @@ export type Database = {
           sources?: Json | null
           species_data?: Json | null
           species_name?: string | null
+          spell_slots?: Json | null
           spells?: Json | null
           subclass_name?: string | null
           updated_at?: string
@@ -71,6 +73,7 @@ export type Database = {
           sources?: Json | null
           species_data?: Json | null
           species_name?: string | null
+          spell_slots?: Json | null
           spells?: Json | null
           subclass_name?: string | null
           updated_at?: string
