@@ -39,7 +39,7 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
   };
 
   const handleSpeedChange = (value: string) => {
-    setCharacter({ ...character, speed: parseInt(value) || 0 });
+    setCharacter({ ...character, speed: parseInt(value) || 30 });
   };
 
   // Safety check for character data

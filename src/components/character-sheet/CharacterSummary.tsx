@@ -39,7 +39,8 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
   const handleDamage = () => {
     const damage = parseInt(tempDamage);
     if (damage > 0) {
-      const newHP = Math.max(0, character.currentHP - damage);
+      const currentHP = character.currentHP || character.maxHP || 0;
+      const newHP = Math.max(0, currentHP - damage);
       setCharacter({ ...character, currentHP: newHP });
       setTempDamage('');
       setShowHPDialog(false);
@@ -49,12 +50,19 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
   const handleHealing = () => {
     const healing = parseInt(tempHealing);
     if (healing > 0) {
-      const newHP = Math.min(character.maxHP, character.currentHP + healing);
+      const currentHP = character.currentHP || character.maxHP || 0;
+      const maxHP = character.maxHP || 0;
+      const newHP = Math.min(maxHP, currentHP + healing);
       setCharacter({ ...character, currentHP: newHP });
       setTempHealing('');
       setShowHPDialog(false);
     }
   };
+
+  // Get HP values with fallbacks
+  const currentHP = character.currentHP !== undefined ? character.currentHP : (character.maxHP || 0);
+  const maxHP = character.maxHP || 0;
+  const tempHP = character.tempHP || 0;
 
   return (
     <div className="bg-white rounded-lg p-4 mt-4">
@@ -111,11 +119,11 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
         <div className="flex items-center space-x-2">
           <span className="font-medium text-gray-700">HP:</span>
           <span className="text-lg font-bold">
-            {character.currentHP} / {character.maxHP}
+            {currentHP} / {maxHP}
           </span>
-          {character.tempHP > 0 && (
+          {tempHP > 0 && (
             <span className="text-blue-600 text-sm">
-              (+{character.tempHP} temp)
+              (+{tempHP} temp)
             </span>
           )}
         </div>
