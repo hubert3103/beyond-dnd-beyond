@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -318,7 +317,7 @@ const SpellsTab = () => {
               )}
               {selectedSpell.classes && Array.isArray(selectedSpell.classes) && selectedSpell.classes.length > 0 && (
                 <p className="text-gray-600">
-                  <strong>Classes:</strong> {selectedSpell.classes.map(cls => cls.name).join(', ')}
+                  <strong>Classes:</strong> {getSpellClasses(selectedSpell)}
                 </p>
               )}
               {selectedSpell.concentration && (
