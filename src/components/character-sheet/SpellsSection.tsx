@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Zap, Circle } from 'lucide-react';
+import { ChevronDown, ChevronRight, Zap, Circle, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Collapsible,
@@ -23,6 +23,12 @@ const SpellsSection = ({ character, setCharacter }: SpellsSectionProps) => {
   const isSpellcaster = () => {
     const spellcasterClasses = ['wizard', 'sorcerer', 'warlock', 'bard', 'cleric', 'druid', 'artificer', 'paladin', 'ranger'];
     return spellcasterClasses.includes(character.class_name?.toLowerCase() || '');
+  };
+
+  // Check if character needs to prepare spells
+  const needsSpellPreparation = () => {
+    const preparationClasses = ['wizard', 'cleric', 'druid', 'paladin', 'artificer'];
+    return preparationClasses.includes(character.class_name?.toLowerCase() || '');
   };
 
   // Get spell slots based on class and level
@@ -155,6 +161,30 @@ const SpellsSection = ({ character, setCharacter }: SpellsSectionProps) => {
     }
   };
 
+  const toggleSpellPreparation = (spellIndex: number, spellLevel: number) => {
+    const updatedSpells = [...character.spells];
+    const spellsAtLevel = characterSpells[spellLevel];
+    
+    // Find the spell in the original array
+    const spellToUpdate = spellsAtLevel[spellIndex];
+    const originalIndex = updatedSpells.findIndex(spell => spell.name === spellToUpdate.name);
+    
+    if (originalIndex !== -1) {
+      updatedSpells[originalIndex] = {
+        ...updatedSpells[originalIndex],
+        prepared: !updatedSpells[originalIndex].prepared
+      };
+      
+      const updatedCharacter = {
+        ...character,
+        spells: updatedSpells
+      };
+      
+      setCharacter(updatedCharacter);
+      console.log(`${updatedSpells[originalIndex].prepared ? 'Prepared' : 'Unprepared'} spell: ${spellToUpdate.name}`);
+    }
+  };
+
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div className="bg-white rounded-lg overflow-hidden">
@@ -227,18 +257,18 @@ const SpellsSection = ({ character, setCharacter }: SpellsSectionProps) => {
                 {characterSpells[selectedLevel]?.map((spell, index) => (
                   <div
                     key={index}
-                    className={`border rounded-lg p-3 flex items-center justify-between ${
+                    className={`border rounded-lg p-3 ${
                       spell.prepared ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
                     }`}
                   >
                     <div 
-                      className="flex items-center space-x-3 flex-1 cursor-pointer"
+                      className="flex items-center space-x-3 mb-2 cursor-pointer"
                       onClick={() => setSelectedSpellForModal(spell)}
                     >
                       <div className="text-gray-600">
                         <Zap className="h-4 w-4" />
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <h4 className="font-medium text-gray-900 flex items-center space-x-2">
                           <span>{spell.name}</span>
                           {spell.prepared && (
@@ -253,19 +283,36 @@ const SpellsSection = ({ character, setCharacter }: SpellsSectionProps) => {
                       </div>
                     </div>
                     
-                    {spell.prepared && (
-                      <Button
-                        size="sm"
-                        className="bg-red-600 hover:bg-red-700"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          castSpell(selectedLevel);
-                        }}
-                        disabled={selectedLevel > 0 && spellSlots[selectedLevel]?.used >= spellSlots[selectedLevel]?.max}
-                      >
-                        Cast
-                      </Button>
-                    )}
+                    <div className="flex space-x-2">
+                      {needsSpellPreparation() && selectedLevel > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSpellPreparation(index, selectedLevel);
+                          }}
+                          className={spell.prepared ? "bg-blue-100 border-blue-300" : ""}
+                        >
+                          <BookOpen className="h-3 w-3 mr-1" />
+                          {spell.prepared ? 'Unprepare' : 'Prepare'}
+                        </Button>
+                      )}
+                      
+                      {(selectedLevel === 0 || spell.prepared || !needsSpellPreparation()) && (
+                        <Button
+                          size="sm"
+                          className="bg-red-600 hover:bg-red-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            castSpell(selectedLevel);
+                          }}
+                          disabled={selectedLevel > 0 && spellSlots[selectedLevel]?.used >= spellSlots[selectedLevel]?.max}
+                        >
+                          Cast
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 )) || (
                   <div className="text-center py-4 text-gray-500">

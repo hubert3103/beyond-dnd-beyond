@@ -50,40 +50,50 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
   const currentHP = character.hit_points?.current !== undefined ? character.hit_points.current : character.currentHP !== undefined ? character.currentHP : maxHP;
   const tempHP = character.hit_points?.temporary || character.tempHP || 0;
 
-  // Get hit die information from class data with better debugging
-  console.log('Character class data:', character.class_data);
-  console.log('Character class name:', character.class_name);
-  
-  // Try multiple ways to get the hit die
-  let hitDie = 8; // default
-  
-  if (character.class_data?.hit_die) {
-    hitDie = character.class_data.hit_die;
-    console.log('Got hit die from class_data.hit_die:', hitDie);
-  } else if (character.class_data?.hitDie) {
-    hitDie = character.class_data.hitDie;
-    console.log('Got hit die from class_data.hitDie:', hitDie);
-  } else if (character.class_name) {
-    // Map class names to hit dice as fallback
-    const classHitDice = {
-      'Barbarian': 12,
-      'Fighter': 10,
-      'Paladin': 10,
-      'Ranger': 10,
-      'Bard': 8,
-      'Cleric': 8,
-      'Druid': 8,
-      'Monk': 8,
-      'Rogue': 8,
-      'Warlock': 8,
-      'Sorcerer': 6,
-      'Wizard': 6
-    };
+  // Get hit die information from class data with proper class mapping
+  const getHitDie = () => {
+    console.log('Character class data:', character.class_data);
+    console.log('Character class name:', character.class_name);
     
-    hitDie = classHitDice[character.class_name] || 8;
-    console.log(`Using fallback hit die for ${character.class_name}:`, hitDie);
-  }
+    // Try to get hit die from class data first
+    if (character.class_data?.hit_die) {
+      console.log('Got hit die from class_data.hit_die:', character.class_data.hit_die);
+      return character.class_data.hit_die;
+    } else if (character.class_data?.hitDie) {
+      console.log('Got hit die from class_data.hitDie:', character.class_data.hitDie);
+      return character.class_data.hitDie;
+    }
+    
+    // Fallback to class name mapping with correct hit dice
+    if (character.class_name) {
+      const classHitDice = {
+        'barbarian': 12,
+        'fighter': 10,
+        'paladin': 10,
+        'ranger': 10,
+        'bard': 8,
+        'cleric': 8,
+        'druid': 8,
+        'monk': 8,
+        'rogue': 8,
+        'warlock': 8,
+        'artificer': 8,
+        'sorcerer': 6,
+        'wizard': 6  // Fixed: Wizard should have d6 hit die
+      };
+      
+      const className = character.class_name.toLowerCase();
+      const hitDie = classHitDice[className] || 8;
+      console.log(`Using fallback hit die for ${character.class_name}:`, hitDie);
+      return hitDie;
+    }
+    
+    // Default fallback
+    console.log('Using default hit die: 8');
+    return 8;
+  };
   
+  const hitDie = getHitDie();
   console.log('Final hit die value:', hitDie);
   
   const hitDiceRemaining = character.hit_points?.hit_dice_remaining !== undefined ? character.hit_points.hit_dice_remaining : character.level;
