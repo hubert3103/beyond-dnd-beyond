@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -21,8 +20,8 @@ const CharactersTab = () => {
     setShowDeleteDialog(null);
   };
 
-  const handleEditCharacter = () => {
-    navigate('/under-construction');
+  const handleEditCharacter = (character: any) => {
+    navigate(`/character-creation?edit=${character.id}`);
   };
 
   const handleNewCharacter = () => {
@@ -97,7 +96,7 @@ const CharactersTab = () => {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={handleEditCharacter}>
+                <DropdownMenuItem onClick={() => handleEditCharacter(character)}>
                   Edit Character
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowDeleteDialog(character.id)}>

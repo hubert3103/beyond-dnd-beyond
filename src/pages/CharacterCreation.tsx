@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import BottomNavigation from '../components/BottomNavigation';
 import { TabType } from './PlayerDashboard';
 import SetupScreen from '../components/character-creation/SetupScreen';
@@ -11,13 +12,19 @@ import SpellSelectionScreen from '../components/character-creation/SpellSelectio
 import EquipmentScreen from '../components/character-creation/EquipmentScreen';
 import SummaryScreen from '../components/character-creation/SummaryScreen';
 import { useCharacters } from '@/hooks/useCharacters';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 export type CreationStep = 'setup' | 'species' | 'class' | 'abilities' | 'background' | 'spells' | 'equipment' | 'summary';
 
 const CharacterCreation = () => {
   const navigate = useNavigate();
-  const { saveCharacter } = useCharacters();
+  const [searchParams] = useSearchParams();
+  const editCharacterId = searchParams.get('edit');
+  const { saveCharacter, getCharacter, updateCharacter } = useCharacters();
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<CreationStep>('setup');
+  const [isLoading, setIsLoading] = useState(!!editCharacterId);
   const [characterData, setCharacterData] = useState({
     name: '',
     sources: { coreRules: true, expansions: false, homebrew: false },
@@ -37,6 +44,62 @@ const CharacterCreation = () => {
     equipment: { startingEquipment: [], inventory: [], currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 } },
     spells: []
   });
+
+  // Load existing character data if editing
+  useEffect(() => {
+    const loadCharacterForEdit = async () => {
+      if (!editCharacterId) return;
+
+      try {
+        const existingCharacter = await getCharacter(editCharacterId);
+        if (existingCharacter) {
+          console.log('Loading character for edit:', existingCharacter);
+          
+          // Convert database character format to creation format
+          const convertedData = {
+            name: existingCharacter.name,
+            sources: { coreRules: true, expansions: false, homebrew: false }, // Default values
+            advancementType: existingCharacter.advancement_type || 'milestone',
+            hitPointType: existingCharacter.hit_point_type || 'fixed',
+            species: existingCharacter.species_data,
+            class: existingCharacter.class_data,
+            abilities: existingCharacter.abilities || {
+              str: { base: 10, bonus: 0, total: 10 },
+              dex: { base: 10, bonus: 0, total: 10 },
+              con: { base: 10, bonus: 0, total: 10 },
+              int: { base: 10, bonus: 0, total: 10 },
+              wis: { base: 10, bonus: 0, total: 10 },
+              cha: { base: 10, bonus: 0, total: 10 }
+            },
+            background: existingCharacter.background_data,
+            equipment: existingCharacter.equipment || { startingEquipment: [], inventory: [], currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 } },
+            spells: existingCharacter.spells || []
+          };
+          
+          setCharacterData(convertedData);
+        } else {
+          toast({
+            title: "Error",
+            description: "Character not found",
+            variant: "destructive",
+          });
+          navigate('/player');
+        }
+      } catch (error) {
+        console.error('Error loading character for edit:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load character",
+          variant: "destructive",
+        });
+        navigate('/player');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCharacterForEdit();
+  }, [editCharacterId, getCharacter, navigate, toast]);
 
   // Check if current class is a spellcaster
   const isSpellcaster = () => {
@@ -88,11 +151,37 @@ const CharacterCreation = () => {
     if (currentStepIndex < steps.length - 1) {
       setCurrentStep(steps[currentStepIndex + 1].id);
     } else {
-      // Save character and navigate to character sheet
+      // Save or update character
       try {
-        const savedCharacter = await saveCharacter(characterData);
-        if (savedCharacter) {
-          navigate(`/character/${savedCharacter.id}`);
+        if (editCharacterId) {
+          // Update existing character
+          await updateCharacter(editCharacterId, {
+            name: characterData.name,
+            species_name: characterData.species?.name || null,
+            species_data: characterData.species,
+            class_name: characterData.class?.name || null,
+            class_data: characterData.class,
+            background_name: characterData.background?.name || null,
+            background_data: characterData.background,
+            abilities: characterData.abilities,
+            equipment: characterData.equipment,
+            spells: characterData.spells,
+            advancement_type: characterData.advancementType,
+            hit_point_type: characterData.hitPointType,
+          });
+          
+          toast({
+            title: "Success",
+            description: "Character updated successfully!",
+          });
+          
+          navigate(`/character/${editCharacterId}`);
+        } else {
+          // Create new character
+          const savedCharacter = await saveCharacter(characterData);
+          if (savedCharacter) {
+            navigate(`/character/${savedCharacter.id}`);
+          }
         }
       } catch (error) {
         console.error('Failed to save character:', error);
@@ -132,6 +221,17 @@ const CharacterCreation = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#4a4a4a] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-white mx-auto mb-4" />
+          <p className="text-white">Loading character...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#4a4a4a] flex flex-col">
       {/* Top Navigation */}
@@ -142,7 +242,9 @@ const CharacterCreation = () => {
         >
           <span className="text-white font-bold text-sm">&larr;</span>
         </button>
-        <h1 className="text-white text-lg font-medium flex-1 text-center pr-11">Character Creation</h1>
+        <h1 className="text-white text-lg font-medium flex-1 text-center pr-11">
+          {editCharacterId ? 'Edit Character' : 'Character Creation'}
+        </h1>
       </header>
 
       {/* Breadcrumb Progress */}
@@ -189,7 +291,7 @@ const CharacterCreation = () => {
             onClick={goToNextStep}
             className="text-white px-4 py-2 font-medium"
           >
-            {currentStepIndex === steps.length - 1 ? 'Create Character' : 'Next >'}
+            {currentStepIndex === steps.length - 1 ? (editCharacterId ? 'Update Character' : 'Create Character') : 'Next >'}
           </button>
         </div>
       </div>
