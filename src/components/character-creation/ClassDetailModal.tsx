@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Open5eClass } from '../../services/open5eApi';
 import { getAvailableSubclasses, getAllSubclasses } from '../../data/classArchetypes';
 import SubclassInfoPanel from './SubclassInfoPanel';
@@ -21,7 +22,7 @@ const ClassDetailModal = ({ classData, isOpen, onClose, onSelect }: ClassDetailM
 
   if (!classData) return null;
 
-  const availableSubclasses = getAvailableSubclasses(classData.name, 3); // Show subclasses available by level 3
+  const availableSubclasses = getAvailableSubclasses(classData.name, 3);
   const allSubclasses = getAllSubclasses(classData.name);
   const higherLevelSubclasses = allSubclasses.filter(sub => sub.availableAtLevel > 3);
   
@@ -38,136 +39,171 @@ const ClassDetailModal = ({ classData, isOpen, onClose, onSelect }: ClassDetailM
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">{classData.name}</DialogTitle>
+          <DialogTitle className="text-3xl font-bold text-center">{classData.name}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Basic Class Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h4 className="font-semibold text-gray-900">Hit Die</h4>
-              <p className="text-gray-600">d{classData.hit_die}</p>
+          {/* Class Image Placeholder */}
+          <div className="w-full h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center border-2 border-gray-300">
+            <img 
+              src="/avatarPlaceholder.svg" 
+              alt={classData.name}
+              className="w-20 h-20 opacity-60"
+              style={{ filter: 'invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)' }}
+            />
+          </div>
+
+          {/* Quick Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+              <h4 className="font-semibold text-red-900 text-sm">Hit Die</h4>
+              <p className="text-red-700 font-medium">d{classData.hit_die}</p>
             </div>
-            <div>
-              <h4 className="font-semibold text-gray-900">Primary Ability</h4>
-              <p className="text-gray-600">{classData.spellcasting_ability || 'Varies'}</p>
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+              <h4 className="font-semibold text-purple-900 text-sm">Primary Ability</h4>
+              <p className="text-purple-700 font-medium">{classData.spellcasting_ability || 'Varies'}</p>
+            </div>
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 col-span-2">
+              <h4 className="font-semibold text-blue-900 text-sm">Saving Throws</h4>
+              <p className="text-blue-700 font-medium">{classData.prof_saving_throws || 'None specified'}</p>
             </div>
           </div>
 
           {/* Description */}
-          <div>
-            <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
-            <p className="text-gray-600 leading-relaxed">{cleanDescription(classData.desc)}</p>
+          <div className="bg-gray-50 p-6 rounded-lg border">
+            <h4 className="font-semibold text-gray-900 mb-3 text-lg">About {classData.name}</h4>
+            <p className="text-gray-700 leading-relaxed">{cleanDescription(classData.desc)}</p>
           </div>
 
-          {/* Proficiencies */}
+          {/* Proficiencies Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {classData.prof_armor && (
-              <div>
-                <h5 className="font-medium text-gray-700">Armor</h5>
-                <p className="text-sm text-gray-600">{classData.prof_armor}</p>
+              <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                <h4 className="font-semibold text-amber-900 mb-2 flex items-center">
+                  <span className="text-lg">🛡️</span>
+                  <span className="ml-2">Armor Proficiency</span>
+                </h4>
+                <p className="text-amber-800 text-sm">{classData.prof_armor}</p>
               </div>
             )}
+            
             {classData.prof_weapons && (
-              <div>
-                <h5 className="font-medium text-gray-700">Weapons</h5>
-                <p className="text-sm text-gray-600">{classData.prof_weapons}</p>
+              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                <h4 className="font-semibold text-orange-900 mb-2 flex items-center">
+                  <span className="text-lg">⚔️</span>
+                  <span className="ml-2">Weapon Proficiency</span>
+                </h4>
+                <p className="text-orange-800 text-sm">{classData.prof_weapons}</p>
               </div>
             )}
+            
             {classData.prof_tools && (
-              <div>
-                <h5 className="font-medium text-gray-700">Tools</h5>
-                <p className="text-sm text-gray-600">{classData.prof_tools}</p>
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h4 className="font-semibold text-green-900 mb-2 flex items-center">
+                  <span className="text-lg">🔧</span>
+                  <span className="ml-2">Tool Proficiency</span>
+                </h4>
+                <p className="text-green-800 text-sm">{classData.prof_tools}</p>
               </div>
             )}
-            {classData.prof_saving_throws && (
-              <div>
-                <h5 className="font-medium text-gray-700">Saving Throws</h5>
-                <p className="text-sm text-gray-600">{classData.prof_saving_throws}</p>
+
+            {classData.prof_skills && (
+              <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                <h4 className="font-semibold text-indigo-900 mb-2 flex items-center">
+                  <span className="text-lg">🎯</span>
+                  <span className="ml-2">Skill Proficiency</span>
+                </h4>
+                <p className="text-indigo-800 text-sm">{classData.prof_skills}</p>
               </div>
             )}
           </div>
 
-          {/* Skills */}
-          {classData.prof_skills && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Skills</h4>
-              <p className="text-gray-600">{classData.prof_skills}</p>
-            </div>
-          )}
-
-          {/* Equipment */}
+          {/* Starting Equipment */}
           {classData.equipment && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Starting Equipment</h4>
-              <p className="text-gray-600">{cleanDescription(classData.equipment)}</p>
+            <div className="bg-white border rounded-lg">
+              <div className="bg-gray-100 px-6 py-4 border-b">
+                <h4 className="font-semibold text-gray-900 text-lg flex items-center">
+                  <span className="text-lg">🎒</span>
+                  <span className="ml-2">Starting Equipment</span>
+                </h4>
+              </div>
+              <div className="p-6">
+                <p className="text-gray-700 leading-relaxed">{cleanDescription(classData.equipment)}</p>
+              </div>
             </div>
           )}
 
           {/* Available Subclasses */}
           {availableSubclasses.length > 0 && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">
-                Available Subclasses (Levels 1-3)
-              </h4>
-              <p className="text-sm text-gray-500 mb-3">
-                Choose a subclass path for your {classData.name}. These become available by level {availableSubclasses[0]?.availableAtLevel || 3}.
-              </p>
-              
-              <Select value={selectedSubclass} onValueChange={setSelectedSubclass}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a subclass (optional)" />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-50">
-                  {availableSubclasses.map((subclass) => (
-                    <SelectItem key={subclass.name} value={subclass.name}>
-                      {subclass.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="bg-white border rounded-lg">
+              <div className="bg-gray-100 px-6 py-4 border-b">
+                <h4 className="font-semibold text-gray-900 text-lg">Choose a Subclass</h4>
+                <p className="text-sm text-gray-600 mt-1">
+                  Available by level {availableSubclasses[0]?.availableAtLevel || 3}. Customize your character with specialized abilities.
+                </p>
+              </div>
+              <div className="p-6">
+                <Select value={selectedSubclass} onValueChange={setSelectedSubclass}>
+                  <SelectTrigger className="mb-4">
+                    <SelectValue placeholder="Choose a subclass (optional)" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {availableSubclasses.map((subclass) => (
+                      <SelectItem key={subclass.name} value={subclass.name}>
+                        {subclass.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              {selectedSubclassData && (
-                <SubclassInfoPanel subclass={selectedSubclassData} />
-              )}
+                {selectedSubclassData && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <SubclassInfoPanel subclass={selectedSubclassData} />
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Higher Level Subclasses (Preview) */}
+          {/* Future Subclasses */}
           {higherLevelSubclasses.length > 0 && (
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">
-                Future Subclass Options (Level {higherLevelSubclasses[0]?.availableAtLevel}+)
-              </h4>
-              <p className="text-sm text-gray-500 mb-3">
-                These subclasses will become available as your character advances.
-              </p>
-              
-              <div className="grid gap-2">
+            <div className="bg-white border rounded-lg">
+              <div className="bg-gray-100 px-6 py-4 border-b">
+                <h4 className="font-semibold text-gray-900 text-lg flex items-center">
+                  <span className="text-lg">🌟</span>
+                  <span className="ml-2">Future Subclass Options</span>
+                </h4>
+                <p className="text-sm text-gray-600 mt-1">
+                  These subclasses will become available as your character advances to level {higherLevelSubclasses[0]?.availableAtLevel}+.
+                </p>
+              </div>
+              <div className="p-6 space-y-3">
                 {higherLevelSubclasses.map((subclass) => (
-                  <Card key={subclass.name} className="border-l-4 border-l-yellow-400">
-                    <CardContent className="p-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h5 className="font-medium text-gray-900">{subclass.name}</h5>
-                          <p className="text-sm text-gray-600 mt-1">{subclass.description}</p>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          Level {subclass.availableAtLevel}
-                        </Badge>
+                  <div key={subclass.name} className="border-l-4 border-l-yellow-400 pl-4 py-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h5 className="font-semibold text-gray-900">{subclass.name}</h5>
+                        <p className="text-sm text-gray-600 mt-1">{subclass.description}</p>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-300 text-yellow-800">
+                        Level {subclass.availableAtLevel}
+                      </Badge>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
           )}
 
+          <Separator />
+
           {/* Source Badge */}
-          <div>
-            <Badge variant="secondary">{classData.document__slug.toUpperCase()}</Badge>
+          <div className="flex justify-center">
+            <Badge variant="secondary" className="text-xs">
+              Source: {classData.document__slug.toUpperCase()}
+            </Badge>
           </div>
 
           {/* Action Buttons */}
@@ -175,7 +211,7 @@ const ClassDetailModal = ({ classData, isOpen, onClose, onSelect }: ClassDetailM
             <Button variant="outline" onClick={onClose} className="flex-1">
               Close
             </Button>
-            <Button onClick={handleSelect} className="flex-1">
+            <Button onClick={handleSelect} className="flex-1 bg-red-600 hover:bg-red-700">
               Select {classData.name}
             </Button>
           </div>
