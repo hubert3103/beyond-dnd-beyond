@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -34,45 +33,83 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
   const getCharacterProficiencies = () => {
     const proficiencies = new Set<string>();
     
+    console.log('Getting proficiencies for:', { species: data.species?.name, class: data.class?.name });
+    
     // Add species proficiencies
     if (data.species?.proficiencies) {
       const speciesProficiencies = data.species.proficiencies.toLowerCase();
-      if (speciesProficiencies.includes('simple weapons')) proficiencies.add('simple');
-      if (speciesProficiencies.includes('martial weapons')) proficiencies.add('martial');
-      if (speciesProficiencies.includes('light armor')) proficiencies.add('light armor');
-      if (speciesProficiencies.includes('medium armor')) proficiencies.add('medium armor');
-      if (speciesProficiencies.includes('heavy armor')) proficiencies.add('heavy armor');
-      if (speciesProficiencies.includes('shields')) proficiencies.add('shield');
+      console.log('Species proficiencies:', speciesProficiencies);
       
-      // Add specific weapon proficiencies
-      const weaponMatches = speciesProficiencies.match(/\b(longsword|shortbow|longbow|rapier|shortsword|scimitar|handaxe|light hammer|javelin|spear|dart|sling|quarterstaff|dagger|club|greatclub|light crossbow|shortbow)\b/g);
-      if (weaponMatches) {
-        weaponMatches.forEach(weapon => proficiencies.add(weapon));
+      // Check for weapon proficiencies
+      if (speciesProficiencies.includes('simple weapon') || speciesProficiencies.includes('simple-weapon')) {
+        proficiencies.add('simple');
       }
+      if (speciesProficiencies.includes('martial weapon') || speciesProficiencies.includes('martial-weapon')) {
+        proficiencies.add('martial');
+      }
+      
+      // Check for armor proficiencies
+      if (speciesProficiencies.includes('light armor') || speciesProficiencies.includes('light-armor')) {
+        proficiencies.add('light-armor');
+      }
+      if (speciesProficiencies.includes('medium armor') || speciesProficiencies.includes('medium-armor')) {
+        proficiencies.add('medium-armor');
+      }
+      if (speciesProficiencies.includes('heavy armor') || speciesProficiencies.includes('heavy-armor')) {
+        proficiencies.add('heavy-armor');
+      }
+      if (speciesProficiencies.includes('shield')) {
+        proficiencies.add('shield');
+      }
+      
+      // Add specific weapon proficiencies (common racial weapons)
+      const specificWeapons = ['longsword', 'shortbow', 'longbow', 'rapier', 'shortsword', 'scimitar', 'handaxe', 'light hammer', 'javelin'];
+      specificWeapons.forEach(weapon => {
+        if (speciesProficiencies.includes(weapon)) {
+          proficiencies.add(weapon);
+        }
+      });
     }
     
-    // Add class proficiencies
-    if (data.class?.prof_weapons) {
+    // Add class proficiencies - Fighter gets extensive proficiencies
+    if (data.class?.name?.toLowerCase() === 'fighter') {
+      proficiencies.add('simple');
+      proficiencies.add('martial');
+      proficiencies.add('light-armor');
+      proficiencies.add('medium-armor');
+      proficiencies.add('heavy-armor');
+      proficiencies.add('shield');
+    } else if (data.class?.prof_weapons) {
       const classProficiencies = data.class.prof_weapons.toLowerCase();
-      if (classProficiencies.includes('simple weapons')) proficiencies.add('simple');
-      if (classProficiencies.includes('martial weapons')) proficiencies.add('martial');
+      console.log('Class weapon proficiencies:', classProficiencies);
       
-      // Add specific weapon proficiencies
-      const weaponMatches = classProficiencies.match(/\b(longsword|shortbow|longbow|rapier|shortsword|scimitar|handaxe|light hammer|javelin|spear|dart|sling|quarterstaff|dagger|club|greatclub|light crossbow|shortbow)\b/g);
-      if (weaponMatches) {
-        weaponMatches.forEach(weapon => proficiencies.add(weapon));
+      if (classProficiencies.includes('simple weapon') || classProficiencies.includes('simple-weapon')) {
+        proficiencies.add('simple');
+      }
+      if (classProficiencies.includes('martial weapon') || classProficiencies.includes('martial-weapon')) {
+        proficiencies.add('martial');
       }
     }
     
     if (data.class?.prof_armor) {
       const armorProficiencies = data.class.prof_armor.toLowerCase();
-      if (armorProficiencies.includes('light armor')) proficiencies.add('light armor');
-      if (armorProficiencies.includes('medium armor')) proficiencies.add('medium armor');
-      if (armorProficiencies.includes('heavy armor')) proficiencies.add('heavy armor');
-      if (armorProficiencies.includes('shields')) proficiencies.add('shield');
+      console.log('Class armor proficiencies:', armorProficiencies);
+      
+      if (armorProficiencies.includes('light armor') || armorProficiencies.includes('light-armor')) {
+        proficiencies.add('light-armor');
+      }
+      if (armorProficiencies.includes('medium armor') || armorProficiencies.includes('medium-armor')) {
+        proficiencies.add('medium-armor');
+      }
+      if (armorProficiencies.includes('heavy armor') || armorProficiencies.includes('heavy-armor')) {
+        proficiencies.add('heavy-armor');
+      }
+      if (armorProficiencies.includes('shield')) {
+        proficiencies.add('shield');
+      }
     }
     
-    console.log('Character proficiencies:', Array.from(proficiencies));
+    console.log('Final character proficiencies:', Array.from(proficiencies));
     return proficiencies;
   };
 
@@ -83,27 +120,49 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
     const proficiencies = getCharacterProficiencies();
     
     // Simple weapons list
-    const simpleWeapons = ['club', 'dagger', 'dart', 'javelin', 'mace', 'quarterstaff', 'sickle', 'spear', 'light crossbow', 'shortbow', 'sling', 'greatclub', 'handaxe', 'light hammer'];
+    const simpleWeapons = [
+      'club', 'dagger', 'dart', 'javelin', 'mace', 'quarterstaff', 'sickle', 'spear', 
+      'light-crossbow', 'shortbow', 'sling', 'greatclub', 'handaxe', 'light-hammer'
+    ];
     
     // Martial weapons list  
-    const martialWeapons = ['battleaxe', 'flail', 'glaive', 'greataxe', 'greatsword', 'halberd', 'lance', 'longsword', 'maul', 'morningstar', 'pike', 'rapier', 'scimitar', 'shortsword', 'trident', 'war pick', 'warhammer', 'whip', 'blowgun', 'hand crossbow', 'heavy crossbow', 'longbow', 'net'];
+    const martialWeapons = [
+      'battleaxe', 'flail', 'glaive', 'greataxe', 'greatsword', 'halberd', 'lance', 
+      'longsword', 'maul', 'morningstar', 'pike', 'rapier', 'scimitar', 'shortsword', 
+      'trident', 'war-pick', 'warhammer', 'whip', 'blowgun', 'hand-crossbow', 
+      'heavy-crossbow', 'longbow', 'net'
+    ];
     
-    return equipment.filter(item => {
-      if (item.type !== 'weapon') return false;
-      
-      const itemName = item.name.toLowerCase();
+    const weapons = equipment.filter(item => item.type === 'weapon');
+    console.log('All weapons found:', weapons.length);
+    
+    const availableWeapons = weapons.filter(weapon => {
+      const weaponSlug = weapon.slug.toLowerCase();
       
       // Check if proficient with this specific weapon
-      if (proficiencies.has(itemName)) return true;
+      if (proficiencies.has(weaponSlug)) return true;
       
       // Check if proficient with simple weapons and this is a simple weapon
-      if (proficiencies.has('simple') && simpleWeapons.some(weapon => itemName.includes(weapon))) return true;
+      if (proficiencies.has('simple')) {
+        const isSimple = simpleWeapons.some(simpleWeapon => 
+          weaponSlug.includes(simpleWeapon) || simpleWeapon.includes(weaponSlug)
+        );
+        if (isSimple) return true;
+      }
       
       // Check if proficient with martial weapons and this is a martial weapon
-      if (proficiencies.has('martial') && martialWeapons.some(weapon => itemName.includes(weapon))) return true;
+      if (proficiencies.has('martial')) {
+        const isMartial = martialWeapons.some(martialWeapon => 
+          weaponSlug.includes(martialWeapon) || martialWeapon.includes(weaponSlug)
+        );
+        if (isMartial) return true;
+      }
       
       return false;
     });
+    
+    console.log('Available weapons after filtering:', availableWeapons.length);
+    return availableWeapons;
   }, [equipment, data.species, data.class]);
 
   // Filter armor based on proficiencies
@@ -112,20 +171,28 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
     
     const proficiencies = getCharacterProficiencies();
     
-    return equipment.filter(item => {
-      if (!item.type.includes('armor') && item.type !== 'shield') return false;
+    const armor = equipment.filter(item => 
+      item.type.includes('armor') || item.type === 'shield' || item.name.toLowerCase().includes('armor') || item.name.toLowerCase().includes('shield')
+    );
+    console.log('All armor found:', armor.length);
+    
+    const availableArmor = armor.filter(armorItem => {
+      const itemName = armorItem.name.toLowerCase();
+      const itemType = armorItem.type.toLowerCase();
       
-      const itemName = item.name.toLowerCase();
-      const itemType = item.type.toLowerCase();
+      // Check for shield
+      if (itemName.includes('shield') && proficiencies.has('shield')) return true;
       
-      // Check specific proficiencies
-      if (itemType.includes('light') && proficiencies.has('light armor')) return true;
-      if (itemType.includes('medium') && proficiencies.has('medium armor')) return true;
-      if (itemType.includes('heavy') && proficiencies.has('heavy armor')) return true;
-      if (itemType.includes('shield') && proficiencies.has('shield')) return true;
+      // Check armor types
+      if ((itemType.includes('light') || itemName.includes('leather') || itemName.includes('padded') || itemName.includes('studded')) && proficiencies.has('light-armor')) return true;
+      if ((itemType.includes('medium') || itemName.includes('hide') || itemName.includes('chain shirt') || itemName.includes('scale mail') || itemName.includes('breastplate') || itemName.includes('half plate')) && proficiencies.has('medium-armor')) return true;
+      if ((itemType.includes('heavy') || itemName.includes('ring mail') || itemName.includes('chain mail') || itemName.includes('splint') || itemName.includes('plate')) && proficiencies.has('heavy-armor')) return true;
       
       return false;
     });
+    
+    console.log('Available armor after filtering:', availableArmor.length);
+    return availableArmor;
   }, [equipment, data.species, data.class]);
 
   const toggleSection = (section: string) => {
@@ -195,6 +262,11 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
     <div className="p-4 space-y-4">
       <h1 className="text-xl font-bold text-gray-900">Choose Equipment</h1>
       
+      {/* Debug info */}
+      <div className="text-xs text-gray-500">
+        Debug: {availableWeapons.length} weapons, {availableArmor.length} armor available
+      </div>
+      
       {/* Weapons Selection */}
       <Collapsible open={expandedSections.weapons} onOpenChange={() => toggleSection('weapons')}>
         <div className="border border-gray-200 rounded-lg">
@@ -202,7 +274,7 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-semibold text-gray-900">Weapons ({equipmentData.selectedWeapons.length})</div>
-                <div className="text-sm text-gray-600">Choose weapons you're proficient with</div>
+                <div className="text-sm text-gray-600">Choose weapons you're proficient with ({availableWeapons.length} available)</div>
               </div>
               <div className="text-gray-400">
                 {expandedSections.weapons ? '▲' : '▼'}
@@ -212,18 +284,22 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
           
           <CollapsibleContent>
             <div className="px-4 pb-4 border-t border-gray-100 space-y-3">
-              <Select onValueChange={addWeapon}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Add a weapon..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableWeapons.map((weapon) => (
-                    <SelectItem key={weapon.slug} value={weapon.slug}>
-                      {weapon.name} {weapon.weight && `(${weapon.weight} lbs)`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {availableWeapons.length > 0 ? (
+                <Select onValueChange={addWeapon}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Add a weapon..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableWeapons.map((weapon) => (
+                      <SelectItem key={weapon.slug} value={weapon.slug}>
+                        {weapon.name} {weapon.weight && `(${weapon.weight} lbs)`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-gray-500 text-sm mt-2">No weapons available with your current proficiencies</p>
+              )}
               
               {equipmentData.selectedWeapons.length > 0 && (
                 <div className="space-y-2">
@@ -256,7 +332,7 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-semibold text-gray-900">Armor ({equipmentData.selectedArmor.length})</div>
-                <div className="text-sm text-gray-600">Choose armor and shields you're proficient with</div>
+                <div className="text-sm text-gray-600">Choose armor and shields you're proficient with ({availableArmor.length} available)</div>
               </div>
               <div className="text-gray-400">
                 {expandedSections.armor ? '▲' : '▼'}
@@ -266,18 +342,22 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
           
           <CollapsibleContent>
             <div className="px-4 pb-4 border-t border-gray-100 space-y-3">
-              <Select onValueChange={addArmor}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Add armor or shield..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableArmor.map((armor) => (
-                    <SelectItem key={armor.slug} value={armor.slug}>
-                      {armor.name} {armor.weight && `(${armor.weight} lbs)`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {availableArmor.length > 0 ? (
+                <Select onValueChange={addArmor}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Add armor or shield..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableArmor.map((armor) => (
+                      <SelectItem key={armor.slug} value={armor.slug}>
+                        {armor.name} {armor.weight && `(${armor.weight} lbs)`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-gray-500 text-sm mt-2">No armor available with your current proficiencies</p>
+              )}
               
               {equipmentData.selectedArmor.length > 0 && (
                 <div className="space-y-2">
