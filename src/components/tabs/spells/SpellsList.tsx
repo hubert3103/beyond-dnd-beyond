@@ -1,6 +1,7 @@
 
 import { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { LoaderCircle } from 'lucide-react';
 import { useInfiniteScroll } from '../../../hooks/useInfiniteScroll';
 import { Open5eSpell } from '../../../services/open5eApi';
 
@@ -150,9 +151,9 @@ const SpellsList = ({
 
         {/* Loading indicator */}
         {isLoadingMore && (
-          <div className="text-center py-4">
-            <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-            <p className="text-white mt-2">Loading more spells...</p>
+          <div className="flex flex-col items-center justify-center py-8">
+            <LoaderCircle className="h-8 w-8 animate-spin text-white mb-2" />
+            <p className="text-white text-sm">Loading more spells...</p>
           </div>
         )}
 
