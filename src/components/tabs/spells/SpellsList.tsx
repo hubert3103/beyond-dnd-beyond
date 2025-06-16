@@ -23,6 +23,17 @@ const SpellsList = ({
   onSpellSelect,
   onAddToCharacter
 }: SpellsListProps) => {
+  // Helper function to safely get spell class names
+  const getSpellClassNames = (spell: Open5eSpell): string[] => {
+    if (!spell.classes || !Array.isArray(spell.classes)) {
+      return [];
+    }
+    return spell.classes
+      .map((cls: any) => cls?.name || '')
+      .filter((name: string) => name.length > 0)
+      .map((name: string) => name.toLowerCase());
+  };
+
   // Optimized filtering and sorting - only recalculates when dependencies change
   const filteredAndSortedSpells = useMemo(() => {
     console.log('Filtering and sorting spells...');
@@ -43,11 +54,9 @@ const SpellsList = ({
         return false;
       }
 
-      // Class filter - Fixed type checking
+      // Class filter - using the helper function
       if (filters.classes.length > 0) {
-        const spellClassNames = spell.classes && Array.isArray(spell.classes) 
-          ? spell.classes.map((cls: any) => cls.name?.toLowerCase() || '') 
-          : [];
+        const spellClassNames = getSpellClassNames(spell);
         const hasMatchingClass = filters.classes.some(cls => 
           spellClassNames.includes(cls.toLowerCase())
         );

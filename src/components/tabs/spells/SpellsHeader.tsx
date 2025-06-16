@@ -33,9 +33,14 @@ const SpellsHeader = ({
     const levels = [...new Set(spells.map(s => s.level))].sort((a, b) => parseInt(a) - parseInt(b));
     const schools = [...new Set(spells.map(s => s.school).filter(Boolean))].sort();
     const classSet = new Set<string>();
+    
     spells.forEach(spell => {
       if (spell.classes && Array.isArray(spell.classes)) {
-        spell.classes.forEach(cls => classSet.add(cls.name));
+        spell.classes.forEach((cls: any) => {
+          if (cls?.name) {
+            classSet.add(cls.name);
+          }
+        });
       }
     });
     const classes = [...classSet].sort();

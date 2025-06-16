@@ -12,9 +12,13 @@ const SpellDetailModal = ({ spell, onClose }: SpellDetailModalProps) => {
   };
 
   const getSpellClasses = (spell: Open5eSpell) => {
-    return spell.classes && Array.isArray(spell.classes) 
-      ? spell.classes.map((cls: any) => cls.name || '').join(', ')
-      : '';
+    if (!spell.classes || !Array.isArray(spell.classes)) {
+      return '';
+    }
+    return spell.classes
+      .map((cls: any) => cls?.name || '')
+      .filter((name: string) => name.length > 0)
+      .join(', ');
   };
 
   return (
