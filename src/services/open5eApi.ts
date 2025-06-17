@@ -267,11 +267,21 @@ class Open5eApiService {
         console.log('=== END ARMOR PROCESSING ===');
       }
 
+      // Deduplicate equipment by name, keeping the first occurrence
+      const uniqueEquipment = combinedEquipment.reduce((acc: Open5eEquipment[], item: Open5eEquipment) => {
+        const existingItem = acc.find(e => e.name.toLowerCase() === item.name.toLowerCase());
+        if (!existingItem) {
+          acc.push(item);
+        }
+        return acc;
+      }, []);
+
       console.log(`Combined equipment: ${combinedEquipment.length} items`);
-      const sampleArmor = combinedEquipment.find(item => item.type.includes('armor'));
+      console.log(`Deduplicated equipment: ${combinedEquipment.length} → ${uniqueEquipment.length}`);
+      const sampleArmor = uniqueEquipment.find(item => item.type.includes('armor'));
       console.log('Sample armor item after processing:', sampleArmor);
-      this.cache.set('/equipment-combined', combinedEquipment);
-      return combinedEquipment;
+      this.cache.set('/equipment-combined', uniqueEquipment);
+      return uniqueEquipment;
     } catch (error) {
       console.warn('Equipment fetch failed, returning empty array:', error);
       return [];
