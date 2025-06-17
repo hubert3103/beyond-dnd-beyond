@@ -12,40 +12,58 @@ interface ItemDetailModalProps {
 const ItemDetailModal = ({ item, onClose }: ItemDetailModalProps) => {
   if (!item) return null;
 
-  // Parse item description to handle multiple variations
+  // Improved parsing for D&D item variations
   const parseItemVariations = (description: string) => {
-    // Check if the description contains multiple items separated by "|" or similar patterns
-    const hasMultipleVariations = description.includes('|') || description.includes(' | ');
+    // Clean up HTML tags first
+    const cleanDesc = description.replace(/<[^>]*>/g, '').trim();
     
-    if (!hasMultipleVariations) {
-      return [{ content: description, isVariation: false }];
+    // Check for common D&D item variation patterns
+    const variationPatterns = [
+      // Pattern for items with multiple types (e.g., "Potion of Giant Strength. Hill giant (uncommon) | Stone giant (rare)")
+      /([^|]+)\s*\|\s*/g,
+      // Pattern for items with different power levels
+      /(\([^)]+\)[^|]*)\s*\|\s*/g,
+      // Pattern for spell scroll variations
+      /(Spell scroll \([^)]+\)[^|]*)\s*\|\s*/g
+    ];
+
+    // Try each pattern to see if we have variations
+    for (const pattern of variationPatterns) {
+      const matches = cleanDesc.match(pattern);
+      if (matches && matches.length > 1) {
+        // Split by the pattern and clean up
+        const parts = cleanDesc.split(/\s*\|\s*/).filter(part => part.trim().length > 10); // Filter out very short fragments
+        
+        if (parts.length > 1) {
+          return parts.map((part, index) => ({
+            content: part.trim(),
+            isVariation: true,
+            title: `Variation ${index + 1}`
+          }));
+        }
+      }
     }
 
-    // Split by common separators and clean up
-    const parts = description.split(/\s*\|\s*/).filter(part => part.trim());
-    
-    const variations = parts.map(part => {
-      const trimmed = part.trim();
-      
-      // Check if this part looks like an item variation (contains rarity keywords)
-      const rarityKeywords = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'];
-      const typeKeywords = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma', 'fire', 'frost', 'storm', 'cloud', 'stone', 'hill', 'giant'];
-      
-      const containsRarity = rarityKeywords.some(keyword => 
-        trimmed.toLowerCase().includes(keyword)
-      );
-      
-      const containsType = typeKeywords.some(keyword => 
-        trimmed.toLowerCase().includes(keyword)
-      );
-      
-      return {
-        content: trimmed,
-        isVariation: containsRarity || containsType || trimmed.includes('+') || /\d+/.test(trimmed)
-      };
-    });
+    // If no clear variations found, check for items with multiple rarity levels in parentheses
+    const rarityMatches = cleanDesc.match(/\([^)]*(?:common|uncommon|rare|very rare|legendary|artifact)[^)]*\)/gi);
+    if (rarityMatches && rarityMatches.length > 1) {
+      // Try to split by sentences that contain rarity information
+      const sentences = cleanDesc.split(/[.!?]+/).filter(s => s.trim().length > 20);
+      if (sentences.length > 1) {
+        return sentences.map((sentence, index) => ({
+          content: sentence.trim(),
+          isVariation: true,
+          title: `Type ${index + 1}`
+        }));
+      }
+    }
 
-    return variations;
+    // Default: return as single description
+    return [{
+      content: cleanDesc,
+      isVariation: false,
+      title: ''
+    }];
   };
 
   const variations = parseItemVariations(item.desc || '');
@@ -122,31 +140,35 @@ const ItemDetailModal = ({ item, onClose }: ItemDetailModalProps) => {
               <h4 className="font-semibold text-gray-900 mb-3 text-lg">Description</h4>
               
               {hasMultipleVariations ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <p className="text-sm text-gray-600 italic mb-4">
                     This item has multiple variations:
                   </p>
                   
-                  <div className="grid gap-3">
+                  <div className="space-y-4">
                     {variations.map((variation, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                        <div className="flex items-start justify-between mb-2">
-                          <Badge variant="outline" className="text-xs">
-                            Variation {index + 1}
+                      <div key={index} className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
+                        <div className="flex items-center mb-3">
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            {variation.title}
                           </Badge>
                         </div>
-                        <p className="text-gray-700 leading-relaxed text-sm">
-                          {variation.content}
-                        </p>
+                        <div className="prose prose-sm max-w-none">
+                          <p className="text-gray-700 leading-relaxed m-0">
+                            {variation.content}
+                          </p>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               ) : (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <p className="text-gray-700 leading-relaxed">
-                    {item.desc ? item.desc.replace(/<[^>]*>/g, '') : 'No description available.'}
-                  </p>
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-gray-700 leading-relaxed m-0">
+                      {variations[0]?.content || 'No description available.'}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
