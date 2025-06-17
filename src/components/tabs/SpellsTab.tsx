@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { useHybridData } from '../../hooks/useHybridData';
 import { Open5eSpell } from '../../services/open5eApi';
@@ -23,35 +24,22 @@ const SpellsTab = () => {
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
   const [spellToAdd, setSpellToAdd] = useState<Open5eSpell | null>(null);
 
-  const levelOptions = useMemo(() => {
-    const levels = new Set<string>();
-    spells.forEach(spell => levels.add(spell.level));
-    return Array.from(levels).sort((a, b) => {
-      const numA = a === '0' ? -1 : parseInt(a);
-      const numB = b === '0' ? -1 : parseInt(b);
-      return numA - numB;
-    });
-  }, [spells]);
+  const handleFilterChange = (filterType: 'levels' | 'schools' | 'classes', value: string, checked: boolean) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: checked 
+        ? [...prev[filterType], value]
+        : prev[filterType].filter(item => item !== value)
+    }));
+  };
 
-  const schoolOptions = useMemo(() => {
-    const schools = new Set<string>();
-    spells.forEach(spell => schools.add(spell.school));
-    return Array.from(schools).sort();
-  }, [spells]);
-
-  const classOptions = useMemo(() => {
-    const classes = new Set<string>();
-    spells.forEach(spell => {
-      if (Array.isArray(spell.classes)) {
-        spell.classes.forEach(cls => {
-          if (cls?.name) {
-            classes.add(cls.name);
-          }
-        });
-      }
+  const handleClearFilters = () => {
+    setFilters({
+      levels: [],
+      schools: [],
+      classes: []
     });
-    return Array.from(classes).sort();
-  }, [spells]);
+  };
 
   const handleAddToCharacter = (spell: Open5eSpell) => {
     if (characters.length === 0) {
@@ -132,12 +120,9 @@ const SpellsTab = () => {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         filters={filters}
-        onFiltersChange={setFilters}
-        levelOptions={levelOptions}
-        schoolOptions={schoolOptions}
-        classOptions={classOptions}
-        isLoading={isLoading}
-        totalSpells={spells.length}
+        onFilterChange={handleFilterChange}
+        onClearFilters={handleClearFilters}
+        spells={spells}
       />
       
       <SpellsList
@@ -152,7 +137,6 @@ const SpellsTab = () => {
         <SpellDetailModal
           spell={selectedSpell}
           onClose={() => setSelectedSpell(null)}
-          onAddToCharacter={handleAddToCharacter}
         />
       )}
 

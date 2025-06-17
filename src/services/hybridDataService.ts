@@ -19,7 +19,7 @@ class HybridDataService {
 
   // Transform Supabase race data to Open5e format
   private transformSupabaseRace(dbRace: any): Open5eRace {
-    return {
+    const race: Open5eRace = {
       slug: dbRace.slug,
       name: dbRace.name,
       desc: dbRace.description,
@@ -31,14 +31,20 @@ class HybridDataService {
       languages: dbRace.languages || '',
       proficiencies: dbRace.proficiencies || '',
       traits: dbRace.traits || '',
-      document__slug: dbRace.document_slug || 'wotc-srd',
-      subraces: Array.isArray(dbRace.subraces) ? dbRace.subraces : []
+      document__slug: dbRace.document_slug || 'wotc-srd'
     };
+
+    // Only add subraces if they exist in the data
+    if (dbRace.subraces && Array.isArray(dbRace.subraces)) {
+      (race as any).subraces = dbRace.subraces;
+    }
+
+    return race;
   }
 
   // Transform Supabase class data to Open5e format
   private transformSupabaseClass(dbClass: any): Open5eClass {
-    return {
+    const classData: Open5eClass = {
       slug: dbClass.slug,
       name: dbClass.name,
       desc: dbClass.description,
@@ -51,9 +57,15 @@ class HybridDataService {
       equipment: dbClass.equipment || '',
       spellcasting_ability: dbClass.spellcasting_ability || '',
       subtypes_name: dbClass.subtypes_name || '',
-      document__slug: dbClass.document_slug || 'wotc-srd',
-      archetypes: Array.isArray(dbClass.archetypes) ? dbClass.archetypes : []
+      document__slug: dbClass.document_slug || 'wotc-srd'
     };
+
+    // Only add archetypes if they exist in the data
+    if (dbClass.archetypes && Array.isArray(dbClass.archetypes)) {
+      (classData as any).archetypes = dbClass.archetypes;
+    }
+
+    return classData;
   }
 
   // Transform Supabase background data to Open5e format
@@ -73,7 +85,7 @@ class HybridDataService {
 
   // Transform Supabase spell data to Open5e format
   private transformSupabaseSpell(dbSpell: any): Open5eSpell {
-    return {
+    const spell: Open5eSpell = {
       slug: dbSpell.slug,
       name: dbSpell.name,
       desc: dbSpell.description,
@@ -89,10 +101,16 @@ class HybridDataService {
       classes: Array.isArray(dbSpell.classes) ? dbSpell.classes : [],
       higher_level: dbSpell.higher_level || '',
       attack_type: dbSpell.attack_type || '',
-      damage_type: dbSpell.damage_type || '',
       save_type: dbSpell.save_type || '',
       document__slug: dbSpell.document_slug || 'wotc-srd'
     };
+
+    // Only add damage_type if it exists in the data
+    if (dbSpell.damage_type) {
+      (spell as any).damage_type = dbSpell.damage_type;
+    }
+
+    return spell;
   }
 
   // Transform Supabase equipment data to Open5e format

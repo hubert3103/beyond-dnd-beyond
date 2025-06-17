@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { useHybridData } from '../../hooks/useHybridData';
 import { Open5eEquipment } from '../../services/open5eApi';
@@ -16,25 +17,32 @@ const ItemsTab = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<Open5eEquipment | null>(null);
-  const [filters, setFilters] = useState({
-    types: [] as string[],
-    rarities: [] as string[]
-  });
+  const [sortBy, setSortBy] = useState<'name' | 'rarity' | 'type'>('name');
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
   const [itemToAdd, setItemToAdd] = useState<Open5eEquipment | null>(null);
 
   // Memoize available sources for better performance
-  const typeOptions = useMemo(() => {
-    const types = new Set<string>();
-    equipment.forEach(item => types.add(item.type));
-    return Array.from(types).sort();
+  const availableSources = useMemo(() => {
+    const sources = new Set<string>();
+    equipment.forEach(item => {
+      if (item.document__slug) {
+        sources.add(item.document__slug);
+      }
+    });
+    return Array.from(sources).sort();
   }, [equipment]);
 
-  const rarityOptions = useMemo(() => {
-    const rarities = new Set<string>();
-    equipment.forEach(item => rarities.add(item.rarity));
-    return Array.from(rarities).sort();
-  }, [equipment]);
+  // Handle source filter changes
+  const handleSourceFilterChange = (source: string, checked: boolean) => {
+    setSelectedSources(prev => {
+      if (checked) {
+        return [...prev, source];
+      } else {
+        return prev.filter(s => s !== source);
+      }
+    });
+  };
 
   // Optimized filtering and sorting - only recalculates when dependencies change
   const filteredEquipment = useMemo(() => {
@@ -42,15 +50,23 @@ const ItemsTab = () => {
       if (searchTerm && !item.name.toLowerCase().includes(searchTerm.toLowerCase())) {
         return false;
       }
-      if (filters.types.length > 0 && !filters.types.includes(item.type)) {
-        return false;
-      }
-      if (filters.rarities.length > 0 && !filters.rarities.includes(item.rarity)) {
+      if (selectedSources.length > 0 && !selectedSources.includes(item.document__slug)) {
         return false;
       }
       return true;
+    }).sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'rarity':
+          return a.rarity.localeCompare(b.rarity);
+        case 'type':
+          return a.type.localeCompare(b.type);
+        default:
+          return 0;
+      }
     });
-  }, [equipment, searchTerm, filters]);
+  }, [equipment, searchTerm, selectedSources, sortBy]);
 
   // Use infinite scroll hook
   const { displayedItems, isLoading: isLoadingMore, hasMore, handleScroll } = useInfiniteScroll({
@@ -142,12 +158,14 @@ const ItemsTab = () => {
       <ItemsHeader
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        filters={filters}
-        onFiltersChange={setFilters}
-        typeOptions={typeOptions}
-        rarityOptions={rarityOptions}
-        isLoading={isLoading}
-        totalItems={equipment.length}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        selectedSources={selectedSources}
+        onSourceFilterChange={handleSourceFilterChange}
+        availableSources={availableSources}
+        displayedCount={displayedEquipment.length}
+        filteredCount={filteredEquipment.length}
+        totalCount={equipment.length}
       />
       
       <ItemsList
@@ -165,7 +183,6 @@ const ItemsTab = () => {
         <ItemDetailModal
           item={selectedItem}
           onClose={() => setSelectedItem(null)}
-          onAddToCharacter={handleAddToCharacter}
         />
       )}
 
