@@ -67,6 +67,19 @@ const CharacterSheet = () => {
         if (updatedCharacter.spellSlots) {
           updateData.spell_slots = updatedCharacter.spellSlots;
         }
+
+        // Update level if it changed
+        if (updatedCharacter.level !== character?.level) {
+          updateData.level = updatedCharacter.level;
+        }
+
+        // Handle inspiration separately - it's stored in abilities
+        if ('inspiration' in updatedCharacter) {
+          updateData.abilities = {
+            ...updatedCharacter.abilities,
+            inspiration: updatedCharacter.inspiration
+          };
+        }
         
         console.log('Updating character in database with data:', updateData);
         
@@ -288,7 +301,8 @@ const CharacterSheet = () => {
             spellSlots: characterData.spell_slots || {},
             armorClass: calculatedAC,
             initiative: formattedAbilities.dexterity.modifier,
-            speed: calculatedSpeed
+            speed: calculatedSpeed,
+            inspiration: characterData.abilities?.inspiration || false // Add inspiration field
           };
           
           console.log('Final formatted character with spell slots:', formattedCharacter.spellSlots);

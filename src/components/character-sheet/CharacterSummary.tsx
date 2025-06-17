@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import LevelUpModal from './LevelUpModal';
+import InspirationToggle from './InspirationToggle';
 
 interface CharacterSummaryProps {
   character: any;
@@ -25,6 +26,8 @@ interface CharacterSummaryProps {
 
 const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) => {
   const [showHPDialog, setShowHPDialog] = useState(false);
+  const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const [tempDamage, setTempDamage] = useState('');
   const [tempHealing, setTempHealing] = useState('');
 
@@ -33,7 +36,24 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
   };
 
   const handleLevelChange = (value: string) => {
-    setCharacter({ ...character, level: parseInt(value) });
+    const newLevel = parseInt(value);
+    if (newLevel > character.level) {
+      setSelectedLevel(newLevel);
+      setShowLevelUpModal(true);
+    } else if (newLevel < character.level) {
+      // Handle level down (less common, but possible)
+      setCharacter({ ...character, level: newLevel });
+    }
+  };
+
+  const handleLevelUpConfirm = (updatedCharacter: any) => {
+    setCharacter(updatedCharacter);
+    setSelectedLevel(null);
+  };
+
+  const handleLevelUpCancel = () => {
+    setShowLevelUpModal(false);
+    setSelectedLevel(null);
   };
 
   const handleDamage = () => {
@@ -136,6 +156,11 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
         </div>
       </div>
 
+      {/* Inspiration Toggle */}
+      <div className="mb-4 flex justify-center">
+        <InspirationToggle character={character} setCharacter={setCharacter} />
+      </div>
+
       {/* HP Display */}
       <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
         <div className="flex items-center space-x-2">
@@ -194,6 +219,17 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Level Up Modal */}
+      {selectedLevel && (
+        <LevelUpModal
+          character={character}
+          newLevel={selectedLevel}
+          isOpen={showLevelUpModal}
+          onClose={handleLevelUpCancel}
+          onConfirm={handleLevelUpConfirm}
+        />
+      )}
     </div>
   );
 };

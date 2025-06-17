@@ -128,9 +128,22 @@ export const useCharacters = () => {
 
   const updateCharacter = async (characterId: string, updates: Partial<Character>) => {
     try {
+      // Ensure we're updating the database with the correct field names
+      const dbUpdates: any = { ...updates };
+      
+      // Handle inspiration field specifically
+      if ('inspiration' in updates) {
+        // Store inspiration as part of the character data
+        dbUpdates.abilities = {
+          ...updates.abilities,
+          inspiration: updates.inspiration
+        };
+        delete dbUpdates.inspiration;
+      }
+
       const { error } = await supabase
         .from('characters')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', characterId);
 
       if (error) throw error;
