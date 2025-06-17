@@ -13,28 +13,51 @@ class Open5eCharacterDataFetcher:
         self.session.headers.update({
             'User-Agent': 'D&D Character Data Fetcher'
         })
+        # Increase timeout for problematic endpoints
+        self.timeout = 60
+        self.max_retries = 3
     
     def fetch_paginated_data(self, endpoint: str) -> List[Dict[str, Any]]:
-        """Fetch all data from a paginated endpoint"""
+        """Fetch all data from a paginated endpoint with retry logic"""
         all_results = []
-        url = f"{self.base_url}{endpoint}?limit=1000"
+        url = f"{self.base_url}{endpoint}?limit=100"  # Smaller page size to reduce timeout risk
         
         while url:
             print(f"Fetching: {url}")
-            try:
-                response = self.session.get(url, timeout=30)
-                response.raise_for_status()
-                data = response.json()
-                
-                all_results.extend(data.get('results', []))
-                url = data.get('next')
-                
-                # Rate limiting - be nice to the API
-                time.sleep(0.5)
-                
-            except requests.exceptions.RequestException as e:
-                print(f"Error fetching {url}: {e}")
-                break
+            
+            # Retry logic for failed requests
+            for attempt in range(self.max_retries):
+                try:
+                    response = self.session.get(url, timeout=self.timeout)
+                    response.raise_for_status()
+                    data = response.json()
+                    
+                    all_results.extend(data.get('results', []))
+                    url = data.get('next')
+                    
+                    # Rate limiting - be nice to the API
+                    time.sleep(1.0)  # Increased delay
+                    break
+                    
+                except requests.exceptions.Timeout as e:
+                    print(f"Timeout on attempt {attempt + 1}/{self.max_retries}: {e}")
+                    if attempt < self.max_retries - 1:
+                        wait_time = (attempt + 1) * 5  # Progressive backoff
+                        print(f"Waiting {wait_time} seconds before retry...")
+                        time.sleep(wait_time)
+                    else:
+                        print(f"Failed to fetch {url} after {self.max_retries} attempts")
+                        return all_results  # Return what we have so far
+                        
+                except requests.exceptions.RequestException as e:
+                    print(f"Error fetching {url}: {e}")
+                    if attempt < self.max_retries - 1:
+                        wait_time = (attempt + 1) * 2
+                        print(f"Waiting {wait_time} seconds before retry...")
+                        time.sleep(wait_time)
+                    else:
+                        print(f"Failed to fetch {url} after {self.max_retries} attempts")
+                        return all_results
                 
         print(f"Fetched {len(all_results)} items from {endpoint}")
         return all_results
@@ -88,24 +111,6 @@ class Open5eCharacterDataFetcher:
             return {'walk': speed_data}
         
         return {'walk': 30}  # Default fallback
-    
-    def parse_classes_list(self, classes_data: Any) -> List[str]:
-        """Parse classes data from various formats"""
-        if not classes_data:
-            return []
-        
-        if isinstance(classes_data, list):
-            # Handle list of objects with 'name' property
-            if classes_data and isinstance(classes_data[0], dict):
-                return [cls.get('name', str(cls)) for cls in classes_data]
-            # Handle list of strings
-            return classes_data
-        
-        if isinstance(classes_data, str):
-            # Handle comma-separated strings
-            return [cls.strip() for cls in classes_data.split(',')]
-        
-        return []
     
     def extract_subraces_from_desc(self, description: str, name: str) -> List[Dict[str, str]]:
         """Extract subrace information from description"""
@@ -223,51 +228,32 @@ class Open5eCharacterDataFetcher:
         
         return normalized_item
     
-    def normalize_background_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
-        """Normalize a background item to match Supabase schema"""
-        
-        print(f"Processing background: {item.get('name', 'Unknown')}")
-        
-        normalized_item = {
-            'slug': item.get('slug', ''),
-            'name': item.get('name', ''),
-            'description': item.get('desc', ''),
-            'skill_proficiencies': item.get('skill_proficiencies', ''),
-            'languages': item.get('languages', ''),
-            'equipment': item.get('equipment', ''),
-            'feature': item.get('feature', ''),
-            'feature_desc': item.get('feature_desc', ''),
-            'document_slug': item.get('document__slug', '')
-        }
-        
-        return normalized_item
-    
-    def fetch_all_character_data(self) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
-        """Fetch all character creation data from multiple endpoints"""
+    def fetch_character_data(self) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """Fetch races and classes data from the API"""
         
         # Fetch races
         print("Fetching races...")
         races_data = self.fetch_paginated_data('/races')
         races = []
         for item in races_data:
-            normalized = self.normalize_race_item(item)
-            races.append(normalized)
+            try:
+                normalized = self.normalize_race_item(item)
+                races.append(normalized)
+            except Exception as e:
+                print(f"Error processing race {item.get('name', 'Unknown')}: {e}")
+                continue
         
         # Fetch classes
         print("Fetching classes...")
         classes_data = self.fetch_paginated_data('/classes')
         classes = []
         for item in classes_data:
-            normalized = self.normalize_class_item(item)
-            classes.append(normalized)
-        
-        # Fetch backgrounds
-        print("Fetching backgrounds...")
-        backgrounds_data = self.fetch_paginated_data('/backgrounds')
-        backgrounds = []
-        for item in backgrounds_data:
-            normalized = self.normalize_background_item(item)
-            backgrounds.append(normalized)
+            try:
+                normalized = self.normalize_class_item(item)
+                classes.append(normalized)
+            except Exception as e:
+                print(f"Error processing class {item.get('name', 'Unknown')}: {e}")
+                continue
         
         # Deduplicate by name (case-insensitive)
         def deduplicate_by_name(items):
@@ -286,14 +272,12 @@ class Open5eCharacterDataFetcher:
         
         races = deduplicate_by_name(races)
         classes = deduplicate_by_name(classes)
-        backgrounds = deduplicate_by_name(backgrounds)
         
         print(f"Total after deduplication:")
         print(f"  Races: {len(races)}")
         print(f"  Classes: {len(classes)}")
-        print(f"  Backgrounds: {len(backgrounds)}")
         
-        return races, classes, backgrounds
+        return races, classes
     
     def save_to_csv(self, data: List[Dict[str, Any]], filename: str, fieldnames: List[str]):
         """Save data to CSV file"""
@@ -324,13 +308,12 @@ class Open5eCharacterDataFetcher:
         
         print(f"Data saved to {filename}")
     
-    def generate_stats_report(self, races: List[Dict[str, Any]], classes: List[Dict[str, Any]], backgrounds: List[Dict[str, Any]]):
+    def generate_stats_report(self, races: List[Dict[str, Any]], classes: List[Dict[str, Any]]):
         """Generate a stats report of the fetched data"""
         print("\n=== CHARACTER DATA STATISTICS ===")
         
         print(f"Total races: {len(races)}")
         print(f"Total classes: {len(classes)}")
-        print(f"Total backgrounds: {len(backgrounds)}")
         
         # Count by document source
         def count_by_source(items):
@@ -350,11 +333,6 @@ class Open5eCharacterDataFetcher:
         for source, count in sorted(class_sources.items()):
             print(f"  {source}: {count}")
         
-        print("\nBackgrounds by source:")
-        bg_sources = count_by_source(backgrounds)
-        for source, count in sorted(bg_sources.items()):
-            print(f"  {source}: {count}")
-        
         # Sample data
         print("\nSample races with ASI data:")
         for race in races[:3]:
@@ -364,11 +342,6 @@ class Open5eCharacterDataFetcher:
         print("\nSample classes with hit dice:")
         for cls in classes[:3]:
             print(f"  {cls['name']}: d{cls['hit_die']} hit die")
-        
-        print("\nSample backgrounds with features:")
-        for bg in backgrounds[:3]:
-            if bg.get('feature'):
-                print(f"  {bg['name']}: {bg['feature']}")
 
 def main():
     print("Starting Open5e Character Data Fetch...")
@@ -376,11 +349,11 @@ def main():
     fetcher = Open5eCharacterDataFetcher()
     
     try:
-        # Fetch all character data
-        races, classes, backgrounds = fetcher.fetch_all_character_data()
+        # Fetch races and classes data only
+        races, classes = fetcher.fetch_character_data()
         
         # Generate stats report
-        fetcher.generate_stats_report(races, classes, backgrounds)
+        fetcher.generate_stats_report(races, classes)
         
         # Define CSV fieldnames for each data type
         race_fieldnames = [
@@ -394,21 +367,14 @@ def main():
             'spellcasting_ability', 'subtypes_name', 'document_slug', 'archetypes'
         ]
         
-        background_fieldnames = [
-            'slug', 'name', 'description', 'skill_proficiencies', 'languages',
-            'equipment', 'feature', 'feature_desc', 'document_slug'
-        ]
-        
         # Save to CSV files
         fetcher.save_to_csv(races, 'open5e_races.csv', race_fieldnames)
         fetcher.save_to_csv(classes, 'open5e_classes.csv', class_fieldnames)
-        fetcher.save_to_csv(backgrounds, 'open5e_backgrounds.csv', background_fieldnames)
         
         print("\n=== FETCH COMPLETE ===")
         print("Generated files:")
         print("- open5e_races.csv")
-        print("- open5e_classes.csv") 
-        print("- open5e_backgrounds.csv")
+        print("- open5e_classes.csv")
         print("\nTo upload to Supabase:")
         print("1. Go to your Supabase dashboard")
         print("2. Navigate to Table Editor > [table_name]")
