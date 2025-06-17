@@ -200,10 +200,10 @@ export type Database = {
           name: string
           properties: Json | null
           rarity: string
-          requires_attunement: boolean
+          requires_attunement: string | null
           slug: string
           type: string
-          weight: number | null
+          weight: string | null
         }
         Insert: {
           ac?: number | null
@@ -224,10 +224,10 @@ export type Database = {
           name: string
           properties?: Json | null
           rarity?: string
-          requires_attunement?: boolean
+          requires_attunement?: string | null
           slug: string
           type: string
-          weight?: number | null
+          weight?: string | null
         }
         Update: {
           ac?: number | null
@@ -248,10 +248,10 @@ export type Database = {
           name?: string
           properties?: Json | null
           rarity?: string
-          requires_attunement?: boolean
+          requires_attunement?: string | null
           slug?: string
           type?: string
-          weight?: number | null
+          weight?: string | null
         }
         Relationships: []
       }
