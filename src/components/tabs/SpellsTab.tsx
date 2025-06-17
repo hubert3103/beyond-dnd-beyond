@@ -142,10 +142,8 @@ const SpellsTab = () => {
 
       {showCharacterSelect && (
         <CharacterSelectModal
-          characters={characters}
-          onSelect={handleCharacterSelect}
           onClose={() => setShowCharacterSelect(false)}
-          itemName={spellToAdd?.name || ''}
+          selectedSpell={spellToAdd}
         />
       )}
     </div>

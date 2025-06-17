@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { open5eApi, Open5eSpell, Open5eEquipment, Open5eRace, Open5eClass, Open5eBackground } from './open5eApi';
 
@@ -101,19 +100,21 @@ class HybridDataService {
       classes: Array.isArray(dbSpell.classes) ? dbSpell.classes : [],
       higher_level: dbSpell.higher_level || '',
       attack_type: dbSpell.attack_type || '',
-      save_type: dbSpell.save_type || '',
       document__slug: dbSpell.document_slug || 'wotc-srd'
     };
 
-    // Only add damage_type if it exists in the data
+    // Only add damage_type and save_type if they exist in the data
     if (dbSpell.damage_type) {
       (spell as any).damage_type = dbSpell.damage_type;
+    }
+
+    if (dbSpell.save_type) {
+      (spell as any).save = dbSpell.save_type;
     }
 
     return spell;
   }
 
-  // Transform Supabase equipment data to Open5e format
   private transformSupabaseEquipment(dbEquipment: any): Open5eEquipment {
     return {
       slug: dbEquipment.slug,

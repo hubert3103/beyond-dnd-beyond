@@ -103,7 +103,7 @@ const ItemsTab = () => {
       const newItem = {
         name: item.name,
         type: item.type,
-        weight: parseFloat(item.weight) || 0,
+        weight: typeof item.weight === 'string' ? parseFloat(item.weight) || 0 : (item.weight || 0),
         quantity: 1,
         equipped: false,
         rarity: item.rarity,
@@ -188,10 +188,9 @@ const ItemsTab = () => {
 
       {showCharacterSelect && (
         <CharacterSelectModal
-          characters={characters}
-          onSelect={handleCharacterSelect}
+          isOpen={showCharacterSelect}
           onClose={() => setShowCharacterSelect(false)}
-          itemName={itemToAdd?.name || ''}
+          selectedItem={itemToAdd}
         />
       )}
     </div>
