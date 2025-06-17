@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -157,7 +158,7 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
         
         <CollapsibleContent className="px-4 pb-4 space-y-4">
           {/* Passive Scores Row */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="bg-gray-50 rounded-lg p-3 text-center">
               <div className="text-xs text-gray-600 mb-1">Passive Perception</div>
               <div className="text-lg font-bold">{getPassivePerception()}</div>
@@ -165,6 +166,10 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
             <div className="bg-gray-50 rounded-lg p-3 text-center">
               <div className="text-xs text-gray-600 mb-1">Passive Investigation</div>
               <div className="text-lg font-bold">{getPassiveInvestigation()}</div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 text-center">
+              <div className="text-xs text-gray-600 mb-1">Proficiency Bonus</div>
+              <div className="text-lg font-bold">+{character.proficiencyBonus || 2}</div>
             </div>
           </div>
 
