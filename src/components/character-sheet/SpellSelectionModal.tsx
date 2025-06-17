@@ -24,7 +24,7 @@ interface SpellSelectionModalProps {
 const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }: SpellSelectionModalProps) => {
   const [selectedSpells, setSelectedSpells] = useState<any[]>([]);
   const [availableSpells, setAvailableSpells] = useState<any[]>([]);
-  const { data: spells } = useOpen5eData('spells');
+  const { spells } = useOpen5eData();
 
   const spellsToLearn = getSpellsToLearn();
 
