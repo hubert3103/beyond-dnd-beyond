@@ -313,7 +313,7 @@ export type Database = {
         Row: {
           attack_type: string | null
           casting_time: string
-          classes: Json
+          classes: Json | null
           components: string
           concentration: boolean
           created_at: string
@@ -335,7 +335,7 @@ export type Database = {
         Insert: {
           attack_type?: string | null
           casting_time: string
-          classes?: Json
+          classes?: Json | null
           components: string
           concentration?: boolean
           created_at?: string
@@ -357,7 +357,7 @@ export type Database = {
         Update: {
           attack_type?: string | null
           casting_time?: string
-          classes?: Json
+          classes?: Json | null
           components?: string
           concentration?: boolean
           created_at?: string
