@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from 'react';
 import { Search, ChevronDown, ChevronRight, Shield, Sword, Wand2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -6,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { useOpen5eData } from '../../hooks/useOpen5eData';
-import { open5eApi, Open5eClass } from '../../services/open5eApi';
+import { useHybridData } from '../../hooks/useHybridData';
+import { hybridDataService } from '../../services/hybridDataService';
+import { Open5eClass } from '../../services/open5eApi';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import ClassDetailModal from './ClassDetailModal';
@@ -18,7 +20,7 @@ interface ClassScreenProps {
 }
 
 const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
-  const { classes, isLoading, error, refresh } = useOpen5eData();
+  const { classes, isLoading, error } = useHybridData();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
   const [selectedClass, setSelectedClass] = useState<Open5eClass | null>(null);
@@ -97,7 +99,7 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
     
     if (hasSourceEnabled) {
       // Get available sources and log them for debugging
-      const availableSources = open5eApi.getAvailableSources(classes);
+      const availableSources = hybridDataService.getAvailableSources(classes);
       console.log('Available sources in classes:', availableSources);
       
       // Define source categories based on actual document slugs from the API
@@ -250,6 +252,11 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
         selectedSkills: newSelectedSkills
       }
     });
+  };
+
+  const refresh = () => {
+    hybridDataService.clearCache();
+    window.location.reload();
   };
 
   if (isLoading) {
