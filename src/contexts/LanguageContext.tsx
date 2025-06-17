@@ -21,7 +21,7 @@ export const useLanguage = () => {
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>('en');
-  const [hasSelectedLanguage, setHasSelectedLanguage] = useState(false);
+  const [hasSelectedLanguage, setHasSelectedLanguage] = useState(true); // Default to true
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem('dnd-language') as Language;
@@ -29,8 +29,12 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     if (savedLanguage) {
       setLanguageState(savedLanguage);
+    } else {
+      // Set default language to English and mark as selected
+      localStorage.setItem('dnd-language', 'en');
+      localStorage.setItem('dnd-language-selected', 'true');
     }
-    setHasSelectedLanguage(hasSelected);
+    setHasSelectedLanguage(hasSelected || true); // Always default to true now
   }, []);
 
   const setLanguage = (lang: Language) => {

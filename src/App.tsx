@@ -7,7 +7,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
-import LanguageSelector from "./pages/LanguageSelector";
 import Login from "./pages/Login";
 import RoleSelection from "./pages/RoleSelection";
 import PlayerDashboard from "./pages/PlayerDashboard";
@@ -27,7 +26,7 @@ const App = () => (
         <AuthProvider>
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<LanguageSelector />} />
+              <Route path="/" element={<Login />} />
               <Route path="/login" element={<Login />} />
               <Route path="/role-selection" element={<RoleSelection />} />
               <Route path="/player" element={<PlayerDashboard />} />
