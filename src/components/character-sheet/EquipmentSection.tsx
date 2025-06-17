@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useOpen5eData } from '@/hooks/useOpen5eData';
+import { useHybridData } from '@/hooks/useHybridData';
 
 interface EquipmentSectionProps {
   character: any;
@@ -38,7 +38,7 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
   const [selectedEquipmentItem, setSelectedEquipmentItem] = useState<any>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   
-  const { equipment: apiEquipment, isLoading: equipmentLoading } = useOpen5eData();
+  const { equipment: apiEquipment, isLoading: equipmentLoading } = useHybridData();
   
   // Get equipment from character's starting equipment and inventory
   const getCharacterEquipment = () => {
@@ -394,7 +394,7 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
 
                   <div className="relative">
                     <label className="text-sm font-medium text-gray-700">
-                      {equipmentLoading ? 'Loading equipment...' : 'Search & Select Item'}
+                      {equipmentLoading ? 'Loading equipment...' : 'Search & Select Item (Using hybrid data service)'}
                     </label>
                     <div className="relative mt-1">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />

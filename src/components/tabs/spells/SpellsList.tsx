@@ -111,7 +111,7 @@ const SpellsList = ({
       <div className="bg-[#4a4a4a] px-4 pb-4">
         <div className="flex justify-between items-center">
           <span className="text-white font-medium">
-            Showing {displayedSpells.length} of {filteredAndSortedSpells.length} spells
+            Showing {displayedSpells.length} of {filteredAndSortedSpells.length} spells (Hybrid data service)
             {filteredAndSortedSpells.length !== spells.length && ` (${spells.length} total)`}
           </span>
         </div>

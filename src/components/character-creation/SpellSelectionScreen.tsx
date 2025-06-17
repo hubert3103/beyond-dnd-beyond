@@ -1,6 +1,5 @@
-
 import { useState, useMemo } from 'react';
-import { useOpen5eData } from '../../hooks/useOpen5eData';
+import { useHybridData } from '../../hooks/useHybridData';
 import { Open5eSpell } from '../../services/open5eApi';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ interface SpellSelectionScreenProps {
 }
 
 const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => {
-  const { spells, isLoading, error, refresh } = useOpen5eData();
+  const { spells, isLoading, error, refresh } = useHybridData();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpells, setSelectedSpells] = useState<Open5eSpell[]>(data.spells || []);
   const [selectedSpellForModal, setSelectedSpellForModal] = useState<Open5eSpell | null>(null);
@@ -290,7 +289,7 @@ const SpellSelectionScreen = ({ data, onUpdate }: SpellSelectionScreenProps) => 
       <Card className="bg-yellow-50 border-yellow-200">
         <CardContent className="p-4">
           <p className="text-sm text-gray-600">
-            Debug: Found {availableSpells.length} spells for {data.class.name}
+            Debug: Found {availableSpells.length} spells for {data.class.name} (Using hybrid data service)
           </p>
           <p className="text-xs text-gray-500 mt-1">
             Note: Using fallback spell mapping due to API data issues

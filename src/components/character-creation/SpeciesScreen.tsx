@@ -4,8 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useOpen5eData } from '../../hooks/useOpen5eData';
-import { open5eApi, Open5eRace } from '../../services/open5eApi';
+import { useHybridData } from '../../hooks/useHybridData';
+import { hybridDataService } from '../../services/hybridDataService';
+import { Open5eRace } from '../../services/open5eApi';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import SpeciesDetailModal from './SpeciesDetailModal';
@@ -16,7 +17,7 @@ interface SpeciesScreenProps {
 }
 
 const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
-  const { races, isLoading, error, refresh } = useOpen5eData();
+  const { races, isLoading, error, refresh } = useHybridData();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
   const [selectedRace, setSelectedRace] = useState<Open5eRace | null>(data.species?.apiData || null);
@@ -36,7 +37,7 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
     
     if (hasSourceEnabled) {
       // Get available sources and log them for debugging
-      const availableSources = open5eApi.getAvailableSources(races);
+      const availableSources = hybridDataService.getAvailableSources(races);
       console.log('Available sources in races:', availableSources);
       
       // Define source categories based on actual document slugs from the API
@@ -181,7 +182,7 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
 
       {/* Debug info */}
       <div className="text-sm text-gray-500 bg-gray-100 p-2 rounded">
-        Debug: {races.length} total races, {filteredRaces.length} after filtering
+        Debug: {races.length} total races, {filteredRaces.length} after filtering (Using hybrid data service)
         <br />
         Sources enabled: coreRules={String(data.sources?.coreRules === true)}, expansions={String(data.sources?.expansions === true)}, homebrew={String(data.sources?.homebrew === true)}
       </div>

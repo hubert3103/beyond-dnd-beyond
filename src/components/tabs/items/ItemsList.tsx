@@ -87,7 +87,7 @@ const ItemsList = ({
       {/* End of results indicator */}
       {!hasMore && displayedEquipment.length > 0 && (
         <div className="text-center py-4">
-          <p className="text-gray-300">You've reached the end of the results</p>
+          <p className="text-gray-300">You've reached the end of the results (Hybrid data service)</p>
         </div>
       )}
 
