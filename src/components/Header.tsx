@@ -15,9 +15,9 @@ const Header = ({ activeTab }: HeaderProps) => {
       case 'characters':
         return 'My characters';
       case 'spells':
-        return 'Spell list';
+        return ''; // Remove "Spell list" title
       case 'items':
-        return 'Items list';
+        return ''; // Remove "Items list" title
       case 'manuals':
         return 'Manuals';
       default:
