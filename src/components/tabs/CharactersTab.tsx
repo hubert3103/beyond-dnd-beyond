@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -35,8 +36,8 @@ const CharactersTab = () => {
   if (loading) {
     return (
       <div className="p-4 flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin" />
-        <span className="ml-2">Loading characters...</span>
+        <Loader2 className="h-6 w-6 animate-spin text-white" />
+        <span className="ml-2 text-white">Loading characters...</span>
       </div>
     );
   }
@@ -46,18 +47,18 @@ const CharactersTab = () => {
       {characters.length === 0 ? (
         // Empty state when no characters exist
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
+          <div className="w-16 h-16 bg-gray-600 rounded-full mx-auto mb-4 flex items-center justify-center">
             <img 
               src="/characterIcon.svg" 
               alt="No characters"
-              className="w-8 h-8 opacity-50"
+              className="w-8 h-8"
               style={{
-                filter: 'invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%)'
+                filter: 'invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)'
               }}
             />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Characters Yet</h3>
-          <p className="text-gray-600 mb-6">Create your first character to get started on your adventure!</p>
+          <h3 className="text-lg font-semibold text-white mb-2">No Characters Yet</h3>
+          <p className="text-gray-300 mb-6">Create your first character to get started on your adventure!</p>
         </div>
       ) : (
         // Character list (when characters exist)
@@ -91,15 +92,15 @@ const CharactersTab = () => {
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="text-gray-400 hover:text-gray-600 p-2">
+                <button className="text-gray-600 hover:text-gray-800 p-2 text-xl font-bold">
                   ⋮
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => handleEditCharacter(character)}>
+              <DropdownMenuContent className="bg-white border border-gray-200 shadow-lg">
+                <DropdownMenuItem onClick={() => handleEditCharacter(character)} className="text-gray-900 hover:bg-gray-100">
                   Edit Character
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowDeleteDialog(character.id)}>
+                <DropdownMenuItem onClick={() => setShowDeleteDialog(character.id)} className="text-red-600 hover:bg-red-50">
                   Delete Character
                 </DropdownMenuItem>
               </DropdownMenuContent>

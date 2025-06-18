@@ -31,7 +31,7 @@ const Header = ({ activeTab }: HeaderProps) => {
         <div className="flex items-center justify-between">
           <button
             onClick={() => setShowProfileMenu(true)}
-            className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center"
+            className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center hover:bg-red-700 transition-colors"
           >
             <img 
               src="/avatarPlaceholder.svg" 
