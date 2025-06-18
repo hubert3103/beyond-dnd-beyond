@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,98 +16,57 @@ interface PassiveScoresDefensesProps {
 
 const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefensesProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const lastCalculatedAC = useRef<number | null>(null);
 
   // Function to recalculate AC based on equipped armor
   const calculateArmorClass = () => {
     const dexModifier = character.abilities?.dexterity?.modifier || 0;
     let baseAC = 10 + dexModifier;
     
-    console.log('=== AC Calculation Debug ===');
-    console.log('Character equipment:', character.equipment);
-    console.log('Dex modifier:', dexModifier);
-    console.log('Base AC (10 + dex):', baseAC);
-    
     // Check for equipped armor in both starting_equipment and inventory
     let equippedArmor = null;
     
     // Check starting equipment first
     if (character.equipment?.starting_equipment) {
-      console.log('Checking starting equipment:', character.equipment.starting_equipment);
       equippedArmor = character.equipment.starting_equipment.find((item: any) => {
-        console.log('Checking item:', {
-          name: item.name,
-          category: item.category,
-          type: item.type,
-          equipped: item.equipped,
-          ac: item.ac,
-          ac_base: item.ac_base,
-          weight: item.weight
-        });
         return (item.category === 'armor' || item.type?.includes('armor')) && item.equipped;
       });
-      if (equippedArmor) console.log('Found equipped armor in starting equipment:', equippedArmor);
     }
     
     // If no equipped armor found in starting equipment, check inventory
     if (!equippedArmor && character.equipment?.inventory) {
-      console.log('Checking inventory:', character.equipment.inventory);
       equippedArmor = character.equipment.inventory.find((item: any) => {
-        console.log('Checking inventory item:', {
-          name: item.name,
-          category: item.category,
-          type: item.type,
-          equipped: item.equipped,
-          ac: item.ac,
-          ac_base: item.ac_base,
-          weight: item.weight
-        });
         return (item.category === 'armor' || item.type?.includes('armor')) && item.equipped;
       });
-      if (equippedArmor) console.log('Found equipped armor in inventory:', equippedArmor);
     }
-    
-    console.log('Final equipped armor found:', equippedArmor);
     
     if (equippedArmor) {
       // Check for AC value in multiple possible properties
       const armorAC = equippedArmor.ac || equippedArmor.ac_base;
-      console.log('Armor AC value:', armorAC);
-      console.log('Armor dex_bonus:', equippedArmor.dex_bonus);
-      console.log('Armor max_dex_bonus:', equippedArmor.max_dex_bonus);
       
       if (armorAC && armorAC > 0) {
         if (equippedArmor.dex_bonus !== false) {
           const maxDexBonus = equippedArmor.max_dex_bonus || 999;
           baseAC = armorAC + Math.min(dexModifier, maxDexBonus);
-          console.log('AC with dex bonus:', baseAC);
         } else {
           baseAC = armorAC;
-          console.log('AC without dex bonus:', baseAC);
         }
-      } else {
-        console.log('No valid AC value found on armor item');
       }
-    } else {
-      console.log('No equipped armor found');
     }
-    
-    console.log('Final calculated AC:', baseAC);
-    console.log('=== End AC Calculation ===');
     
     return baseAC;
   };
 
-  // Update AC when equipment changes
+  // Update AC when equipment changes, but prevent infinite loops
   useEffect(() => {
-    console.log('PassiveScoresDefenses useEffect triggered - equipment changed');
     const newAC = calculateArmorClass();
-    if (newAC !== character.armorClass) {
-      console.log('Updating AC from', character.armorClass, 'to', newAC);
+    
+    // Only update if AC actually changed and avoid infinite loops
+    if (newAC !== lastCalculatedAC.current && newAC !== character.armorClass) {
+      lastCalculatedAC.current = newAC;
       setCharacter({ ...character, armorClass: newAC });
-    } else {
-      console.log('AC unchanged, staying at:', character.armorClass);
     }
-  }, [character.equipment]);
+  }, [character.equipment?.starting_equipment, character.equipment?.inventory]);
 
   const getModifier = (score: number) => {
     return Math.floor((score - 10) / 2);
@@ -127,7 +86,9 @@ const PassiveScoresDefenses = ({ character, setCharacter }: PassiveScoresDefense
   };
 
   const handleArmorClassChange = (value: string) => {
-    setCharacter({ ...character, armorClass: parseInt(value) || 0 });
+    const newAC = parseInt(value) || 0;
+    lastCalculatedAC.current = newAC; // Update ref to prevent recalculation
+    setCharacter({ ...character, armorClass: newAC });
   };
 
   const handleSpeedChange = (value: string) => {
