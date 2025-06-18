@@ -34,6 +34,11 @@ const CharacterSheet = () => {
   const [character, setCharacter] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Handle bottom navigation - navigate to player dashboard with selected tab
+  const handleTabChange = (tab: TabType) => {
+    navigate('/player', { state: { activeTab: tab } });
+  };
+
   // Enhanced character update handler with better error handling and persistence
   const handleCharacterUpdate = async (updatedCharacter: any) => {
     // Update local state immediately for responsive UI
@@ -143,9 +148,7 @@ const CharacterSheet = () => {
 
   // Helper function to format character data
   const formatCharacterData = (characterData: any) => {
-    
     const formatAbilities = (abilities: any) => {
-      // ... keep existing code (formatAbilities function)
       const defaultAbilities = {
         strength: { score: 10, modifier: 0, proficient: false },
         dexterity: { score: 10, modifier: 0, proficient: false },
@@ -208,7 +211,6 @@ const CharacterSheet = () => {
     };
 
     const calculateInitialHP = (characterData: any, formattedAbilities: any) => {
-      // ... keep existing code (calculateInitialHP function)
       if (!characterData.class_data) return 1;
       const conModifier = formattedAbilities.constitution.modifier;
       if (characterData.hit_point_type === 'fixed') {
@@ -218,7 +220,6 @@ const CharacterSheet = () => {
     };
 
     const calculateArmorClass = (characterData: any, formattedAbilities: any) => {
-      // ... keep existing code (calculateArmorClass function)
       const dexModifier = formattedAbilities.dexterity.modifier;
       let baseAC = 10 + dexModifier;
       
@@ -249,7 +250,6 @@ const CharacterSheet = () => {
     };
 
     const calculateSpeed = (characterData: any) => {
-      // ... keep existing code (calculateSpeed function)
       let speed = 30;
       
       if (characterData.species?.speed) {
@@ -355,8 +355,8 @@ const CharacterSheet = () => {
 
   const handleOverflowAction = async (action: string) => {
     switch (action) {
-      case 'share':
-        console.log('Share character');
+      case 'edit':
+        navigate(`/character-creation?edit=${character?.id}`);
         break;
       case 'delete':
         if (character?.id) {
@@ -437,8 +437,8 @@ const CharacterSheet = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="bg-white">
-            <DropdownMenuItem onClick={() => handleOverflowAction('share')}>
-              Share Character
+            <DropdownMenuItem onClick={() => handleOverflowAction('edit')}>
+              Edit Character
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleOverflowAction('export')}>
               Export PDF
@@ -470,7 +470,7 @@ const CharacterSheet = () => {
       </main>
 
       {/* Bottom Navigation */}
-      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
     </div>
   );
 };
