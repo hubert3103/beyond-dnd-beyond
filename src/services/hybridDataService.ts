@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { open5eApi, Open5eSpell, Open5eEquipment, Open5eRace, Open5eClass, Open5eBackground } from './open5eApi';
 
@@ -147,11 +148,50 @@ class HybridDataService {
     return Date.now() - this.cache.lastFetch < CACHE_DURATION;
   }
 
+  async fetchSpells(): Promise<Open5eSpell[]> {
+    if (this.isCacheValid('spells') && this.cache.spells) {
+      return this.cache.spells;
+    }
+
+    try {
+      // Always try API first for spells since database seems to be empty
+      const apiSpells = await open5eApi.fetchSpells();
+      
+      if (apiSpells && apiSpells.length > 0) {
+        this.cache.spells = apiSpells;
+        this.cache.lastFetch = Date.now();
+        return apiSpells;
+      }
+
+      // Only fallback to database if API fails
+      const { data: dbSpells, error } = await supabase
+        .from('open5e_spells')
+        .select('*');
+
+      if (error) {
+        console.warn('Error fetching spells from database:', error);
+        // Return empty array if both sources fail
+        this.cache.spells = [];
+        this.cache.lastFetch = Date.now();
+        return [];
+      }
+
+      const transformedSpells = (dbSpells || []).map(this.transformSupabaseSpell);
+      this.cache.spells = transformedSpells;
+      this.cache.lastFetch = Date.now();
+      return transformedSpells;
+      
+    } catch (error) {
+      console.error('Error in fetchSpells:', error);
+      // Return empty array on error
+      this.cache.spells = [];
+      this.cache.lastFetch = Date.now();
+      return [];
+    }
+  }
+
   async fetchRaces(): Promise<Open5eRace[]> {
-    console.log('HybridDataService: Fetching races...');
-    
     if (this.isCacheValid('races') && this.cache.races) {
-      console.log('Returning cached races');
       return this.cache.races;
     }
 
@@ -170,8 +210,6 @@ class HybridDataService {
         return apiRaces;
       }
 
-      console.log(`Found ${dbRaces?.length || 0} races in database`);
-
       // Transform database data to API format
       const transformedRaces = (dbRaces || []).map(this.transformSupabaseRace);
 
@@ -182,7 +220,6 @@ class HybridDataService {
         return transformedRaces;
       } else {
         // Fallback to API if no database data
-        console.log('No races found in database, falling back to API');
         const apiRaces = await open5eApi.fetchRaces();
         this.cache.races = apiRaces;
         this.cache.lastFetch = Date.now();
@@ -199,10 +236,7 @@ class HybridDataService {
   }
 
   async fetchClasses(): Promise<Open5eClass[]> {
-    console.log('HybridDataService: Fetching classes...');
-    
     if (this.isCacheValid('classes') && this.cache.classes) {
-      console.log('Returning cached classes');
       return this.cache.classes;
     }
 
@@ -219,8 +253,6 @@ class HybridDataService {
         return apiClasses;
       }
 
-      console.log(`Found ${dbClasses?.length || 0} classes in database`);
-
       const transformedClasses = (dbClasses || []).map(this.transformSupabaseClass);
 
       if (transformedClasses.length > 0) {
@@ -228,7 +260,6 @@ class HybridDataService {
         this.cache.lastFetch = Date.now();
         return transformedClasses;
       } else {
-        console.log('No classes found in database, falling back to API');
         const apiClasses = await open5eApi.fetchClasses();
         this.cache.classes = apiClasses;
         this.cache.lastFetch = Date.now();
@@ -244,10 +275,7 @@ class HybridDataService {
   }
 
   async fetchBackgrounds(): Promise<Open5eBackground[]> {
-    console.log('HybridDataService: Fetching backgrounds...');
-    
     if (this.isCacheValid('backgrounds') && this.cache.backgrounds) {
-      console.log('Returning cached backgrounds');
       return this.cache.backgrounds;
     }
 
@@ -264,8 +292,6 @@ class HybridDataService {
         return apiBackgrounds;
       }
 
-      console.log(`Found ${dbBackgrounds?.length || 0} backgrounds in database`);
-
       const transformedBackgrounds = (dbBackgrounds || []).map(this.transformSupabaseBackground);
 
       if (transformedBackgrounds.length > 0) {
@@ -273,7 +299,6 @@ class HybridDataService {
         this.cache.lastFetch = Date.now();
         return transformedBackgrounds;
       } else {
-        console.log('No backgrounds found in database, falling back to API');
         const apiBackgrounds = await open5eApi.fetchBackgrounds();
         this.cache.backgrounds = apiBackgrounds;
         this.cache.lastFetch = Date.now();
@@ -288,56 +313,8 @@ class HybridDataService {
     }
   }
 
-  async fetchSpells(): Promise<Open5eSpell[]> {
-    console.log('HybridDataService: Fetching spells...');
-    
-    if (this.isCacheValid('spells') && this.cache.spells) {
-      console.log('Returning cached spells');
-      return this.cache.spells;
-    }
-
-    try {
-      const { data: dbSpells, error } = await supabase
-        .from('open5e_spells')
-        .select('*');
-
-      if (error) {
-        console.warn('Error fetching spells from database:', error);
-        const apiSpells = await open5eApi.fetchSpells();
-        this.cache.spells = apiSpells;
-        this.cache.lastFetch = Date.now();
-        return apiSpells;
-      }
-
-      console.log(`Found ${dbSpells?.length || 0} spells in database`);
-
-      const transformedSpells = (dbSpells || []).map(this.transformSupabaseSpell);
-
-      if (transformedSpells.length > 0) {
-        this.cache.spells = transformedSpells;
-        this.cache.lastFetch = Date.now();
-        return transformedSpells;
-      } else {
-        console.log('No spells found in database, falling back to API');
-        const apiSpells = await open5eApi.fetchSpells();
-        this.cache.spells = apiSpells;
-        this.cache.lastFetch = Date.now();
-        return apiSpells;
-      }
-    } catch (error) {
-      console.error('Error in fetchSpells:', error);
-      const apiSpells = await open5eApi.fetchSpells();
-      this.cache.spells = apiSpells;
-      this.cache.lastFetch = Date.now();
-      return apiSpells;
-    }
-  }
-
   async fetchEquipment(): Promise<Open5eEquipment[]> {
-    console.log('HybridDataService: Fetching equipment...');
-    
     if (this.isCacheValid('equipment') && this.cache.equipment) {
-      console.log('Returning cached equipment');
       return this.cache.equipment;
     }
 
@@ -354,8 +331,6 @@ class HybridDataService {
         return apiEquipment;
       }
 
-      console.log(`Found ${dbEquipment?.length || 0} equipment items in database`);
-
       const transformedEquipment = (dbEquipment || []).map(this.transformSupabaseEquipment);
 
       if (transformedEquipment.length > 0) {
@@ -363,7 +338,6 @@ class HybridDataService {
         this.cache.lastFetch = Date.now();
         return transformedEquipment;
       } else {
-        console.log('No equipment found in database, falling back to API');
         const apiEquipment = await open5eApi.fetchEquipment();
         this.cache.equipment = apiEquipment;
         this.cache.lastFetch = Date.now();
@@ -380,7 +354,6 @@ class HybridDataService {
 
   clearCache(): void {
     this.cache = {};
-    console.log('HybridDataService: Cache cleared');
   }
 
   getAvailableSources(items: any[]): string[] {
