@@ -27,6 +27,9 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
   const [abilityImprovements, setAbilityImprovements] = useState<{ [key: string]: number }>({});
   const [newSpells, setNewSpells] = useState<any[]>([]);
 
+  // Define ASI levels constant
+  const asiLevels = [4, 8, 12, 16, 19];
+
   useEffect(() => {
     if (isOpen && character && newLevel !== character.level) {
       calculateLevelUpChanges();
@@ -78,7 +81,6 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
       const newProfBonus = Math.ceil(newLevel / 4) + 1;
       changes.proficiencyBonusIncrease = newProfBonus > oldProfBonus;
 
-      const asiLevels = [4, 8, 12, 16, 19];
       for (let level = character.level + 1; level <= newLevel; level++) {
         if (asiLevels.includes(level)) {
           changes.abilityScoreImprovements++;
@@ -314,7 +316,26 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
         ? calculateSpellSlots(newLevel, character.class_name)
         : {};
 
-      const maxSpellsAtLevel = character.spells ? character.spells.slice(0, maxSpellsAtLevel) : [];
+      // Calculate maximum spells allowed at this level
+      const className = character.class_name?.toLowerCase();
+      let maxSpellsAtLevel = 0;
+      
+      if (className === 'wizard') {
+        // Wizards start with 6 spells at level 1, then gain 2 per level
+        maxSpellsAtLevel = 6 + ((newLevel - 1) * 2);
+      } else {
+        // Other spellcasters use the spells known progression
+        const spellsKnownProgression: { [key: string]: { [key: number]: number } } = {
+          bard: { 1: 4, 2: 5, 3: 6, 4: 7, 5: 8, 6: 9, 7: 10, 8: 11, 9: 12, 10: 14 },
+          sorcerer: { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10, 10: 11 },
+          warlock: { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10, 10: 10 }
+        };
+        
+        const progression = spellsKnownProgression[className];
+        maxSpellsAtLevel = progression?.[newLevel] || 0;
+      }
+
+      const limitedSpells = character.spells ? character.spells.slice(0, maxSpellsAtLevel) : [];
       
       updatedCharacter = {
         ...character,
@@ -329,7 +350,7 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
         currentHP: Math.min((character.hit_points?.current !== undefined ? character.hit_points.current : character.currentHP || 0), newTotalHP),
         proficiencyBonus: newProficiencyBonus,
         spellSlots: newSpellSlots,
-        spells: maxSpellsAtLevel
+        spells: limitedSpells
       };
     } else {
       const updatedAbilities = { ...character.abilities };
