@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -128,18 +127,43 @@ export const useCharacters = () => {
 
   const updateCharacter = async (characterId: string, updates: Partial<Character>) => {
     try {
-      // Ensure we're updating the database with the correct field names
-      const dbUpdates: any = { ...updates };
+      // Prepare the database updates
+      const dbUpdates: any = {};
       
-      // Handle inspiration field specifically
+      // Always update these fields if they exist in updates
+      if ('level' in updates) {
+        dbUpdates.level = updates.level;
+      }
+      
+      if ('abilities' in updates) {
+        dbUpdates.abilities = updates.abilities;
+      }
+      
+      if ('hit_points' in updates) {
+        dbUpdates.hit_points = updates.hit_points;
+      }
+      
+      if ('equipment' in updates) {
+        dbUpdates.equipment = updates.equipment;
+      }
+      
+      if ('spells' in updates) {
+        dbUpdates.spells = updates.spells;
+      }
+      
+      if ('spell_slots' in updates || 'spellSlots' in updates) {
+        dbUpdates.spell_slots = updates.spell_slots || (updates as any).spellSlots;
+      }
+
+      // Special handling for inspiration - make sure it's preserved in abilities
       if ('inspiration' in updates) {
-        // Store inspiration as part of the character data
         dbUpdates.abilities = {
           ...updates.abilities,
           inspiration: updates.inspiration
         };
-        delete dbUpdates.inspiration;
       }
+
+      console.log('Updating character in database with:', dbUpdates);
 
       const { error } = await supabase
         .from('characters')

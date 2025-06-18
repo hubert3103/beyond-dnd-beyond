@@ -36,6 +36,7 @@ const CharacterSheet = () => {
 
   // Function to handle character updates and sync with database
   const handleCharacterUpdate = async (updatedCharacter: any) => {
+    console.log('Handling character update:', updatedCharacter);
     setCharacter(updatedCharacter);
     
     // Update the database with the updated character data
@@ -43,19 +44,27 @@ const CharacterSheet = () => {
       try {
         const updateData: any = {};
         
+        // Always update level if it changed
+        if (updatedCharacter.level !== character?.level) {
+          updateData.level = updatedCharacter.level;
+          console.log('Updating level to:', updatedCharacter.level);
+        }
+
+        // Always update abilities if they exist and changed
+        if (updatedCharacter.abilities) {
+          updateData.abilities = updatedCharacter.abilities;
+          console.log('Updating abilities to:', updatedCharacter.abilities);
+        }
+        
         // Always update hit points if they exist
         if (updatedCharacter.hit_points) {
           updateData.hit_points = updatedCharacter.hit_points;
+          console.log('Updating hit_points to:', updatedCharacter.hit_points);
         }
         
         // Update equipment if it exists
         if (updatedCharacter.equipment) {
           updateData.equipment = updatedCharacter.equipment;
-        }
-        
-        // Update abilities if they exist
-        if (updatedCharacter.abilities) {
-          updateData.abilities = updatedCharacter.abilities;
         }
         
         // Update spells if they exist
@@ -66,11 +75,6 @@ const CharacterSheet = () => {
         // Update spell slots if they exist
         if (updatedCharacter.spellSlots) {
           updateData.spell_slots = updatedCharacter.spellSlots;
-        }
-
-        // Update level if it changed
-        if (updatedCharacter.level !== character?.level) {
-          updateData.level = updatedCharacter.level;
         }
 
         // Handle inspiration separately - it's stored in abilities
