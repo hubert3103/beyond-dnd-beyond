@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -64,9 +63,15 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
     if (isOpen && !isLoading && spells && spells.length > 0) {
       const className = character.class_name?.toLowerCase();
       
-      // Use a more comprehensive spell-to-class mapping since API data might be incomplete
+      console.log('Filtering spells for level up modal:', {
+        className,
+        currentLevel: character.level,
+        newLevel,
+        totalSpells: spells.length
+      });
+      
+      // Enhanced spell lists for each class with more 2nd level spells
       const getSpellsForClass = (className: string) => {
-        // Basic spell lists for each class - fallback if API data is missing
         const basicSpellLists: { [key: string]: string[] } = {
           sorcerer: [
             // Cantrips
@@ -75,7 +80,13 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
             // 1st level
             'burning hands', 'charm person', 'comprehend languages', 'detect magic', 
             'disguise self', 'expeditious retreat', 'false life', 'feather fall', 'fog cloud',
-            'jump', 'mage armor', 'magic missile', 'shield', 'silent image', 'sleep', 'thunderwave'
+            'jump', 'mage armor', 'magic missile', 'shield', 'silent image', 'sleep', 'thunderwave',
+            // 2nd level spells for sorcerer
+            'alter self', 'blindness/deafness', 'blur', 'cloud of daggers', 'crown of madness',
+            'darkness', 'darkvision', 'detect thoughts', 'enhance ability', 'enlarge/reduce',
+            'gust of wind', 'hold person', 'invisibility', 'knock', 'levitate', 'mirror image',
+            'misty step', 'scorching ray', 'see invisibility', 'shatter', 'spider climb',
+            'suggestion', 'web'
           ],
           wizard: [
             // Cantrips
@@ -85,20 +96,37 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
             'burning hands', 'charm person', 'comprehend languages', 'detect magic',
             'disguise self', 'expeditious retreat', 'false life', 'feather fall', 'find familiar',
             'fog cloud', 'grease', 'identify', 'jump', 'longstrider', 'mage armor', 'magic missile',
-            'protection from evil and good', 'shield', 'silent image', 'sleep', 'thunderwave', 'unseen servant'
+            'protection from evil and good', 'shield', 'silent image', 'sleep', 'thunderwave', 'unseen servant',
+            // 2nd level spells for wizard
+            'alter self', 'arcane lock', 'blindness/deafness', 'blur', 'cloud of daggers',
+            'continual flame', 'darkness', 'darkvision', 'detect thoughts', 'enlarge/reduce',
+            'flaming sphere', 'gentle repose', 'gust of wind', 'hold person', 'invisibility',
+            'knock', 'levitate', 'locate object', 'magic mouth', 'magic weapon', 'melf\'s acid arrow',
+            'mirror image', 'misty step', 'nystul\'s magic aura', 'ray of enfeeblement', 'rope trick',
+            'scorching ray', 'see invisibility', 'shatter', 'spider climb', 'suggestion', 'web'
           ],
           warlock: [
             // Cantrips
             'chill touch', 'mage hand', 'minor illusion', 'poison spray', 'prestidigitation',
             // 1st level
-            'charm person', 'comprehend languages', 'expeditious retreat', 'protection from evil and good', 'unseen servant'
+            'charm person', 'comprehend languages', 'expeditious retreat', 'protection from evil and good', 'unseen servant',
+            // 2nd level spells for warlock
+            'cloud of daggers', 'crown of madness', 'darkness', 'enthrall', 'hold person',
+            'invisibility', 'mirror image', 'misty step', 'ray of enfeeblement', 'shatter',
+            'spider climb', 'suggestion'
           ],
           bard: [
             // Cantrips
             'dancing lights', 'light', 'mage hand', 'minor illusion', 'prestidigitation',
             // 1st level
             'charm person', 'comprehend languages', 'detect magic', 'disguise self', 'feather fall',
-            'identify', 'longstrider', 'silent image', 'sleep', 'thunderwave', 'unseen servant'
+            'identify', 'longstrider', 'silent image', 'sleep', 'thunderwave', 'unseen servant',
+            // 2nd level spells for bard
+            'animal messenger', 'blindness/deafness', 'calm emotions', 'cloud of daggers',
+            'crown of madness', 'detect thoughts', 'enhance ability', 'enthrall', 'heat metal',
+            'hold person', 'invisibility', 'knock', 'lesser restoration', 'locate animals or plants',
+            'locate object', 'magic mouth', 'see invisibility', 'shatter', 'silence',
+            'suggestion', 'zone of truth'
           ]
         };
 
@@ -133,21 +161,42 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
         !knownSpellNames.includes(spell.name.toLowerCase())
       );
 
-      // Get spells of appropriate level
+      // Get spells of appropriate level - FIXED: Use correct max spell level calculation
       const maxSpellLevel = getMaxSpellLevel(newLevel, className);
+      console.log('Max spell level for', className, 'at level', newLevel, ':', maxSpellLevel);
+      
       const levelAppropriateSpells = unknownSpells.filter((spell: any) => {
         const spellLevel = parseInt(spell.level) || 0;
-        return spellLevel <= maxSpellLevel;
+        const isAppropriate = spellLevel <= maxSpellLevel;
+        
+        if (spellLevel === 2) {
+          console.log('Level 2 spell check:', {
+            spellName: spell.name,
+            spellLevel,
+            maxSpellLevel,
+            isAppropriate
+          });
+        }
+        
+        return isAppropriate;
+      });
+      
+      console.log('Filtered spells:', {
+        classSpells: classSpells.length,
+        unknownSpells: unknownSpells.length,
+        levelAppropriate: levelAppropriateSpells.length,
+        level2Spells: levelAppropriateSpells.filter(s => parseInt(s.level) === 2).length
       });
       
       setAvailableSpells(levelAppropriateSpells);
     } else if (isOpen && !isLoading && (!spells || spells.length === 0)) {
-      // If no spells loaded, show a message
       setAvailableSpells([]);
     }
   }, [isOpen, spells, isLoading, character, newLevel]);
 
   const getMaxSpellLevel = (characterLevel: number, className: string) => {
+    console.log('Getting max spell level for:', { characterLevel, className });
+    
     if (className === 'warlock') {
       if (characterLevel < 3) return 1;
       if (characterLevel < 5) return 2;
@@ -166,7 +215,10 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
     }
     
     // Full casters (wizard, sorcerer, bard, cleric, druid)
-    return Math.ceil(characterLevel / 2);
+    // Level 1-2: 1st level spells, Level 3-4: 2nd level spells, etc.
+    const maxLevel = Math.ceil(characterLevel / 2);
+    console.log('Full caster max spell level:', maxLevel);
+    return maxLevel;
   };
 
   const toggleSpellSelection = (spell: any) => {
@@ -223,6 +275,9 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
                 <p>No spells available to learn at your level</p>
                 <p className="text-xs mt-2">
                   {spells?.length ? `${spells.length} total spells loaded` : 'No spells loaded from data source'}
+                </p>
+                <p className="text-xs mt-1">
+                  Max spell level for level {newLevel}: {getMaxSpellLevel(newLevel, character.class_name?.toLowerCase())}
                 </p>
               </div>
             ) : (
