@@ -17,8 +17,8 @@ const ItemsTab = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<Open5eEquipment | null>(null);
-  const [sortBy, setSortBy] = useState<'name' | 'rarity' | 'type'>('name');
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [selectedRarities, setSelectedRarities] = useState<string[]>([]);
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
   const [itemToAdd, setItemToAdd] = useState<Open5eEquipment | null>(null);
 
@@ -33,6 +33,17 @@ const ItemsTab = () => {
     return Array.from(sources).sort();
   }, [equipment]);
 
+  // Memoize available rarities for better performance
+  const availableRarities = useMemo(() => {
+    const rarities = new Set<string>();
+    equipment.forEach(item => {
+      if (item.rarity) {
+        rarities.add(item.rarity.toLowerCase());
+      }
+    });
+    return Array.from(rarities).sort();
+  }, [equipment]);
+
   // Handle source filter changes
   const handleSourceFilterChange = (source: string, checked: boolean) => {
     setSelectedSources(prev => {
@@ -40,6 +51,17 @@ const ItemsTab = () => {
         return [...prev, source];
       } else {
         return prev.filter(s => s !== source);
+      }
+    });
+  };
+
+  // Handle rarity filter changes
+  const handleRarityFilterChange = (rarity: string, checked: boolean) => {
+    setSelectedRarities(prev => {
+      if (checked) {
+        return [...prev, rarity];
+      } else {
+        return prev.filter(r => r !== rarity);
       }
     });
   };
@@ -53,20 +75,15 @@ const ItemsTab = () => {
       if (selectedSources.length > 0 && !selectedSources.includes(item.document__slug)) {
         return false;
       }
+      if (selectedRarities.length > 0 && !selectedRarities.includes(item.rarity.toLowerCase())) {
+        return false;
+      }
       return true;
     }).sort((a, b) => {
-      switch (sortBy) {
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'rarity':
-          return a.rarity.localeCompare(b.rarity);
-        case 'type':
-          return a.type.localeCompare(b.type);
-        default:
-          return 0;
-      }
+      // Default sort by name
+      return a.name.localeCompare(b.name);
     });
-  }, [equipment, searchTerm, selectedSources, sortBy]);
+  }, [equipment, searchTerm, selectedSources, selectedRarities]);
 
   // Use infinite scroll hook
   const { displayedItems, isLoading: isLoadingMore, hasMore, handleScroll } = useInfiniteScroll({
@@ -158,11 +175,12 @@ const ItemsTab = () => {
       <ItemsHeader
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
         selectedSources={selectedSources}
         onSourceFilterChange={handleSourceFilterChange}
         availableSources={availableSources}
+        selectedRarities={selectedRarities}
+        onRarityFilterChange={handleRarityFilterChange}
+        availableRarities={availableRarities}
         displayedCount={displayedEquipment.length}
         filteredCount={filteredEquipment.length}
         totalCount={equipment.length}

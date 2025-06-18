@@ -3,17 +3,17 @@ import { useState } from 'react';
 import { Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ItemsFilters from './ItemsFilters';
 
 interface ItemsHeaderProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
-  sortBy: 'name' | 'rarity' | 'type';
-  onSortChange: (value: 'name' | 'rarity' | 'type') => void;
   selectedSources: string[];
   onSourceFilterChange: (source: string, checked: boolean) => void;
   availableSources: string[];
+  selectedRarities: string[];
+  onRarityFilterChange: (rarity: string, checked: boolean) => void;
+  availableRarities: string[];
   displayedCount: number;
   filteredCount: number;
   totalCount: number;
@@ -22,11 +22,12 @@ interface ItemsHeaderProps {
 const ItemsHeader = ({
   searchTerm,
   onSearchChange,
-  sortBy,
-  onSortChange,
   selectedSources,
   onSourceFilterChange,
   availableSources,
+  selectedRarities,
+  onRarityFilterChange,
+  availableRarities,
   displayedCount,
   filteredCount,
   totalCount
@@ -62,17 +63,6 @@ const ItemsHeader = ({
             <Filter className="h-4 w-4" />
             <span>Filters</span>
           </Button>
-          
-          <Select value={sortBy} onValueChange={onSortChange}>
-            <SelectTrigger className="w-32 bg-white text-gray-700 border-gray-300">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent className="bg-white">
-              <SelectItem value="rarity">Rarity</SelectItem>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="type">Type</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         {/* Filter Panel */}
@@ -81,6 +71,9 @@ const ItemsHeader = ({
             availableSources={availableSources}
             selectedSources={selectedSources}
             onSourceFilterChange={onSourceFilterChange}
+            availableRarities={availableRarities}
+            selectedRarities={selectedRarities}
+            onRarityFilterChange={onRarityFilterChange}
           />
         )}
       </div>
