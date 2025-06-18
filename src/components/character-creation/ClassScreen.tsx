@@ -87,9 +87,6 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
   };
 
   const filteredClasses = useMemo(() => {
-    console.log('All classes:', classes.length);
-    console.log('Data sources:', data.sources);
-    
     if (!classes.length) return [];
     
     let filtered = classes;
@@ -98,9 +95,8 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
     const hasSourceEnabled = data.sources?.coreRules || data.sources?.expansions || data.sources?.homebrew;
     
     if (hasSourceEnabled) {
-      // Get available sources and log them for debugging
+      // Get available sources
       const availableSources = hybridDataService.getAvailableSources(classes);
-      console.log('Available sources in classes:', availableSources);
       
       // Define source categories based on actual document slugs from the API
       const coreRuleSources = ['wotc-srd'];  // This is what's actually in the API
@@ -119,11 +115,8 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
         allowedSources.push(...homebrewSources);
       }
       
-      console.log('Allowed sources:', allowedSources);
-      
       // Filter by allowed sources
       filtered = classes.filter(cls => allowedSources.includes(cls.document__slug));
-      console.log('Filtered by source:', filtered.length);
     }
     
     // Apply search filter
@@ -131,7 +124,6 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
       filtered = filtered.filter(cls => 
         cls.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      console.log('Filtered by search:', filtered.length);
     }
     
     return filtered;
@@ -272,15 +264,6 @@ const ClassScreen = ({ data, onUpdate }: ClassScreenProps) => {
       <div className="text-center">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Choose Your Class</h1>
         <p className="text-gray-600">Select a class that defines your character's abilities and role</p>
-      </div>
-
-      {/* Debug info */}
-      <div className="text-sm text-gray-500 bg-gray-100 p-2 rounded">
-        Debug: {classes.length} total classes, {filteredClasses.length} after filtering
-        <br />
-        Sources enabled: coreRules={String(data.sources?.coreRules === true)}, expansions={String(data.sources?.expansions === true)}, homebrew={String(data.sources?.homebrew === true)}
-        <br />
-        Selected class: {selectedClass?.name || 'None'}
       </div>
 
       {/* Search */}
