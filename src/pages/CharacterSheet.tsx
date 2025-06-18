@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, MoreVertical, Loader2 } from 'lucide-react';
@@ -37,6 +36,8 @@ const CharacterSheet = () => {
 
   // Function to handle character updates and sync with database
   const handleCharacterUpdate = async (updatedCharacter: any) => {
+    console.log('Handling character update:', updatedCharacter);
+    
     // Update local state immediately for responsive UI
     setCharacter(updatedCharacter);
     
@@ -48,6 +49,7 @@ const CharacterSheet = () => {
         // Always update level if it changed
         if (updatedCharacter.level !== character?.level) {
           updateData.level = updatedCharacter.level;
+          console.log('Level changed to:', updatedCharacter.level);
         }
 
         // Always update abilities if they exist and check if they actually changed
@@ -57,6 +59,7 @@ const CharacterSheet = () => {
           
           if (abilitiesChanged) {
             updateData.abilities = updatedCharacter.abilities;
+            console.log('Abilities changed:', updatedCharacter.abilities);
           }
         }
         
@@ -67,6 +70,7 @@ const CharacterSheet = () => {
             
           if (hitPointsChanged) {
             updateData.hit_points = updatedCharacter.hit_points;
+            console.log('Hit points changed:', updatedCharacter.hit_points);
           }
         }
         
@@ -80,37 +84,47 @@ const CharacterSheet = () => {
           }
         }
         
-        // Update spells if they exist and changed
+        // FIXED: Update spells if they exist and changed - handle both spells array and spellSlots
         if (updatedCharacter.spells) {
           const spellsChanged = !character?.spells ||
             JSON.stringify(updatedCharacter.spells) !== JSON.stringify(character.spells);
             
           if (spellsChanged) {
             updateData.spells = updatedCharacter.spells;
+            console.log('Spells changed:', updatedCharacter.spells);
           }
         }
         
-        // Update spell slots if they exist and changed
-        if (updatedCharacter.spellSlots) {
-          const spellSlotsChanged = !character?.spellSlots ||
-            JSON.stringify(updatedCharacter.spellSlots) !== JSON.stringify(character.spellSlots);
+        // FIXED: Update spell slots if they exist and changed - check both spellSlots and spell_slots
+        if (updatedCharacter.spellSlots || updatedCharacter.spell_slots) {
+          const newSpellSlots = updatedCharacter.spellSlots || updatedCharacter.spell_slots;
+          const currentSpellSlots = character?.spellSlots || character?.spell_slots;
+          
+          const spellSlotsChanged = !currentSpellSlots ||
+            JSON.stringify(newSpellSlots) !== JSON.stringify(currentSpellSlots);
             
           if (spellSlotsChanged) {
-            updateData.spell_slots = updatedCharacter.spellSlots;
+            updateData.spell_slots = newSpellSlots;
+            console.log('Spell slots changed:', newSpellSlots);
           }
         }
 
         // Handle inspiration separately - it's stored in abilities
         if ('inspiration' in updatedCharacter) {
-          updateData.abilities = {
-            ...updatedCharacter.abilities,
-            inspiration: updatedCharacter.inspiration
-          };
+          if (!updateData.abilities) {
+            updateData.abilities = updatedCharacter.abilities || {};
+          }
+          updateData.abilities.inspiration = updatedCharacter.inspiration;
+          console.log('Inspiration changed:', updatedCharacter.inspiration);
         }
         
         // Only update if there are actual changes
         if (Object.keys(updateData).length > 0) {
+          console.log('Sending update to database:', updateData);
           await updateCharacter(id, updateData);
+          console.log('Database update successful');
+        } else {
+          console.log('No changes detected, skipping database update');
         }
         
       } catch (error) {

@@ -70,7 +70,7 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
         totalSpells: spells.length
       });
       
-      // Enhanced spell lists for each class with more 2nd level spells
+      // Enhanced spell lists for each class with more spells including higher levels
       const getSpellsForClass = (className: string) => {
         const basicSpellLists: { [key: string]: string[] } = {
           sorcerer: [
@@ -86,7 +86,14 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
             'darkness', 'darkvision', 'detect thoughts', 'enhance ability', 'enlarge/reduce',
             'gust of wind', 'hold person', 'invisibility', 'knock', 'levitate', 'mirror image',
             'misty step', 'scorching ray', 'see invisibility', 'shatter', 'spider climb',
-            'suggestion', 'web'
+            'suggestion', 'web',
+            // 3rd level spells for sorcerer
+            'counterspell', 'daylight', 'dispel magic', 'fireball', 'fly', 'gaseous form',
+            'haste', 'hypnotic pattern', 'lightning bolt', 'major image', 'protection from energy',
+            'sleet storm', 'slow', 'tongues', 'water breathing',
+            // 4th level spells for sorcerer
+            'confusion', 'dimension door', 'greater invisibility', 'ice storm', 'polymorph',
+            'stoneskin', 'wall of fire'
           ],
           wizard: [
             // Cantrips
@@ -103,7 +110,19 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
             'flaming sphere', 'gentle repose', 'gust of wind', 'hold person', 'invisibility',
             'knock', 'levitate', 'locate object', 'magic mouth', 'magic weapon', 'melf\'s acid arrow',
             'mirror image', 'misty step', 'nystul\'s magic aura', 'ray of enfeeblement', 'rope trick',
-            'scorching ray', 'see invisibility', 'shatter', 'spider climb', 'suggestion', 'web'
+            'scorching ray', 'see invisibility', 'shatter', 'spider climb', 'suggestion', 'web',
+            // 3rd level spells for wizard
+            'animate dead', 'bestow curse', 'blink', 'clairvoyance', 'counterspell', 'dispel magic',
+            'fireball', 'fly', 'gaseous form', 'haste', 'hold person', 'hypnotic pattern',
+            'lightning bolt', 'magic circle', 'major image', 'nondetection', 'phantom steed',
+            'protection from energy', 'remove curse', 'sending', 'sleet storm', 'slow',
+            'stinking cloud', 'tongues', 'vampiric touch', 'water breathing',
+            // 4th level spells for wizard
+            'arcane eye', 'banishment', 'black tentacles', 'blight', 'confusion', 'conjure minor elementals',
+            'control water', 'dimension door', 'fabricate', 'fire shield', 'greater invisibility',
+            'hallucinatory terrain', 'ice storm', 'locate creature', 'phantasmal killer',
+            'polymorph', 'private sanctum', 'resilient sphere', 'secret chest', 'stone shape',
+            'stoneskin', 'wall of fire'
           ],
           warlock: [
             // Cantrips
@@ -113,7 +132,12 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
             // 2nd level spells for warlock
             'cloud of daggers', 'crown of madness', 'darkness', 'enthrall', 'hold person',
             'invisibility', 'mirror image', 'misty step', 'ray of enfeeblement', 'shatter',
-            'spider climb', 'suggestion'
+            'spider climb', 'suggestion',
+            // 3rd level spells for warlock
+            'counterspell', 'dispel magic', 'fear', 'fly', 'gaseous form', 'hypnotic pattern',
+            'magic circle', 'major image', 'remove curse', 'tongues', 'vampiric touch',
+            // 4th level spells for warlock
+            'banishment', 'blight', 'confusion', 'dimension door', 'hallucinatory terrain'
           ],
           bard: [
             // Cantrips
@@ -126,7 +150,14 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
             'crown of madness', 'detect thoughts', 'enhance ability', 'enthrall', 'heat metal',
             'hold person', 'invisibility', 'knock', 'lesser restoration', 'locate animals or plants',
             'locate object', 'magic mouth', 'see invisibility', 'shatter', 'silence',
-            'suggestion', 'zone of truth'
+            'suggestion', 'zone of truth',
+            // 3rd level spells for bard
+            'bestow curse', 'clairvoyance', 'counterspell', 'dispel magic', 'fear', 'glyph of warding',
+            'hypnotic pattern', 'leomund\'s tiny hut', 'major image', 'nondetection', 'plant growth',
+            'sending', 'speak with dead', 'speak with plants', 'stinking cloud', 'tongues',
+            // 4th level spells for bard
+            'confusion', 'dimension door', 'freedom of movement', 'greater invisibility', 'hallucinatory terrain',
+            'locate creature', 'polymorph'
           ]
         };
 
@@ -169,8 +200,8 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
         const spellLevel = parseInt(spell.level) || 0;
         const isAppropriate = spellLevel <= maxSpellLevel;
         
-        if (spellLevel === 2) {
-          console.log('Level 2 spell check:', {
+        if (spellLevel >= 3) {
+          console.log('Higher level spell check:', {
             spellName: spell.name,
             spellLevel,
             maxSpellLevel,
@@ -185,7 +216,8 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
         classSpells: classSpells.length,
         unknownSpells: unknownSpells.length,
         levelAppropriate: levelAppropriateSpells.length,
-        level2Spells: levelAppropriateSpells.filter(s => parseInt(s.level) === 2).length
+        level3Spells: levelAppropriateSpells.filter(s => parseInt(s.level) === 3).length,
+        level4Spells: levelAppropriateSpells.filter(s => parseInt(s.level) === 4).length
       });
       
       setAvailableSpells(levelAppropriateSpells);
@@ -215,10 +247,12 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
     }
     
     // Full casters (wizard, sorcerer, bard, cleric, druid)
-    // Level 1-2: 1st level spells, Level 3-4: 2nd level spells, etc.
-    const maxLevel = Math.ceil(characterLevel / 2);
-    console.log('Full caster max spell level:', maxLevel);
-    return maxLevel;
+    // CORRECTED: Use proper D&D 5e spell slot progression
+    if (characterLevel < 3) return 1;
+    if (characterLevel < 5) return 2;
+    if (characterLevel < 7) return 3;
+    if (characterLevel < 9) return 4;
+    return 5;
   };
 
   const toggleSpellSelection = (spell: any) => {
