@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { useHybridData } from '../../hooks/useHybridData';
 import { Open5eEquipment } from '../../services/open5eApi';
@@ -22,6 +21,27 @@ const ItemsTab = () => {
   const [showCharacterSelect, setShowCharacterSelect] = useState(false);
   const [itemToAdd, setItemToAdd] = useState<Open5eEquipment | null>(null);
 
+  // Function to normalize rarity values to standard D&D 5e rarities
+  const normalizeRarity = (rarity: string): string => {
+    if (!rarity) return 'common';
+    
+    const lowerRarity = rarity.toLowerCase();
+    
+    // Extract the primary rarity from complex descriptions
+    if (lowerRarity.includes('artifact')) return 'artifact';
+    if (lowerRarity.includes('legendary')) return 'legendary';
+    if (lowerRarity.includes('very rare')) return 'very rare';
+    if (lowerRarity.includes('rare')) return 'rare';
+    if (lowerRarity.includes('uncommon')) return 'uncommon';
+    if (lowerRarity.includes('common')) return 'common';
+    
+    // Handle edge cases
+    if (lowerRarity.includes('varies')) return 'varies';
+    
+    // Default to common for unknown rarities
+    return 'common';
+  };
+
   // Memoize available sources for better performance
   const availableSources = useMemo(() => {
     const sources = new Set<string>();
@@ -33,15 +53,18 @@ const ItemsTab = () => {
     return Array.from(sources).sort();
   }, [equipment]);
 
-  // Memoize available rarities for better performance
+  // Memoize available rarities - now using normalized values
   const availableRarities = useMemo(() => {
     const rarities = new Set<string>();
     equipment.forEach(item => {
-      if (item.rarity) {
-        rarities.add(item.rarity.toLowerCase());
-      }
+      const normalizedRarity = normalizeRarity(item.rarity);
+      rarities.add(normalizedRarity);
     });
-    return Array.from(rarities).sort();
+    
+    // Define the standard order for D&D 5e rarities
+    const rarityOrder = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact', 'varies'];
+    
+    return rarityOrder.filter(rarity => rarities.has(rarity));
   }, [equipment]);
 
   // Handle source filter changes
@@ -66,7 +89,7 @@ const ItemsTab = () => {
     });
   };
 
-  // Optimized filtering and sorting - only recalculates when dependencies change
+  // Optimized filtering and sorting - now using normalized rarity for filtering
   const filteredEquipment = useMemo(() => {
     return equipment.filter(item => {
       if (searchTerm && !item.name.toLowerCase().includes(searchTerm.toLowerCase())) {
@@ -75,8 +98,11 @@ const ItemsTab = () => {
       if (selectedSources.length > 0 && !selectedSources.includes(item.document__slug)) {
         return false;
       }
-      if (selectedRarities.length > 0 && !selectedRarities.includes(item.rarity.toLowerCase())) {
-        return false;
+      if (selectedRarities.length > 0) {
+        const normalizedRarity = normalizeRarity(item.rarity);
+        if (!selectedRarities.includes(normalizedRarity)) {
+          return false;
+        }
       }
       return true;
     }).sort((a, b) => {
