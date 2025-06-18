@@ -65,7 +65,7 @@ const ItemsHeader = ({
           
           <Select value={sortBy} onValueChange={onSortChange}>
             <SelectTrigger className="w-32">
-              <SelectValue />
+              <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="rarity">Rarity</SelectItem>
