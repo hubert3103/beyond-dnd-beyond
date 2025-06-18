@@ -40,6 +40,15 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
       wizard: { 1: 6, 2: 8, 3: 10, 4: 12, 5: 14, 6: 16, 7: 18, 8: 20, 9: 22, 10: 24 }
     };
 
+    if (className === 'wizard') {
+      // Wizards learn 2 spells per level after 1st level
+      if (newLevel > character.level) {
+        const levelsGained = newLevel - character.level;
+        return levelsGained * 2; // 2 spells per level
+      }
+      return 0;
+    }
+
     if (spellsKnownProgression[className]) {
       const currentKnown = character.spells?.length || 0;
       const shouldKnow = spellsKnownProgression[className][newLevel] || 0;

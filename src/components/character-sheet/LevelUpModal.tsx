@@ -49,43 +49,35 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
     };
 
     if (changes.isLevelDown) {
-      // For level downs, calculate what the character should have at the new level
       const newTotalHP = calculateTotalHPAtLevel(newLevel);
       const currentMaxHP = character.hit_points?.max || character.maxHP || 0;
       changes.totalHitPointIncrease = newTotalHP - currentMaxHP;
-      changes.proficiencyBonusIncrease = false; // Will be recalculated
+      changes.proficiencyBonusIncrease = false;
       
-      // No new features or improvements when leveling down
       changes.abilityScoreImprovements = 0;
       changes.spellsKnownIncrease = 0;
       changes.classFeatures = [];
     } else {
-      // Calculate HP increase for leveling up
       const conModifier = Math.floor((character.abilities.constitution.score - 10) / 2);
       const hitDie = character.class_data?.hit_die || 8;
       
       for (let level = character.level + 1; level <= newLevel; level++) {
         if (character.hit_point_type === 'fixed') {
-          // Fixed HP: average of hit die + 1 + CON modifier
           const hpGain = Math.floor(hitDie / 2) + 1 + conModifier;
           changes.totalHitPointIncrease += hpGain;
         } else if (character.hit_point_type === 'rolled') {
-          // For rolled, use average for calculation (could be improved to track actual rolls)
           const hpGain = Math.floor(hitDie / 2) + 1 + conModifier;
           changes.totalHitPointIncrease += hpGain;
         } else {
-          // Default to average
           const hpGain = Math.floor(hitDie / 2) + 1 + conModifier;
           changes.totalHitPointIncrease += hpGain;
         }
       }
 
-      // Check proficiency bonus increase
       const oldProfBonus = Math.ceil(character.level / 4) + 1;
       const newProfBonus = Math.ceil(newLevel / 4) + 1;
       changes.proficiencyBonusIncrease = newProfBonus > oldProfBonus;
 
-      // Count ability score improvements
       const asiLevels = [4, 8, 12, 16, 19];
       for (let level = character.level + 1; level <= newLevel; level++) {
         if (asiLevels.includes(level)) {
@@ -93,10 +85,8 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
         }
       }
 
-      // Get class features for new levels
       changes.classFeatures = getClassFeatures(character.level + 1, newLevel);
 
-      // Calculate spell slot increases for spellcasters
       if (isSpellcaster(character.class_name)) {
         const oldSpellSlots = calculateSpellSlots(character.level, character.class_name);
         const newSpellSlots = calculateSpellSlots(newLevel, character.class_name);
@@ -109,7 +99,6 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
           }
         }
 
-        // Calculate spells known increase
         changes.spellsKnownIncrease = calculateSpellsKnownIncrease(character.level, newLevel, character.class_name);
       }
     }
@@ -127,23 +116,19 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
     const conModifier = Math.floor((character.abilities.constitution.score - 10) / 2);
     const hitDie = character.class_data?.hit_die || 8;
     
-    // Level 1 HP: max hit die + CON modifier
     let totalHP = hitDie + conModifier;
     
-    // Additional levels
     for (let i = 2; i <= level; i++) {
       if (character.hit_point_type === 'fixed') {
         totalHP += Math.floor(hitDie / 2) + 1 + conModifier;
       } else if (character.hit_point_type === 'rolled') {
-        // For rolled, use average for calculation (could be improved to track actual rolls)
         totalHP += Math.floor(hitDie / 2) + 1 + conModifier;
       } else {
-        // Default to average
         totalHP += Math.floor(hitDie / 2) + 1 + conModifier;
       }
     }
     
-    return Math.max(1, totalHP); // Minimum 1 HP
+    return Math.max(1, totalHP);
   };
 
   const getClassFeatures = (fromLevel: number, toLevel: number) => {
@@ -241,6 +226,14 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
       warlock: { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10, 10: 10 }
     };
 
+    if (className?.toLowerCase() === 'wizard') {
+      if (newLevel > oldLevel) {
+        const levelsGained = newLevel - oldLevel;
+        return levelsGained * 2; // 2 spells per level
+      }
+      return 0;
+    }
+
     const progression = spellsKnownProgression[className?.toLowerCase()];
     if (!progression) return 0;
 
@@ -279,12 +272,15 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
     setShowASIModal(false);
     
     // After ASI, check if we still need spells
-    if (levelUpChanges?.spellsKnownIncrease > 0 && newSpells.length === 0) {
+    if (levelUpChanges?.spellsKnownIncrease > 0) {
       console.log('After ASI, showing spell modal');
       setShowSpellModal(true);
     } else {
       console.log('After ASI, confirming directly');
-      handleConfirm();
+      // Use setTimeout to allow state to update properly
+      setTimeout(() => {
+        handleConfirm();
+      }, 100);
     }
   };
 
@@ -307,33 +303,19 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
     let updatedCharacter;
 
     if (levelUpChanges.isLevelDown) {
-      // Level down logic
       const newTotalHP = calculateTotalHPAtLevel(newLevel);
       const newProficiencyBonus = Math.ceil(newLevel / 4) + 1;
       
-      // Reset abilities to base values (remove ASI bonuses beyond new level)
       const resetAbilities = { ...character.abilities };
       
-      // Calculate allowed ASI levels and reset accordingly
-      const asiLevels = [4, 8, 12, 16, 19];
       const allowedASILevels = asiLevels.filter(level => level <= newLevel);
       
       const newSpellSlots = isSpellcaster(character.class_name) 
         ? calculateSpellSlots(newLevel, character.class_name)
         : {};
 
-      // Reset spells for spellcasters
-      const spellsKnownProgression: { [key: string]: { [key: number]: number } } = {
-        bard: { 1: 4, 2: 5, 3: 6, 4: 7, 5: 8, 6: 9, 7: 10, 8: 11, 9: 12, 10: 14 },
-        sorcerer: { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10, 10: 11 },
-        warlock: { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10, 10: 10 },
-        wizard: { 1: 6, 2: 8, 3: 10, 4: 12, 5: 14, 6: 16, 7: 18, 8: 20, 9: 22, 10: 24 }
-      };
+      const maxSpellsAtLevel = character.spells ? character.spells.slice(0, maxSpellsAtLevel) : [];
       
-      const progression = spellsKnownProgression[character.class_name?.toLowerCase()];
-      const maxSpellsAtLevel = progression ? progression[newLevel] || 0 : 0;
-      const resetSpells = character.spells ? character.spells.slice(0, maxSpellsAtLevel) : [];
-
       updatedCharacter = {
         ...character,
         level: newLevel,
@@ -347,13 +329,11 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
         currentHP: Math.min((character.hit_points?.current !== undefined ? character.hit_points.current : character.currentHP || 0), newTotalHP),
         proficiencyBonus: newProficiencyBonus,
         spellSlots: newSpellSlots,
-        spells: resetSpells
+        spells: maxSpellsAtLevel
       };
     } else {
-      // Level up logic
       const updatedAbilities = { ...character.abilities };
       
-      // Apply ability score improvements
       Object.entries(abilityImprovements).forEach(([ability, improvement]) => {
         if (improvement > 0) {
           const newScore = updatedAbilities[ability].score + improvement;
@@ -365,11 +345,9 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
         }
       });
 
-      // Calculate new max HP
       const newMaxHP = (character.hit_points?.max || character.maxHP || 0) + levelUpChanges.totalHitPointIncrease;
       const newCurrentHP = (character.hit_points?.current !== undefined ? character.hit_points.current : character.currentHP || 0) + levelUpChanges.totalHitPointIncrease;
 
-      // Calculate new spell slots
       const updatedSpellSlots = { ...character.spellSlots };
       Object.entries(levelUpChanges.spellSlotsIncrease).forEach(([key, increase]) => {
         updatedSpellSlots[key] = (character.spellSlots?.[key] || 0) + (increase as number);
@@ -398,30 +376,26 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
     onClose();
   };
 
-  // Check if we can proceed based on current state
   const canProceed = () => {
     if (!levelUpChanges) return false;
     
     const isLevelDown = levelUpChanges.isLevelDown;
     
-    // For level downs, always allow proceeding
     if (isLevelDown) return true;
     
-    // For level ups, check requirements
     const needsASI = levelUpChanges.abilityScoreImprovements > 0;
     const needsSpells = levelUpChanges.spellsKnownIncrease > 0;
+    const hasSelectedASI = Object.keys(abilityImprovements).length > 0;
+    const hasSelectedSpells = newSpells.length > 0;
     
-    // If we need ASI and haven't selected them, we need to show ASI modal first
-    if (needsASI && Object.keys(abilityImprovements).length === 0) {
-      return true; // Can proceed to ASI modal
+    if (needsASI && !hasSelectedASI) {
+      return true;
     }
     
-    // If we need spells and haven't selected them, we need to show spell modal
-    if (needsSpells && newSpells.length === 0) {
-      return true; // Can proceed to spell modal
+    if (needsSpells && !hasSelectedSpells) {
+      return true;
     }
     
-    // Otherwise we can proceed to final confirmation
     return true;
   };
 
@@ -436,18 +410,17 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
     
     const needsASI = levelUpChanges.abilityScoreImprovements > 0;
     const needsSpells = levelUpChanges.spellsKnownIncrease > 0;
+    const hasSelectedASI = Object.keys(abilityImprovements).length > 0;
+    const hasSelectedSpells = newSpells.length > 0;
     
-    // If we need ASI and haven't selected them
-    if (needsASI && Object.keys(abilityImprovements).length === 0) {
+    if (needsASI && !hasSelectedASI) {
       return 'Choose Ability Scores';
     }
     
-    // If we need spells and haven't selected them
-    if (needsSpells && newSpells.length === 0) {
+    if (needsSpells && !hasSelectedSpells) {
       return 'Choose Spells';
     }
     
-    // Otherwise final level up
     return 'Level Up!';
   };
 
@@ -564,7 +537,7 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
                     Learn {levelUpChanges.spellsKnownIncrease} New Spell{levelUpChanges.spellsKnownIncrease > 1 ? 's' : ''}
                   </div>
                   <div className="text-xs text-purple-600 mt-1">
-                    Choose new spells for your spellbook
+                    {character.class_name?.toLowerCase() === 'wizard' ? 'Choose new spells for your spellbook' : 'Choose new spells for your spell list'}
                   </div>
                   {newSpells.length > 0 && (
                     <div className="text-xs text-green-600 mt-1">
