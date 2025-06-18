@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Package, Sword, Shield, Search, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -44,21 +45,9 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
   const getCharacterEquipment = () => {
     const characterEquipment = [];
     
-    console.log('Getting equipment for character:', character.equipment);
-    
     // Add starting equipment
     if (character.equipment?.starting_equipment) {
-      console.log('Found starting equipment:', character.equipment.starting_equipment);
       character.equipment.starting_equipment.forEach((item: any) => {
-        console.log('Processing starting equipment item:', {
-          name: item.name,
-          weight: item.weight,
-          ac: item.ac,
-          ac_base: item.ac_base,
-          category: item.category,
-          type: item.type
-        });
-        
         characterEquipment.push({
           id: item.name || item.index,
           name: item.name,
@@ -74,17 +63,7 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
 
     // Add inventory items
     if (character.equipment?.inventory) {
-      console.log('Found inventory:', character.equipment.inventory);
       character.equipment.inventory.forEach((item: any) => {
-        console.log('Processing inventory item:', {
-          name: item.name,
-          weight: item.weight,
-          ac: item.ac,
-          ac_base: item.ac_base,
-          category: item.category,
-          type: item.type
-        });
-        
         characterEquipment.push({
           id: item.name || item.index,
           name: item.name,
@@ -98,7 +77,6 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
       });
     }
 
-    console.log('Final equipment list with detailed info:', characterEquipment);
     return characterEquipment;
   };
 
@@ -135,7 +113,6 @@ const EquipmentSection = ({ character, setCharacter }: EquipmentSectionProps) =>
   const suggestions = getEquipmentSuggestions();
 
   const selectEquipmentItem = (item: any) => {
-    console.log('Selecting equipment item:', item);
     setSelectedEquipmentItem(item);
     setSearchTerm(item.name); // Set search term to the item name
     setNewItemName(item.name);

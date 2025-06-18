@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Sword } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,8 +18,6 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
   // Get attacks from character's equipment and class features
   const getCharacterAttacks = () => {
     const attacks = [];
-    
-    console.log('Getting attacks for character with equipment:', character.equipment);
     
     // Always add unarmed attack
     const strModifier = Math.floor((character.abilities.strength.score - 10) / 2);
@@ -56,8 +55,6 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
 
     // Helper function to create weapon attack
     const createWeaponAttack = (item: any) => {
-      console.log('Creating weapon attack for item:', item);
-      
       // Determine if weapon uses Dex or Str
       const usesDexterity = item.finesse || 
                            item.ranged || 
@@ -72,8 +69,6 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
       // Get damage - handle multiple possible API data structures
       let damage = '1d4'; // Default fallback
       let damageType = 'bludgeoning'; // Default fallback
-      
-      console.log('Item damage structure:', item.damage);
       
       // Check for Open5e API weapon structure
       if (item.damage && typeof item.damage === 'object') {
@@ -132,8 +127,6 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
         damage : 
         `${damage}${abilityModifier >= 0 ? '+' : ''}${abilityModifier}`;
       
-      console.log('Final weapon damage:', finalDamage, 'type:', damageType);
-      
       return {
         id: item.index || item.name,
         name: item.name,
@@ -147,12 +140,9 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
     
     // Add weapon attacks from equipped starting equipment
     if (character.equipment?.starting_equipment) {
-      console.log('Checking starting equipment:', character.equipment.starting_equipment);
       character.equipment.starting_equipment.forEach((item: any) => {
-        console.log('Checking starting equipment item:', item, 'equipped:', item.equipped, 'is weapon:', isWeapon(item));
         if (item.equipped && isWeapon(item)) {
           const weaponAttack = createWeaponAttack(item);
-          console.log('Adding weapon attack from starting equipment:', weaponAttack);
           attacks.push(weaponAttack);
         }
       });
@@ -160,18 +150,14 @@ const AttacksSpellcasting = ({ character }: AttacksSpellcastingProps) => {
 
     // Add weapon attacks from equipped inventory items
     if (character.equipment?.inventory) {
-      console.log('Checking inventory:', character.equipment.inventory);
       character.equipment.inventory.forEach((item: any) => {
-        console.log('Checking inventory item:', item, 'equipped:', item.equipped, 'is weapon:', isWeapon(item));
         if (item.equipped && isWeapon(item)) {
           const weaponAttack = createWeaponAttack(item);
-          console.log('Adding weapon attack from inventory:', weaponAttack);
           attacks.push(weaponAttack);
         }
       });
     }
 
-    console.log('Final attacks list:', attacks);
     return attacks;
   };
 
