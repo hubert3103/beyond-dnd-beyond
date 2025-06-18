@@ -50,11 +50,6 @@ const SpellsHeader = ({
 
   return (
     <div className="bg-[#4a4a4a] p-4 border-b border-gray-600">
-      <div className="text-center mb-4">
-        <h1 className="text-2xl font-bold text-white mb-2">Spells & Magic</h1>
-        <p className="text-gray-300">Browse spells from D&D 5e sources</p>
-      </div>
-      
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />

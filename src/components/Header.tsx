@@ -43,21 +43,7 @@ const Header = ({ activeTab }: HeaderProps) => {
             />
           </button>
           <h1 className="text-white font-bold text-lg">{getTabTitle()}</h1>
-          {(activeTab === 'spells' || activeTab === 'items') && (
-            <button className="text-white">
-              <img 
-                src="/filterIcon.svg" 
-                alt="Filter"
-                className="w-6 h-6"
-                style={{
-                  filter: 'invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)'
-                }}
-              />
-            </button>
-          )}
-          {activeTab === 'characters' || activeTab === 'manuals' ? (
-            <div className="w-6" />
-          ) : null}
+          <div className="w-6" />
         </div>
       </header>
       
