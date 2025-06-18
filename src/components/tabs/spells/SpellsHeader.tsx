@@ -30,28 +30,79 @@ const SpellsHeader = ({
 }: SpellsHeaderProps) => {
   // Get unique values for filters - memoized for performance
   const filterOptions = useMemo(() => {
-    // Sort levels with cantrips (0) first, then 1-9
-    const levels = [...new Set(spells.map(s => s.level))].sort((a, b) => {
+    console.log('Processing spells for filters:', spells.length);
+    console.log('Sample spell:', spells[0]);
+    
+    // Get unique levels and sort them properly (0 first, then 1-9)
+    const levelSet = new Set<string>();
+    const classSet = new Set<string>();
+    const schoolSet = new Set<string>();
+    
+    spells.forEach(spell => {
+      // Add level
+      if (spell.level !== undefined && spell.level !== null) {
+        levelSet.add(String(spell.level));
+      }
+      
+      // Add school
+      if (spell.school) {
+        schoolSet.add(spell.school);
+      }
+      
+      // Add classes - check multiple possible formats
+      if (spell.classes) {
+        if (Array.isArray(spell.classes)) {
+          spell.classes.forEach(cls => {
+            if (typeof cls === 'string') {
+              classSet.add(cls);
+            } else if (cls && typeof cls === 'object' && cls.name) {
+              classSet.add(cls.name);
+            }
+          });
+        } else if (typeof spell.classes === 'string') {
+          // Handle comma-separated string format
+          spell.classes.split(',').forEach(cls => {
+            const cleanClass = cls.trim();
+            if (cleanClass) {
+              classSet.add(cleanClass);
+            }
+          });
+        }
+      }
+      
+      // Also check dnd_class field if it exists
+      if (spell.dnd_class) {
+        if (Array.isArray(spell.dnd_class)) {
+          spell.dnd_class.forEach(cls => {
+            if (typeof cls === 'string') {
+              classSet.add(cls);
+            } else if (cls && typeof cls === 'object' && cls.name) {
+              classSet.add(cls.name);
+            }
+          });
+        }
+      }
+    });
+    
+    // Sort levels: cantrip (0) first, then 1-9
+    const levels = Array.from(levelSet).sort((a, b) => {
       const numA = parseInt(a);
       const numB = parseInt(b);
       return numA - numB;
     });
     
-    const schools = [...new Set(spells.map(s => s.school).filter(Boolean))].sort();
-    const classSet = new Set<string>();
-    
-    spells.forEach(spell => {
-      if (spell.classes && Array.isArray(spell.classes)) {
-        spell.classes.forEach(cls => {
-          if (cls?.name) {
-            classSet.add(cls.name);
-          }
-        });
-      }
-    });
-    const classes = [...classSet].sort();
+    const schools = Array.from(schoolSet).sort();
+    const classes = Array.from(classSet).sort();
 
-    console.log('Filter options:', { levels, schools, classes });
+    console.log('Filter options generated:', { 
+      levels: levels.length, 
+      schools: schools.length, 
+      classes: classes.length 
+    });
+    console.log('Level values:', levels);
+    console.log('Class values:', classes);
+    console.log('School values:', schools);
+    
     return { levels, schools, classes };
   }, [spells]);
 
@@ -140,20 +191,24 @@ const SpellsHeader = ({
               <div>
                 <h3 className="font-medium mb-3">Classes</h3>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {filterOptions.classes.map(cls => (
-                    <div key={cls} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`class-${cls}`}
-                        checked={filters.classes.includes(cls)}
-                        onCheckedChange={(checked) => 
-                          onFilterChange('classes', cls, checked as boolean)
-                        }
-                      />
-                      <label htmlFor={`class-${cls}`} className="text-sm">
-                        {cls}
-                      </label>
-                    </div>
-                  ))}
+                  {filterOptions.classes.length > 0 ? (
+                    filterOptions.classes.map(cls => (
+                      <div key={cls} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`class-${cls}`}
+                          checked={filters.classes.includes(cls)}
+                          onCheckedChange={(checked) => 
+                            onFilterChange('classes', cls, checked as boolean)
+                          }
+                        />
+                        <label htmlFor={`class-${cls}`} className="text-sm">
+                          {cls}
+                        </label>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500">No classes available</p>
+                  )}
                 </div>
               </div>
             </div>
