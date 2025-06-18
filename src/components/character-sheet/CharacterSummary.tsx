@@ -27,7 +27,6 @@ interface CharacterSummaryProps {
 const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) => {
   const [showHPDialog, setShowHPDialog] = useState(false);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
-  const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const [tempDamage, setTempDamage] = useState('');
   const [tempHealing, setTempHealing] = useState('');
 
@@ -38,7 +37,6 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
   const handleLevelChange = (value: string) => {
     const newLevel = parseInt(value);
     if (newLevel > character.level) {
-      setSelectedLevel(newLevel);
       setShowLevelUpModal(true);
     } else if (newLevel < character.level) {
       // Handle level down (less common, but possible)
@@ -48,12 +46,10 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
 
   const handleLevelUpConfirm = (updatedCharacter: any) => {
     setCharacter(updatedCharacter);
-    setSelectedLevel(null);
   };
 
   const handleLevelUpCancel = () => {
     setShowLevelUpModal(false);
-    setSelectedLevel(null);
   };
 
   const handleDamage = () => {
@@ -221,15 +217,12 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
       </div>
 
       {/* Level Up Modal */}
-      {selectedLevel && (
-        <LevelUpModal
-          character={character}
-          newLevel={selectedLevel}
-          isOpen={showLevelUpModal}
-          onClose={handleLevelUpCancel}
-          onConfirm={handleLevelUpConfirm}
-        />
-      )}
+      <LevelUpModal
+        character={character}
+        isOpen={showLevelUpModal}
+        onClose={handleLevelUpCancel}
+        onConfirm={handleLevelUpConfirm}
+      />
     </div>
   );
 };
