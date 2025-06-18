@@ -34,73 +34,52 @@ const CharacterSheet = () => {
   const [character, setCharacter] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Function to handle character updates and sync with database
+  // Enhanced character update handler with better error handling and persistence
   const handleCharacterUpdate = async (updatedCharacter: any) => {
-    console.log('=== CHARACTER UPDATE HANDLER ===');
-    console.log('Updated character received:', updatedCharacter);
-    console.log('Current character for comparison:', character);
+    console.log('=== CHARACTER SHEET UPDATE HANDLER ===');
+    console.log('Updated character received:', JSON.stringify(updatedCharacter, null, 2));
+    console.log('Current character for comparison:', JSON.stringify(character, null, 2));
     
     // Update local state immediately for responsive UI
     setCharacter(updatedCharacter);
     
-    // Update the database with the updated character data
+    // Prepare database update payload
     if (id) {
       try {
         const updateData: any = {};
         
-        // Always update level if it changed
+        // Check and update level
         if (updatedCharacter.level !== character?.level) {
           updateData.level = updatedCharacter.level;
-          console.log('Level changed from', character?.level, 'to', updatedCharacter.level);
+          console.log('🔄 Level change detected:', character?.level, '->', updatedCharacter.level);
         }
 
-        // Always update abilities if they exist and check if they actually changed
-        if (updatedCharacter.abilities) {
-          const abilitiesChanged = !character?.abilities || 
-            JSON.stringify(updatedCharacter.abilities) !== JSON.stringify(character.abilities);
-          
-          if (abilitiesChanged) {
-            updateData.abilities = updatedCharacter.abilities;
-            console.log('Abilities changed:', {
-              old: character?.abilities,
-              new: updatedCharacter.abilities
-            });
-          }
+        // Check and update abilities (including nested changes)
+        if (updatedCharacter.abilities && JSON.stringify(updatedCharacter.abilities) !== JSON.stringify(character?.abilities)) {
+          updateData.abilities = updatedCharacter.abilities;
+          console.log('🔄 Abilities change detected');
         }
         
-        // Always update hit points if they exist and changed
-        if (updatedCharacter.hit_points) {
-          const hitPointsChanged = !character?.hit_points ||
-            JSON.stringify(updatedCharacter.hit_points) !== JSON.stringify(character.hit_points);
-            
-          if (hitPointsChanged) {
-            updateData.hit_points = updatedCharacter.hit_points;
-            console.log('Hit points changed:', {
-              old: character?.hit_points,
-              new: updatedCharacter.hit_points
-            });
-          }
+        // Check and update hit points
+        if (updatedCharacter.hit_points && JSON.stringify(updatedCharacter.hit_points) !== JSON.stringify(character?.hit_points)) {
+          updateData.hit_points = updatedCharacter.hit_points;
+          console.log('🔄 Hit points change detected');
         }
         
-        // Update equipment if it exists and changed
-        if (updatedCharacter.equipment) {
-          const equipmentChanged = !character?.equipment ||
-            JSON.stringify(updatedCharacter.equipment) !== JSON.stringify(character.equipment);
-            
-          if (equipmentChanged) {
-            updateData.equipment = updatedCharacter.equipment;
-            console.log('Equipment changed');
-          }
+        // Check and update equipment
+        if (updatedCharacter.equipment && JSON.stringify(updatedCharacter.equipment) !== JSON.stringify(character?.equipment)) {
+          updateData.equipment = updatedCharacter.equipment;
+          console.log('🔄 Equipment change detected');
         }
         
-        // CRITICAL: Update spells if they exist and changed - handle both spells array and spellSlots
+        // CRITICAL: Handle spells - check both array format and content
         if (updatedCharacter.spells !== undefined) {
-          const spellsChanged = !character?.spells ||
-            JSON.stringify(updatedCharacter.spells) !== JSON.stringify(character.spells);
-            
-          if (spellsChanged) {
+          const currentSpellsString = JSON.stringify(character?.spells || []);
+          const newSpellsString = JSON.stringify(updatedCharacter.spells || []);
+          
+          if (currentSpellsString !== newSpellsString) {
             updateData.spells = updatedCharacter.spells;
-            console.log('Spells changed:', {
+            console.log('🔄 Spells change detected:', {
               oldCount: character?.spells?.length || 0,
               newCount: updatedCharacter.spells?.length || 0,
               oldSpells: character?.spells || [],
@@ -109,53 +88,66 @@ const CharacterSheet = () => {
           }
         }
         
-        // CRITICAL: Update spell slots if they exist and changed - check both spellSlots and spell_slots
-        if (updatedCharacter.spellSlots || updatedCharacter.spell_slots) {
-          const newSpellSlots = updatedCharacter.spellSlots || updatedCharacter.spell_slots;
-          const currentSpellSlots = character?.spellSlots || character?.spell_slots;
-          
-          const spellSlotsChanged = !currentSpellSlots ||
-            JSON.stringify(newSpellSlots) !== JSON.stringify(currentSpellSlots);
-            
-          if (spellSlotsChanged) {
-            updateData.spell_slots = newSpellSlots;
-            console.log('Spell slots changed:', {
-              old: currentSpellSlots,
-              new: newSpellSlots
-            });
-          }
+        // CRITICAL: Handle spell slots - check both property names
+        const newSpellSlots = updatedCharacter.spellSlots || updatedCharacter.spell_slots;
+        const currentSpellSlots = character?.spellSlots || character?.spell_slots;
+        
+        if (newSpellSlots && JSON.stringify(newSpellSlots) !== JSON.stringify(currentSpellSlots || {})) {
+          updateData.spell_slots = newSpellSlots;
+          console.log('🔄 Spell slots change detected:', {
+            old: currentSpellSlots,
+            new: newSpellSlots
+          });
         }
 
-        // Handle inspiration separately - it's stored in abilities
-        if ('inspiration' in updatedCharacter) {
+        // Handle inspiration separately if it exists
+        if ('inspiration' in updatedCharacter && updatedCharacter.inspiration !== character?.inspiration) {
           if (!updateData.abilities) {
-            updateData.abilities = updatedCharacter.abilities || {};
+            updateData.abilities = updatedCharacter.abilities || character?.abilities || {};
           }
           updateData.abilities.inspiration = updatedCharacter.inspiration;
-          console.log('Inspiration changed:', updatedCharacter.inspiration);
+          console.log('🔄 Inspiration change detected:', updatedCharacter.inspiration);
         }
         
-        // Only update if there are actual changes
+        // Only proceed with database update if there are actual changes
         if (Object.keys(updateData).length > 0) {
-          console.log('=== SENDING TO DATABASE ===');
-          console.log('Update payload:', updateData);
-          await updateCharacter(id, updateData);
-          console.log('Database update successful');
+          console.log('📤 Sending update to database with payload:', JSON.stringify(updateData, null, 2));
+          
+          const result = await updateCharacter(id, updateData);
+          
+          if (result) {
+            console.log('✅ Database update successful, result:', JSON.stringify(result, null, 2));
+            
+            // Refresh character data from database to ensure consistency
+            const refreshedCharacter = await getCharacter(id);
+            if (refreshedCharacter) {
+              const formattedRefreshedCharacter = formatCharacterData(refreshedCharacter);
+              setCharacter(formattedRefreshedCharacter);
+              console.log('🔄 Character data refreshed from database');
+            }
+          }
         } else {
-          console.log('No changes detected, skipping database update');
+          console.log('ℹ️ No changes detected, skipping database update');
         }
         
       } catch (error) {
-        console.error('Failed to update character in database:', error);
+        console.error('❌ Failed to update character in database:', error);
         toast({
           title: "Error",
-          description: "Failed to save character changes",
+          description: "Failed to save character changes. Please try again.",
           variant: "destructive",
         });
         
-        // Revert local state on error
-        if (character) {
-          setCharacter(character);
+        // Revert local state on error by reloading from database
+        try {
+          const originalCharacter = await getCharacter(id);
+          if (originalCharacter) {
+            const formattedCharacter = formatCharacterData(originalCharacter);
+            setCharacter(formattedCharacter);
+            console.log('🔄 Reverted to original character data after error');
+          }
+        } catch (revertError) {
+          console.error('❌ Failed to revert character data:', revertError);
         }
       }
     }
@@ -302,20 +294,12 @@ const CharacterSheet = () => {
       return speed;
     };
 
-    // Format abilities first
     const formattedAbilities = formatAbilities(characterData.abilities);
-
-    // Calculate speed
     const calculatedSpeed = calculateSpeed(characterData);
-
-    // Calculate max HP if not stored
     const maxHP = characterData.hit_points?.max || calculateInitialHP(characterData, formattedAbilities);
     const currentHP = characterData.hit_points?.current !== undefined ? characterData.hit_points.current : maxHP;
-
-    // Calculate armor class with equipment
     const calculatedAC = calculateArmorClass(characterData, formattedAbilities);
 
-    // Convert database character to the format expected by the character sheet
     const formattedCharacter = {
       id: characterData.id,
       name: characterData.name,
@@ -327,7 +311,6 @@ const CharacterSheet = () => {
       background_name: characterData.background_name,
       background_data: characterData.background_data,
       avatar: '/avatarPlaceholder.svg',
-      // Use stored hit points or calculate them
       currentHP: currentHP,
       maxHP: maxHP,
       tempHP: characterData.hit_points?.temporary || 0,

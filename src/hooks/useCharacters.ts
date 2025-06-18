@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -18,7 +19,7 @@ export interface Character {
   hit_points: any;
   equipment: any;
   spells: any;
-  spell_slots?: any; // Make this optional since it might not exist in all records
+  spell_slots?: any;
   sources: any;
   advancement_type: string | null;
   hit_point_type: string | null;
@@ -48,10 +49,9 @@ export const useCharacters = () => {
 
       if (error) throw error;
       
-      // Map the data to ensure spell_slots is always defined
       const mappedData = (data || []).map(character => ({
         ...character,
-        spell_slots: (character as any).spell_slots || {} // Use type assertion to access spell_slots
+        spell_slots: (character as any).spell_slots || {}
       }));
       
       setCharacters(mappedData);
@@ -93,7 +93,7 @@ export const useCharacters = () => {
         hit_points: characterData.hitPoints || null,
         equipment: characterData.equipment || null,
         spells: characterData.spells || null,
-        spell_slots: characterData.spellSlots || {}, // Include spell_slots in new characters
+        spell_slots: characterData.spellSlots || {},
         sources: characterData.sources || null,
         advancement_type: characterData.advancementType || null,
         hit_point_type: characterData.hitPointType || null,
@@ -127,82 +127,87 @@ export const useCharacters = () => {
 
   const updateCharacter = async (characterId: string, updates: Partial<Character>) => {
     try {
-      console.log('=== DATABASE UPDATE START ===');
+      console.log('=== CRITICAL DATABASE UPDATE START ===');
       console.log('Character ID:', characterId);
-      console.log('Updates to apply:', updates);
+      console.log('Raw updates received:', JSON.stringify(updates, null, 2));
       
-      // Prepare the database updates with explicit mapping
-      const dbUpdates: any = {
-        updated_at: new Date().toISOString()
-      };
+      // Build the update object more carefully
+      const updatePayload: any = {};
       
-      // Always update these fields if they exist in updates
-      if ('level' in updates) {
-        dbUpdates.level = updates.level;
-        console.log('Updating level to:', updates.level);
+      // Handle each field explicitly
+      if (updates.level !== undefined) {
+        updatePayload.level = updates.level;
+        console.log('✓ Level update:', updates.level);
       }
       
-      if ('abilities' in updates && updates.abilities) {
-        dbUpdates.abilities = updates.abilities;
-        console.log('Updating abilities to:', JSON.stringify(updates.abilities, null, 2));
+      if (updates.abilities !== undefined) {
+        updatePayload.abilities = updates.abilities;
+        console.log('✓ Abilities update:', JSON.stringify(updates.abilities, null, 2));
       }
       
-      if ('hit_points' in updates && updates.hit_points) {
-        dbUpdates.hit_points = updates.hit_points;
-        console.log('Updating hit_points to:', JSON.stringify(updates.hit_points, null, 2));
+      if (updates.hit_points !== undefined) {
+        updatePayload.hit_points = updates.hit_points;
+        console.log('✓ Hit points update:', JSON.stringify(updates.hit_points, null, 2));
       }
       
-      if ('equipment' in updates && updates.equipment) {
-        dbUpdates.equipment = updates.equipment;
+      if (updates.spells !== undefined) {
+        updatePayload.spells = updates.spells;
+        console.log('✓ Spells update - Count:', updates.spells?.length || 0);
+        console.log('✓ Spells data:', JSON.stringify(updates.spells, null, 2));
       }
       
-      if ('spells' in updates) {
-        dbUpdates.spells = updates.spells;
-        console.log('Updating spells to:', updates.spells?.length, 'spells:', updates.spells);
+      // Handle spell slots with both possible property names
+      if (updates.spell_slots !== undefined) {
+        updatePayload.spell_slots = updates.spell_slots;
+        console.log('✓ Spell slots update (spell_slots):', JSON.stringify(updates.spell_slots, null, 2));
+      } else if ((updates as any).spellSlots !== undefined) {
+        updatePayload.spell_slots = (updates as any).spellSlots;
+        console.log('✓ Spell slots update (spellSlots):', JSON.stringify((updates as any).spellSlots, null, 2));
       }
       
-      // Handle both spell_slots and spellSlots property names
-      if ('spell_slots' in updates || 'spellSlots' in updates) {
-        const spellSlots = updates.spell_slots || (updates as any).spellSlots;
-        dbUpdates.spell_slots = spellSlots;
-        console.log('Updating spell_slots to:', JSON.stringify(spellSlots, null, 2));
-      }
-
-      // Special handling for inspiration - make sure it's included in abilities
-      if ('inspiration' in updates) {
-        if (!dbUpdates.abilities) {
-          dbUpdates.abilities = updates.abilities || {};
-        }
-        dbUpdates.abilities.inspiration = updates.inspiration;
-        console.log('Updating inspiration to:', updates.inspiration);
+      if (updates.equipment !== undefined) {
+        updatePayload.equipment = updates.equipment;
+        console.log('✓ Equipment update');
       }
 
-      console.log('Final database update payload:', JSON.stringify(dbUpdates, null, 2));
-
+      // Always update the timestamp
+      updatePayload.updated_at = new Date().toISOString();
+      
+      console.log('=== FINAL UPDATE PAYLOAD ===');
+      console.log(JSON.stringify(updatePayload, null, 2));
+      
+      // Perform the database update
       const { data, error } = await supabase
         .from('characters')
-        .update(dbUpdates)
+        .update(updatePayload)
         .eq('id', characterId)
         .select()
         .single();
 
       if (error) {
-        console.error('Database update error:', error);
+        console.error('❌ DATABASE UPDATE FAILED:', error);
         throw error;
       }
 
-      console.log('Database update successful. Returned data:', data);
+      console.log('✅ DATABASE UPDATE SUCCESS');
+      console.log('Updated character data:', JSON.stringify(data, null, 2));
 
-      // Update local state to reflect the changes
+      // Update local state immediately with the returned data
       setCharacters(prev => prev.map(char => 
-        char.id === characterId 
-          ? { ...char, ...dbUpdates }
-          : char
+        char.id === characterId ? { ...char, ...data } : char
       ));
       
       console.log('=== DATABASE UPDATE COMPLETE ===');
+      
+      // Show success toast
+      toast({
+        title: "Success",
+        description: "Character updated successfully!",
+      });
+      
+      return data;
     } catch (error) {
-      console.error('Error updating character:', error);
+      console.error('❌ CRITICAL ERROR in updateCharacter:', error);
       toast({
         title: "Error",
         description: "Failed to update character",
@@ -247,7 +252,6 @@ export const useCharacters = () => {
 
       if (error) throw error;
       
-      // Ensure spell_slots exists in the returned character using type assertion
       return {
         ...data,
         spell_slots: (data as any).spell_slots || {}
