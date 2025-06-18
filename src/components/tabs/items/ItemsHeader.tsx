@@ -64,10 +64,10 @@ const ItemsHeader = ({
           </Button>
           
           <Select value={sortBy} onValueChange={onSortChange}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-32 bg-white text-gray-700 border-gray-300">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               <SelectItem value="rarity">Rarity</SelectItem>
               <SelectItem value="name">Name</SelectItem>
               <SelectItem value="type">Type</SelectItem>
