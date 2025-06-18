@@ -12,6 +12,7 @@ const Login = () => {
   const [name, setName] = useState('');
   const [isSignup, setIsSignup] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
   const navigate = useNavigate();
   const { login, signup, user, loading } = useAuth();
   const { toast } = useToast();
@@ -57,9 +58,16 @@ const Login = () => {
             });
           }
         } else {
+          // Successfully signed up - switch back to login mode and show confirmation
+          setIsSignup(false);
+          setShowConfirmationMessage(true);
+          setEmail('');
+          setPassword('');
+          setName('');
+          
           toast({
-            title: "Success",
-            description: "Account created successfully! Please check your email for verification.",
+            title: "Account created successfully!",
+            description: "Please check your email for a confirmation link before signing in.",
           });
         }
       } else {
@@ -91,6 +99,14 @@ const Login = () => {
     }
   };
 
+  const handleToggleMode = () => {
+    setIsSignup(!isSignup);
+    setShowConfirmationMessage(false);
+    setEmail('');
+    setPassword('');
+    setName('');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#4a4a4a] flex items-center justify-center">
@@ -106,6 +122,18 @@ const Login = () => {
         <h2 className="text-xl text-red-500 font-bold">RED</h2>
         <h3 className="text-2xl font-bold text-white">BEYOND</h3>
       </div>
+
+      {/* Confirmation message for successful signup */}
+      {showConfirmationMessage && !isSignup && (
+        <div className="w-full max-w-sm mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+          <div className="text-center">
+            <h4 className="font-bold mb-2">Check Your Email!</h4>
+            <p className="text-sm">
+              We've sent you a confirmation email. Please click the link in the email to verify your account before signing in.
+            </p>
+          </div>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         {isSignup && (
@@ -149,7 +177,7 @@ const Login = () => {
 
       <div className="mt-6 text-center">
         <button
-          onClick={() => setIsSignup(!isSignup)}
+          onClick={handleToggleMode}
           className="text-gray-300 hover:text-white underline"
         >
           {isSignup ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
