@@ -36,7 +36,7 @@ const CharacterSheet = () => {
 
   // Enhanced character update handler with better error handling and persistence
   const handleCharacterUpdate = async (updatedCharacter: any) => {
-    console.log('=== CHARACTER SHEET UPDATE HANDLER ===');
+    console.log('=== CHARACTER SHEET UPDATE HANDLER START ===');
     console.log('Updated character received:', JSON.stringify(updatedCharacter, null, 2));
     console.log('Current character for comparison:', JSON.stringify(character, null, 2));
     
@@ -48,22 +48,36 @@ const CharacterSheet = () => {
       try {
         const updateData: any = {};
         
-        // Check and update level
+        // Check and update level - CRITICAL for level ups
         if (updatedCharacter.level !== character?.level) {
           updateData.level = updatedCharacter.level;
           console.log('🔄 Level change detected:', character?.level, '->', updatedCharacter.level);
         }
 
-        // Check and update abilities (including nested changes)
+        // Check and update abilities (including ability score improvements)
         if (updatedCharacter.abilities && JSON.stringify(updatedCharacter.abilities) !== JSON.stringify(character?.abilities)) {
           updateData.abilities = updatedCharacter.abilities;
-          console.log('🔄 Abilities change detected');
+          console.log('🔄 Abilities change detected - comparing scores:');
+          
+          // Log specific ability changes for debugging
+          Object.keys(updatedCharacter.abilities).forEach(ability => {
+            const oldScore = character?.abilities?.[ability]?.score || 10;
+            const newScore = updatedCharacter.abilities[ability]?.score || 10;
+            if (oldScore !== newScore) {
+              console.log(`  ${ability}: ${oldScore} → ${newScore}`);
+            }
+          });
         }
         
         // Check and update hit points
         if (updatedCharacter.hit_points && JSON.stringify(updatedCharacter.hit_points) !== JSON.stringify(character?.hit_points)) {
           updateData.hit_points = updatedCharacter.hit_points;
-          console.log('🔄 Hit points change detected');
+          console.log('🔄 Hit points change detected:', {
+            oldMax: character?.hit_points?.max,
+            newMax: updatedCharacter.hit_points?.max,
+            oldCurrent: character?.hit_points?.current,
+            newCurrent: updatedCharacter.hit_points?.current
+          });
         }
         
         // Check and update equipment
@@ -82,13 +96,16 @@ const CharacterSheet = () => {
             console.log('🔄 Spells change detected:', {
               oldCount: character?.spells?.length || 0,
               newCount: updatedCharacter.spells?.length || 0,
-              oldSpells: character?.spells || [],
-              newSpells: updatedCharacter.spells || []
+              oldSpells: (character?.spells || []).map((s: any) => s.name),
+              newSpells: (updatedCharacter.spells || []).map((s: any) => s.name),
+              newSpellsAdded: (updatedCharacter.spells || [])
+                .filter((newSpell: any) => !(character?.spells || []).some((oldSpell: any) => oldSpell.name === newSpell.name))
+                .map((s: any) => s.name)
             });
           }
         }
         
-        // CRITICAL: Handle spell slots - check both property names
+        // CRITICAL: Handle spell slots - check both property names and ensure proper update
         const newSpellSlots = updatedCharacter.spellSlots || updatedCharacter.spell_slots;
         const currentSpellSlots = character?.spellSlots || character?.spell_slots;
         
@@ -124,6 +141,8 @@ const CharacterSheet = () => {
               const formattedRefreshedCharacter = formatCharacterData(refreshedCharacter);
               setCharacter(formattedRefreshedCharacter);
               console.log('🔄 Character data refreshed from database');
+              console.log('Refreshed abilities:', JSON.stringify(formattedRefreshedCharacter.abilities, null, 2));
+              console.log('Refreshed spells count:', formattedRefreshedCharacter.spells?.length);
             }
           }
         } else {
@@ -151,6 +170,8 @@ const CharacterSheet = () => {
         }
       }
     }
+    
+    console.log('=== CHARACTER SHEET UPDATE HANDLER END ===');
   };
 
   // Function to refresh character data from database
