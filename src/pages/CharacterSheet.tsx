@@ -37,6 +37,8 @@ const CharacterSheet = () => {
   // Function to handle character updates and sync with database
   const handleCharacterUpdate = async (updatedCharacter: any) => {
     console.log('Handling character update:', updatedCharacter);
+    
+    // Update local state immediately for responsive UI
     setCharacter(updatedCharacter);
     
     // Update the database with the updated character data
@@ -50,7 +52,7 @@ const CharacterSheet = () => {
           console.log('Updating level to:', updatedCharacter.level);
         }
 
-        // Always update abilities if they exist and changed
+        // Always update abilities if they exist
         if (updatedCharacter.abilities) {
           updateData.abilities = updatedCharacter.abilities;
           console.log('Updating abilities to:', updatedCharacter.abilities);
@@ -70,11 +72,13 @@ const CharacterSheet = () => {
         // Update spells if they exist
         if (updatedCharacter.spells) {
           updateData.spells = updatedCharacter.spells;
+          console.log('Updating spells to:', updatedCharacter.spells);
         }
         
         // Update spell slots if they exist
         if (updatedCharacter.spellSlots) {
           updateData.spell_slots = updatedCharacter.spellSlots;
+          console.log('Updating spell_slots to:', updatedCharacter.spellSlots);
         }
 
         // Handle inspiration separately - it's stored in abilities
@@ -89,6 +93,10 @@ const CharacterSheet = () => {
         
         await updateCharacter(id, updateData);
         console.log('Character updated successfully in database');
+        
+        // Refresh the character data from the database to ensure consistency
+        await refreshCharacterData();
+        
       } catch (error) {
         console.error('Failed to update character in database:', error);
         toast({
@@ -96,8 +104,220 @@ const CharacterSheet = () => {
           description: "Failed to save character changes",
           variant: "destructive",
         });
+        
+        // Revert local state on error
+        if (character) {
+          setCharacter(character);
+        }
       }
     }
+  };
+
+  // Function to refresh character data from database
+  const refreshCharacterData = async () => {
+    if (!id) return;
+    
+    try {
+      const characterData = await getCharacter(id);
+      if (characterData) {
+        const formattedCharacter = formatCharacterData(characterData);
+        setCharacter(formattedCharacter);
+        console.log('Character data refreshed:', formattedCharacter);
+      }
+    } catch (error) {
+      console.error('Error refreshing character data:', error);
+    }
+  };
+
+  // Helper function to format character data
+  const formatCharacterData = (characterData: any) => {
+    // ... keep existing code (formatAbilities, calculateInitialHP, calculateArmorClass, calculateSpeed functions)
+    
+    const formatAbilities = (abilities: any) => {
+      const defaultAbilities = {
+        strength: { score: 10, modifier: 0, proficient: false },
+        dexterity: { score: 10, modifier: 0, proficient: false },
+        constitution: { score: 10, modifier: 0, proficient: false },
+        intelligence: { score: 10, modifier: 0, proficient: false },
+        wisdom: { score: 10, modifier: 0, proficient: false },
+        charisma: { score: 10, modifier: 0, proficient: false }
+      };
+
+      if (!abilities) return defaultAbilities;
+
+      if (abilities.str || abilities.dex || abilities.con || abilities.int || abilities.wis || abilities.cha) {
+        return {
+          strength: {
+            score: abilities.str?.total || abilities.str?.score || abilities.str || 10,
+            modifier: Math.floor(((abilities.str?.total || abilities.str?.score || abilities.str || 10) - 10) / 2),
+            proficient: abilities.str?.proficient || false
+          },
+          dexterity: {
+            score: abilities.dex?.total || abilities.dex?.score || abilities.dex || 10,
+            modifier: Math.floor(((abilities.dex?.total || abilities.dex?.score || abilities.dex || 10) - 10) / 2),
+            proficient: abilities.dex?.proficient || false
+          },
+          constitution: {
+            score: abilities.con?.total || abilities.con?.score || abilities.con || 10,
+            modifier: Math.floor(((abilities.con?.total || abilities.con?.score || abilities.con || 10) - 10) / 2),
+            proficient: abilities.con?.proficient || false
+          },
+          intelligence: {
+            score: abilities.int?.total || abilities.int?.score || abilities.int || 10,
+            modifier: Math.floor(((abilities.int?.total || abilities.int?.score || abilities.int || 10) - 10) / 2),
+            proficient: abilities.int?.proficient || false
+          },
+          wisdom: {
+            score: abilities.wis?.total || abilities.wis?.score || abilities.wis || 10,
+            modifier: Math.floor(((abilities.wis?.total || abilities.wis?.score || abilities.wis || 10) - 10) / 2),
+            proficient: abilities.wis?.proficient || false
+          },
+          charisma: {
+            score: abilities.cha?.total || abilities.cha?.score || abilities.cha || 10,
+            modifier: Math.floor(((abilities.cha?.total || abilities.cha?.score || abilities.cha || 10) - 10) / 2),
+            proficient: abilities.cha?.proficient || false
+          }
+        };
+      }
+
+      const formattedAbilities = { ...defaultAbilities };
+      Object.keys(defaultAbilities).forEach(key => {
+        if (abilities[key]) {
+          const score = abilities[key].score || abilities[key].total || abilities[key] || 10;
+          formattedAbilities[key] = {
+            score: score,
+            modifier: Math.floor((score - 10) / 2),
+            proficient: abilities[key].proficient || false
+          };
+        }
+      });
+
+      return formattedAbilities;
+    };
+
+    const calculateInitialHP = (characterData: any, formattedAbilities: any) => {
+      if (!characterData.class_data) return 1;
+      const conModifier = formattedAbilities.constitution.modifier;
+      if (characterData.hit_point_type === 'fixed') {
+        return (characterData.class_data.hit_die || 8) + conModifier;
+      }
+      return characterData.hit_points?.max || ((characterData.class_data.hit_die || 8) + conModifier);
+    };
+
+    const calculateArmorClass = (characterData: any, formattedAbilities: any) => {
+      const dexModifier = formattedAbilities.dexterity.modifier;
+      let baseAC = 10 + dexModifier;
+      
+      console.log('Calculating AC with equipment:', characterData.equipment);
+      
+      let equippedArmor = null;
+      
+      if (characterData.equipment?.starting_equipment) {
+        equippedArmor = characterData.equipment.starting_equipment.find((item: any) => 
+          item.category === 'armor' && item.equipped
+        );
+      }
+      
+      if (!equippedArmor && characterData.equipment?.inventory) {
+        equippedArmor = characterData.equipment.inventory.find((item: any) => 
+          item.category === 'armor' && item.equipped
+        );
+      }
+      
+      console.log('Found equipped armor:', equippedArmor);
+      
+      if (equippedArmor && equippedArmor.ac) {
+        if (equippedArmor.dex_bonus !== false) {
+          const maxDexBonus = equippedArmor.max_dex_bonus || 999;
+          baseAC = equippedArmor.ac + Math.min(dexModifier, maxDexBonus);
+        } else {
+          baseAC = equippedArmor.ac;
+        }
+        console.log('Calculated AC with armor:', baseAC);
+      }
+      
+      return baseAC;
+    };
+
+    const calculateSpeed = (characterData: any) => {
+      console.log('Calculating speed for character:', characterData);
+      
+      let speed = 30;
+      
+      if (characterData.species?.speed) {
+        console.log('Found speed in species:', characterData.species.speed);
+        speed = characterData.species.speed;
+      } else if (characterData.species_data?.speed) {
+        console.log('Found speed in species_data:', characterData.species_data.speed);
+        if (typeof characterData.species_data.speed === 'object' && characterData.species_data.speed.walk) {
+          speed = characterData.species_data.speed.walk;
+        } else {
+          speed = characterData.species_data.speed;
+        }
+      } else if (characterData.species?.apiData?.speed) {
+        console.log('Found speed in species apiData:', characterData.species.apiData.speed);
+        if (typeof characterData.species.apiData.speed === 'object' && characterData.species.apiData.speed.walk) {
+          speed = characterData.species.apiData.speed.walk;
+        } else {
+          speed = characterData.species.apiData.speed;
+        }
+      }
+      
+      console.log('Final calculated speed:', speed);
+      return speed;
+    };
+
+    // Format abilities first
+    const formattedAbilities = formatAbilities(characterData.abilities);
+    console.log('Formatted abilities:', formattedAbilities);
+
+    // Calculate speed
+    const calculatedSpeed = calculateSpeed(characterData);
+    console.log('Calculated speed:', calculatedSpeed);
+
+    // Calculate max HP if not stored
+    const maxHP = characterData.hit_points?.max || calculateInitialHP(characterData, formattedAbilities);
+    const currentHP = characterData.hit_points?.current !== undefined ? characterData.hit_points.current : maxHP;
+
+    // Calculate armor class with equipment
+    const calculatedAC = calculateArmorClass(characterData, formattedAbilities);
+    console.log('Final calculated AC:', calculatedAC);
+
+    // Convert database character to the format expected by the character sheet
+    const formattedCharacter = {
+      id: characterData.id,
+      name: characterData.name,
+      level: characterData.level,
+      class_name: characterData.class_name,
+      class_data: characterData.class_data,
+      species_name: characterData.species_name,
+      species_data: characterData.species_data,
+      background_name: characterData.background_name,
+      background_data: characterData.background_data,
+      avatar: '/avatarPlaceholder.svg',
+      // Use stored hit points or calculate them
+      currentHP: currentHP,
+      maxHP: maxHP,
+      tempHP: characterData.hit_points?.temporary || 0,
+      hit_points: {
+        current: currentHP,
+        max: maxHP,
+        temporary: characterData.hit_points?.temporary || 0,
+        hit_dice_remaining: characterData.hit_points?.hit_dice_remaining || characterData.level
+      },
+      hit_point_type: characterData.hit_point_type,
+      proficiencyBonus: Math.ceil(characterData.level / 4) + 1,
+      abilities: formattedAbilities,
+      equipment: characterData.equipment,
+      spells: characterData.spells || [],
+      spellSlots: characterData.spell_slots || {},
+      armorClass: calculatedAC,
+      initiative: formattedAbilities.dexterity.modifier,
+      speed: calculatedSpeed,
+      inspiration: characterData.abilities?.inspiration || false
+    };
+    
+    return formattedCharacter;
   };
 
   useEffect(() => {
@@ -114,201 +334,7 @@ const CharacterSheet = () => {
         
         if (characterData) {
           console.log('Character data loaded:', characterData);
-          
-          // Helper function to ensure proper abilities structure
-          const formatAbilities = (abilities: any) => {
-            // Default abilities structure
-            const defaultAbilities = {
-              strength: { score: 10, modifier: 0, proficient: false },
-              dexterity: { score: 10, modifier: 0, proficient: false },
-              constitution: { score: 10, modifier: 0, proficient: false },
-              intelligence: { score: 10, modifier: 0, proficient: false },
-              wisdom: { score: 10, modifier: 0, proficient: false },
-              charisma: { score: 10, modifier: 0, proficient: false }
-            };
-
-            if (!abilities) return defaultAbilities;
-
-            // If abilities are stored in different format (like str, dex, con, int, wis, cha)
-            if (abilities.str || abilities.dex || abilities.con || abilities.int || abilities.wis || abilities.cha) {
-              return {
-                strength: {
-                  score: abilities.str?.total || abilities.str?.score || abilities.str || 10,
-                  modifier: Math.floor(((abilities.str?.total || abilities.str?.score || abilities.str || 10) - 10) / 2),
-                  proficient: abilities.str?.proficient || false
-                },
-                dexterity: {
-                  score: abilities.dex?.total || abilities.dex?.score || abilities.dex || 10,
-                  modifier: Math.floor(((abilities.dex?.total || abilities.dex?.score || abilities.dex || 10) - 10) / 2),
-                  proficient: abilities.dex?.proficient || false
-                },
-                constitution: {
-                  score: abilities.con?.total || abilities.con?.score || abilities.con || 10,
-                  modifier: Math.floor(((abilities.con?.total || abilities.con?.score || abilities.con || 10) - 10) / 2),
-                  proficient: abilities.con?.proficient || false
-                },
-                intelligence: {
-                  score: abilities.int?.total || abilities.int?.score || abilities.int || 10,
-                  modifier: Math.floor(((abilities.int?.total || abilities.int?.score || abilities.int || 10) - 10) / 2),
-                  proficient: abilities.int?.proficient || false
-                },
-                wisdom: {
-                  score: abilities.wis?.total || abilities.wis?.score || abilities.wis || 10,
-                  modifier: Math.floor(((abilities.wis?.total || abilities.wis?.score || abilities.wis || 10) - 10) / 2),
-                  proficient: abilities.wis?.proficient || false
-                },
-                charisma: {
-                  score: abilities.cha?.total || abilities.cha?.score || abilities.cha || 10,
-                  modifier: Math.floor(((abilities.cha?.total || abilities.cha?.score || abilities.cha || 10) - 10) / 2),
-                  proficient: abilities.cha?.proficient || false
-                }
-              };
-            }
-
-            // If abilities are already in the correct format, ensure all properties exist
-            const formattedAbilities = { ...defaultAbilities };
-            Object.keys(defaultAbilities).forEach(key => {
-              if (abilities[key]) {
-                const score = abilities[key].score || abilities[key].total || abilities[key] || 10;
-                formattedAbilities[key] = {
-                  score: score,
-                  modifier: Math.floor((score - 10) / 2),
-                  proficient: abilities[key].proficient || false
-                };
-              }
-            });
-
-            return formattedAbilities;
-          };
-
-          // Helper functions to calculate derived stats
-          const calculateInitialHP = (characterData: any, formattedAbilities: any) => {
-            if (!characterData.class_data) return 1;
-            const conModifier = formattedAbilities.constitution.modifier;
-            if (characterData.hit_point_type === 'fixed') {
-              return (characterData.class_data.hit_die || 8) + conModifier;
-            }
-            return characterData.hit_points?.max || ((characterData.class_data.hit_die || 8) + conModifier);
-          };
-
-          const calculateArmorClass = (characterData: any, formattedAbilities: any) => {
-            const dexModifier = formattedAbilities.dexterity.modifier;
-            let baseAC = 10 + dexModifier;
-            
-            console.log('Calculating AC with equipment:', characterData.equipment);
-            
-            // Check for armor in equipment - look in both starting_equipment and inventory
-            let equippedArmor = null;
-            
-            // Check starting equipment first
-            if (characterData.equipment?.starting_equipment) {
-              equippedArmor = characterData.equipment.starting_equipment.find((item: any) => 
-                item.category === 'armor' && item.equipped
-              );
-            }
-            
-            // If no equipped armor found in starting equipment, check inventory
-            if (!equippedArmor && characterData.equipment?.inventory) {
-              equippedArmor = characterData.equipment.inventory.find((item: any) => 
-                item.category === 'armor' && item.equipped
-              );
-            }
-            
-            console.log('Found equipped armor:', equippedArmor);
-            
-            if (equippedArmor && equippedArmor.ac) {
-              if (equippedArmor.dex_bonus !== false) {
-                const maxDexBonus = equippedArmor.max_dex_bonus || 999;
-                baseAC = equippedArmor.ac + Math.min(dexModifier, maxDexBonus);
-              } else {
-                baseAC = equippedArmor.ac;
-              }
-              console.log('Calculated AC with armor:', baseAC);
-            }
-            
-            return baseAC;
-          };
-
-          const calculateSpeed = (characterData: any) => {
-            console.log('Calculating speed for character:', characterData);
-            
-            // Check multiple possible locations for speed data
-            let speed = 30; // Default speed
-            
-            // Check species data first
-            if (characterData.species?.speed) {
-              console.log('Found speed in species:', characterData.species.speed);
-              speed = characterData.species.speed;
-            } else if (characterData.species_data?.speed) {
-              console.log('Found speed in species_data:', characterData.species_data.speed);
-              if (typeof characterData.species_data.speed === 'object' && characterData.species_data.speed.walk) {
-                speed = characterData.species_data.speed.walk;
-              } else {
-                speed = characterData.species_data.speed;
-              }
-            } else if (characterData.species?.apiData?.speed) {
-              console.log('Found speed in species apiData:', characterData.species.apiData.speed);
-              if (typeof characterData.species.apiData.speed === 'object' && characterData.species.apiData.speed.walk) {
-                speed = characterData.species.apiData.speed.walk;
-              } else {
-                speed = characterData.species.apiData.speed;
-              }
-            }
-            
-            console.log('Final calculated speed:', speed);
-            return speed;
-          };
-
-          // Format abilities first
-          const formattedAbilities = formatAbilities(characterData.abilities);
-          console.log('Formatted abilities:', formattedAbilities);
-
-          // Calculate speed
-          const calculatedSpeed = calculateSpeed(characterData);
-          console.log('Calculated speed:', calculatedSpeed);
-
-          // Calculate max HP if not stored
-          const maxHP = characterData.hit_points?.max || calculateInitialHP(characterData, formattedAbilities);
-          const currentHP = characterData.hit_points?.current !== undefined ? characterData.hit_points.current : maxHP;
-
-          // Calculate armor class with equipment
-          const calculatedAC = calculateArmorClass(characterData, formattedAbilities);
-          console.log('Final calculated AC:', calculatedAC);
-
-          // Convert database character to the format expected by the character sheet
-          const formattedCharacter = {
-            id: characterData.id,
-            name: characterData.name,
-            level: characterData.level,
-            class_name: characterData.class_name,
-            class_data: characterData.class_data,
-            species_name: characterData.species_name,
-            species_data: characterData.species_data,
-            background_name: characterData.background_name,
-            background_data: characterData.background_data,
-            avatar: '/avatarPlaceholder.svg',
-            // Use stored hit points or calculate them
-            currentHP: currentHP,
-            maxHP: maxHP,
-            tempHP: characterData.hit_points?.temporary || 0,
-            hit_points: {
-              current: currentHP,
-              max: maxHP,
-              temporary: characterData.hit_points?.temporary || 0,
-              hit_dice_remaining: characterData.hit_points?.hit_dice_remaining || characterData.level
-            },
-            hit_point_type: characterData.hit_point_type,
-            proficiencyBonus: Math.ceil(characterData.level / 4) + 1,
-            abilities: formattedAbilities,
-            equipment: characterData.equipment,
-            spells: characterData.spells || [],
-            spellSlots: characterData.spell_slots || {},
-            armorClass: calculatedAC,
-            initiative: formattedAbilities.dexterity.modifier,
-            speed: calculatedSpeed,
-            inspiration: characterData.abilities?.inspiration || false // Add inspiration field
-          };
-          
+          const formattedCharacter = formatCharacterData(characterData);
           console.log('Final formatted character with spell slots:', formattedCharacter.spellSlots);
           setCharacter(formattedCharacter);
           console.log('Character formatted and set:', formattedCharacter);
