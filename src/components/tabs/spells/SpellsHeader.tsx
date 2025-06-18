@@ -33,7 +33,7 @@ const SpellsHeader = ({
     console.log('Processing spells for filters:', spells.length);
     console.log('Sample spell:', spells[0]);
     
-    // Get unique levels and sort them properly (0 first, then 1-9)
+    // Get unique levels and sort them properly (Cantrip first, then 1st-9th)
     const levelSet = new Set<string>();
     const schoolSet = new Set<string>();
     
@@ -49,14 +49,20 @@ const SpellsHeader = ({
       }
     });
     
-    // Sort levels: cantrip (0) first, then 1-9
+    // Sort levels: Cantrip first, then 1st-level through 9th-level
     const levels = Array.from(levelSet).sort((a, b) => {
-      const numA = parseInt(a);
-      const numB = parseInt(b);
-      // Put 0 (Cantrip) first, then sort numerically
-      if (numA === 0 && numB !== 0) return -1;
-      if (numA !== 0 && numB === 0) return 1;
-      return numA - numB;
+      // Handle "Cantrip" specially - it should be first
+      if (a === 'Cantrip' && b !== 'Cantrip') return -1;
+      if (a !== 'Cantrip' && b === 'Cantrip') return 1;
+      if (a === 'Cantrip' && b === 'Cantrip') return 0;
+      
+      // For non-cantrip levels, extract the number and sort numerically
+      const getNumFromLevel = (level: string) => {
+        const match = level.match(/(\d+)/);
+        return match ? parseInt(match[1]) : 999;
+      };
+      
+      return getNumFromLevel(a) - getNumFromLevel(b);
     });
     
     const schools = Array.from(schoolSet).sort();
@@ -124,7 +130,7 @@ const SpellsHeader = ({
                         }
                       />
                       <label htmlFor={`level-${level}`} className="text-sm">
-                        {level === '0' ? 'Cantrip' : `Level ${level}`}
+                        {level === 'Cantrip' ? 'Cantrip' : level}
                       </label>
                     </div>
                   ))}
