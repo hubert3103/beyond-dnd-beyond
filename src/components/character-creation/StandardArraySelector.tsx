@@ -16,11 +16,23 @@ const StandardArraySelector = ({ abilities, onUpdate }: StandardArraySelectorPro
   useEffect(() => {
     const initialAssignments: Record<string, number> = {};
     
-    // Check if any of the base scores match standard array values and are not the default unassigned value (8)
+    // Check if any of the base scores match standard array values
+    // Only consider it assigned if it's not the default 8 from initialization AND it's in the standard array
     Object.entries(abilities).forEach(([key, abilityData]: [string, any]) => {
       const baseScore = abilityData.base;
-      if (STANDARD_ARRAY_VALUES.includes(baseScore) && baseScore !== 8) {
-        initialAssignments[key] = baseScore;
+      // Consider it assigned if it's a standard array value that was explicitly set
+      // We'll detect this by checking if other abilities also have non-8 values
+      if (STANDARD_ARRAY_VALUES.includes(baseScore)) {
+        // Check if this looks like an intentional assignment (other abilities have different values)
+        const otherAbilityValues = Object.entries(abilities)
+          .filter(([k]) => k !== key)
+          .map(([, data]: [string, any]) => data.base);
+        
+        const hasVariedScores = otherAbilityValues.some(score => score !== 8);
+        
+        if (baseScore !== 8 || hasVariedScores) {
+          initialAssignments[key] = baseScore;
+        }
       }
     });
     
