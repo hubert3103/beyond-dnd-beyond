@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -127,54 +128,39 @@ export const useCharacters = () => {
 
   const updateCharacter = async (characterId: string, updates: Partial<Character>) => {
     try {
-      console.log('=== CRITICAL DATABASE UPDATE START ===');
-      console.log('Character ID:', characterId);
-      console.log('Raw updates received:', JSON.stringify(updates, null, 2));
-      
       // Build the update object more carefully
       const updatePayload: any = {};
       
       // Handle each field explicitly
       if (updates.level !== undefined) {
         updatePayload.level = updates.level;
-        console.log('✓ Level update:', updates.level);
       }
       
       if (updates.abilities !== undefined) {
         updatePayload.abilities = updates.abilities;
-        console.log('✓ Abilities update:', JSON.stringify(updates.abilities, null, 2));
       }
       
       if (updates.hit_points !== undefined) {
         updatePayload.hit_points = updates.hit_points;
-        console.log('✓ Hit points update:', JSON.stringify(updates.hit_points, null, 2));
       }
       
       if (updates.spells !== undefined) {
         updatePayload.spells = updates.spells;
-        console.log('✓ Spells update - Count:', updates.spells?.length || 0);
-        console.log('✓ Spells data:', JSON.stringify(updates.spells, null, 2));
       }
       
       // Handle spell slots with both possible property names
       if (updates.spell_slots !== undefined) {
         updatePayload.spell_slots = updates.spell_slots;
-        console.log('✓ Spell slots update (spell_slots):', JSON.stringify(updates.spell_slots, null, 2));
       } else if ((updates as any).spellSlots !== undefined) {
         updatePayload.spell_slots = (updates as any).spellSlots;
-        console.log('✓ Spell slots update (spellSlots):', JSON.stringify((updates as any).spellSlots, null, 2));
       }
       
       if (updates.equipment !== undefined) {
         updatePayload.equipment = updates.equipment;
-        console.log('✓ Equipment update');
       }
 
       // Always update the timestamp
       updatePayload.updated_at = new Date().toISOString();
-      
-      console.log('=== FINAL UPDATE PAYLOAD ===');
-      console.log(JSON.stringify(updatePayload, null, 2));
       
       // Perform the database update
       const { data, error } = await supabase
@@ -185,19 +171,13 @@ export const useCharacters = () => {
         .single();
 
       if (error) {
-        console.error('❌ DATABASE UPDATE FAILED:', error);
         throw error;
       }
-
-      console.log('✅ DATABASE UPDATE SUCCESS');
-      console.log('Updated character data:', JSON.stringify(data, null, 2));
 
       // Update local state immediately with the returned data
       setCharacters(prev => prev.map(char => 
         char.id === characterId ? { ...char, ...data } : char
       ));
-      
-      console.log('=== DATABASE UPDATE COMPLETE ===');
       
       // Show success toast
       toast({
@@ -207,7 +187,7 @@ export const useCharacters = () => {
       
       return data;
     } catch (error) {
-      console.error('❌ CRITICAL ERROR in updateCharacter:', error);
+      console.error('Error in updateCharacter:', error);
       toast({
         title: "Error",
         description: "Failed to update character",
@@ -276,3 +256,4 @@ export const useCharacters = () => {
     refreshCharacters: fetchCharacters,
   };
 };
+

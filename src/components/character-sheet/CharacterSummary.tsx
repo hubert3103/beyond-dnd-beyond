@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -60,16 +61,10 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
 
   const handleLevelChange = (value: string) => {
     const newLevel = parseInt(value);
-    console.log('=== LEVEL CHANGE DETECTED ===');
-    console.log('Current level:', character.level);
-    console.log('New level:', newLevel);
     
     if (newLevel > character.level) {
-      console.log('Level up detected, showing modal');
       setShowLevelUpModal(true);
     } else if (newLevel < character.level) {
-      console.log('Level down detected, reverting character');
-      
       // Calculate what the character should be at the new level
       const levelDifference = character.level - newLevel;
       
@@ -79,7 +74,6 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
       // Check which levels had ability score improvements and revert them
       for (let level = character.level; level > newLevel; level--) {
         if ([4, 8, 12, 16, 19, 20].includes(level)) {
-          console.log(`Reverting ability improvements from level ${level}`);
           // This is a simplified reversion - in a real app you'd track the specific improvements
           // For now, we'll just revert to base scores if going below level 4
           if (newLevel < 4) {
@@ -118,7 +112,6 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
         proficiencyBonus: Math.ceil(newLevel / 4) + 1
       };
       
-      console.log('Updated character for level down:', JSON.stringify(updatedCharacter, null, 2));
       setCharacter(updatedCharacter);
     }
   };
@@ -146,7 +139,6 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
         }
       };
       
-      console.log('Applying damage:', damage, 'New HP:', newHP);
       setCharacter(updatedCharacter);
       setTempDamage('');
       setShowHPDialog(false);
@@ -169,7 +161,6 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
         }
       };
       
-      console.log('Applying healing:', healing, 'New HP:', newHP);
       setCharacter(updatedCharacter);
       setTempHealing('');
       setShowHPDialog(false);
@@ -307,3 +298,4 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
 };
 
 export default CharacterSummary;
+

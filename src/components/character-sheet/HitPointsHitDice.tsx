@@ -39,8 +39,8 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
         'rogue': 8,
         'warlock': 8,
         'artificer': 8,
-        'sorcerer': 6,  // Sorcerer uses d6
-        'wizard': 6     // Wizard uses d6
+        'sorcerer': 6,
+        'wizard': 6
       };
       
       const className = character.class_name.toLowerCase();
@@ -60,21 +60,12 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
     const hitDie = getHitDie();
     let maxHP = 0;
 
-    console.log('=== HP CALCULATION DEBUG ===');
-    console.log('Character level:', character.level);
-    console.log('Class:', character.class_name);
-    console.log('Hit die:', hitDie);
-    console.log('CON modifier:', conModifier);
-    console.log('Hit point type:', character.hit_point_type);
-
     // Level 1 HP
     if (character.hit_point_type === 'fixed') {
       maxHP = hitDie + conModifier;
-      console.log('Level 1 HP (fixed):', maxHP);
     } else {
       // For rolled or average, use average calculation
       maxHP = Math.floor(hitDie / 2) + 1 + conModifier;
-      console.log('Level 1 HP (average):', maxHP);
     }
 
     // Additional levels
@@ -86,11 +77,9 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
         levelHP = Math.floor(hitDie / 2) + 1 + conModifier;
       }
       maxHP += levelHP;
-      console.log(`Level ${level} HP added:`, levelHP, 'Total:', maxHP);
     }
 
     const finalHP = Math.max(1, maxHP);
-    console.log('Final calculated HP:', finalHP);
     return finalHP;
   };
 
@@ -102,12 +91,6 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
   const shouldUseCalculated = Math.abs(storedMaxHP - correctMaxHP) > 10;
   const maxHP = shouldUseCalculated ? correctMaxHP : storedMaxHP;
   
-  console.log('=== HP VALUES COMPARISON ===');
-  console.log('Stored max HP:', storedMaxHP);
-  console.log('Calculated max HP:', correctMaxHP);
-  console.log('Using HP:', maxHP);
-  console.log('Should use calculated:', shouldUseCalculated);
-
   const currentHP = character.hit_points?.current !== undefined ? 
     Math.min(character.hit_points.current, maxHP) : maxHP;
   const tempHP = character.hit_points?.temporary || character.tempHP || 0;
@@ -183,15 +166,6 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
             </div>
           </div>
 
-          {/* Debug Info (temporary - can be removed) */}
-          {shouldUseCalculated && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-xs">
-              <div className="text-yellow-800">
-                HP corrected: {storedMaxHP} → {correctMaxHP} (Level {character.level} {character.class_name} with d{hitDie})
-              </div>
-            </div>
-          )}
-
           {/* Hit Dice */}
           <div className="space-y-3">
             <h3 className="font-medium text-gray-700">Hit Dice</h3>
@@ -256,3 +230,4 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
 };
 
 export default HitPointsHitDice;
+

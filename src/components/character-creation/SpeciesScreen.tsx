@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -25,9 +26,6 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const filteredRaces = useMemo(() => {
-    console.log('All races:', races.length);
-    console.log('Data sources:', data.sources);
-    
     if (!races.length) return [];
     
     let filtered = races;
@@ -36,14 +34,13 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
     const hasSourceEnabled = data.sources?.coreRules || data.sources?.expansions || data.sources?.homebrew;
     
     if (hasSourceEnabled) {
-      // Get available sources and log them for debugging
+      // Get available sources
       const availableSources = hybridDataService.getAvailableSources(races);
-      console.log('Available sources in races:', availableSources);
       
       // Define source categories based on actual document slugs from the API
-      const coreRuleSources = ['wotc-srd'];  // This is what's actually in the API
-      const expansionSources = ['toh'];  // Tome of Heroes appears to be expansion content
-      const homebrewSources = ['kp'];  // Kobold Press - third party
+      const coreRuleSources = ['wotc-srd'];
+      const expansionSources = ['toh'];
+      const homebrewSources = ['kp'];
       
       let allowedSources: string[] = [];
       
@@ -57,11 +54,8 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
         allowedSources.push(...homebrewSources);
       }
       
-      console.log('Allowed sources:', allowedSources);
-      
       // Filter by allowed sources
       filtered = races.filter(race => allowedSources.includes(race.document__slug));
-      console.log('Filtered by source:', filtered.length);
     }
     
     // Apply search filter
@@ -69,7 +63,6 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
       filtered = filtered.filter(race => 
         race.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      console.log('Filtered by search:', filtered.length);
     }
     
     return filtered;
@@ -178,13 +171,6 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
       <div className="text-center">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Choose Your Species</h1>
         <p className="text-gray-600">Select a species that will define your character's heritage and abilities</p>
-      </div>
-
-      {/* Debug info */}
-      <div className="text-sm text-gray-500 bg-gray-100 p-2 rounded">
-        Debug: {races.length} total races, {filteredRaces.length} after filtering (Using hybrid data service)
-        <br />
-        Sources enabled: coreRules={String(data.sources?.coreRules === true)}, expansions={String(data.sources?.expansions === true)}, homebrew={String(data.sources?.homebrew === true)}
       </div>
 
       {/* Search */}
@@ -301,3 +287,4 @@ const SpeciesScreen = ({ data, onUpdate }: SpeciesScreenProps) => {
 };
 
 export default SpeciesScreen;
+
