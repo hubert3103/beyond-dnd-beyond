@@ -49,38 +49,13 @@ const SpellsHeader = ({
         schoolSet.add(spell.school);
       }
       
-      // Add classes - check multiple possible formats
-      if (spell.classes) {
-        if (Array.isArray(spell.classes)) {
-          spell.classes.forEach(cls => {
-            if (typeof cls === 'string') {
-              classSet.add(cls);
-            } else if (cls && typeof cls === 'object' && cls.name) {
-              classSet.add(cls.name);
-            }
-          });
-        } else if (typeof spell.classes === 'string') {
-          // Handle comma-separated string format
-          spell.classes.split(',').forEach(cls => {
-            const cleanClass = cls.trim();
-            if (cleanClass) {
-              classSet.add(cleanClass);
-            }
-          });
-        }
-      }
-      
-      // Also check dnd_class field if it exists
-      if (spell.dnd_class) {
-        if (Array.isArray(spell.dnd_class)) {
-          spell.dnd_class.forEach(cls => {
-            if (typeof cls === 'string') {
-              classSet.add(cls);
-            } else if (cls && typeof cls === 'object' && cls.name) {
-              classSet.add(cls.name);
-            }
-          });
-        }
+      // Add classes - handle the array format from the API
+      if (spell.classes && Array.isArray(spell.classes)) {
+        spell.classes.forEach(cls => {
+          if (cls && typeof cls === 'object' && cls.name) {
+            classSet.add(cls.name);
+          }
+        });
       }
     });
     
