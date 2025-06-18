@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { LoaderCircle } from 'lucide-react';
@@ -55,14 +54,7 @@ const SpellsList = ({
         return false;
       }
 
-      // Class filter - using the helper function
-      if (filters.classes.length > 0) {
-        const spellClassNames = getSpellClassNames(spell);
-        const hasMatchingClass = filters.classes.some(cls => 
-          spellClassNames.includes(cls.toLowerCase())
-        );
-        if (!hasMatchingClass) return false;
-      }
+      // Removed class filtering since we removed the class filter option
 
       return true;
     });

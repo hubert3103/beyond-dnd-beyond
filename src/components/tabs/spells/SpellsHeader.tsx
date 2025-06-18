@@ -35,7 +35,6 @@ const SpellsHeader = ({
     
     // Get unique levels and sort them properly (0 first, then 1-9)
     const levelSet = new Set<string>();
-    const classSet = new Set<string>();
     const schoolSet = new Set<string>();
     
     spells.forEach(spell => {
@@ -48,37 +47,28 @@ const SpellsHeader = ({
       if (spell.school) {
         schoolSet.add(spell.school);
       }
-      
-      // Add classes - handle the array format from the API
-      if (spell.classes && Array.isArray(spell.classes)) {
-        spell.classes.forEach(cls => {
-          if (cls && typeof cls === 'object' && cls.name) {
-            classSet.add(cls.name);
-          }
-        });
-      }
     });
     
     // Sort levels: cantrip (0) first, then 1-9
     const levels = Array.from(levelSet).sort((a, b) => {
       const numA = parseInt(a);
       const numB = parseInt(b);
+      // Put 0 (Cantrip) first, then sort numerically
+      if (numA === 0 && numB !== 0) return -1;
+      if (numA !== 0 && numB === 0) return 1;
       return numA - numB;
     });
     
     const schools = Array.from(schoolSet).sort();
-    const classes = Array.from(classSet).sort();
 
     console.log('Filter options generated:', { 
       levels: levels.length, 
-      schools: schools.length, 
-      classes: classes.length 
+      schools: schools.length
     });
     console.log('Level values:', levels);
-    console.log('Class values:', classes);
     console.log('School values:', schools);
     
-    return { levels, schools, classes };
+    return { levels, schools };
   }, [spells]);
 
   return (
@@ -159,31 +149,6 @@ const SpellsHeader = ({
                       </label>
                     </div>
                   ))}
-                </div>
-              </div>
-
-              {/* Class Filter */}
-              <div>
-                <h3 className="font-medium mb-3">Classes</h3>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {filterOptions.classes.length > 0 ? (
-                    filterOptions.classes.map(cls => (
-                      <div key={cls} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`class-${cls}`}
-                          checked={filters.classes.includes(cls)}
-                          onCheckedChange={(checked) => 
-                            onFilterChange('classes', cls, checked as boolean)
-                          }
-                        />
-                        <label htmlFor={`class-${cls}`} className="text-sm">
-                          {cls}
-                        </label>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">No classes available</p>
-                  )}
                 </div>
               </div>
             </div>
