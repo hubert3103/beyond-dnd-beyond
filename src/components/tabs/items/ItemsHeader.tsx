@@ -57,10 +57,10 @@ const ItemsHeader = ({
             variant="outline"
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2"
+            className="flex items-center justify-center gap-2 bg-white text-gray-700 border-gray-300"
           >
             <Filter className="h-4 w-4" />
-            Filters
+            <span>Filters</span>
           </Button>
           
           <Select value={sortBy} onValueChange={onSortChange}>

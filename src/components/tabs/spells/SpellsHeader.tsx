@@ -68,8 +68,8 @@ const SpellsHeader = ({
         
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="bg-white border-gray-300">
-              <Filter className="h-4 w-4" />
+            <Button variant="outline" size="icon" className="bg-white border-gray-300 flex items-center justify-center">
+              <Filter className="h-4 w-4 text-gray-700" />
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-80">
