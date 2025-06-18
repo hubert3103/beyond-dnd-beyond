@@ -36,7 +36,9 @@ const CharacterSheet = () => {
 
   // Function to handle character updates and sync with database
   const handleCharacterUpdate = async (updatedCharacter: any) => {
-    console.log('Handling character update:', updatedCharacter);
+    console.log('=== CHARACTER UPDATE HANDLER ===');
+    console.log('Updated character received:', updatedCharacter);
+    console.log('Current character for comparison:', character);
     
     // Update local state immediately for responsive UI
     setCharacter(updatedCharacter);
@@ -49,7 +51,7 @@ const CharacterSheet = () => {
         // Always update level if it changed
         if (updatedCharacter.level !== character?.level) {
           updateData.level = updatedCharacter.level;
-          console.log('Level changed to:', updatedCharacter.level);
+          console.log('Level changed from', character?.level, 'to', updatedCharacter.level);
         }
 
         // Always update abilities if they exist and check if they actually changed
@@ -59,7 +61,10 @@ const CharacterSheet = () => {
           
           if (abilitiesChanged) {
             updateData.abilities = updatedCharacter.abilities;
-            console.log('Abilities changed:', updatedCharacter.abilities);
+            console.log('Abilities changed:', {
+              old: character?.abilities,
+              new: updatedCharacter.abilities
+            });
           }
         }
         
@@ -70,7 +75,10 @@ const CharacterSheet = () => {
             
           if (hitPointsChanged) {
             updateData.hit_points = updatedCharacter.hit_points;
-            console.log('Hit points changed:', updatedCharacter.hit_points);
+            console.log('Hit points changed:', {
+              old: character?.hit_points,
+              new: updatedCharacter.hit_points
+            });
           }
         }
         
@@ -81,21 +89,27 @@ const CharacterSheet = () => {
             
           if (equipmentChanged) {
             updateData.equipment = updatedCharacter.equipment;
+            console.log('Equipment changed');
           }
         }
         
-        // FIXED: Update spells if they exist and changed - handle both spells array and spellSlots
-        if (updatedCharacter.spells) {
+        // CRITICAL: Update spells if they exist and changed - handle both spells array and spellSlots
+        if (updatedCharacter.spells !== undefined) {
           const spellsChanged = !character?.spells ||
             JSON.stringify(updatedCharacter.spells) !== JSON.stringify(character.spells);
             
           if (spellsChanged) {
             updateData.spells = updatedCharacter.spells;
-            console.log('Spells changed:', updatedCharacter.spells);
+            console.log('Spells changed:', {
+              oldCount: character?.spells?.length || 0,
+              newCount: updatedCharacter.spells?.length || 0,
+              oldSpells: character?.spells || [],
+              newSpells: updatedCharacter.spells || []
+            });
           }
         }
         
-        // FIXED: Update spell slots if they exist and changed - check both spellSlots and spell_slots
+        // CRITICAL: Update spell slots if they exist and changed - check both spellSlots and spell_slots
         if (updatedCharacter.spellSlots || updatedCharacter.spell_slots) {
           const newSpellSlots = updatedCharacter.spellSlots || updatedCharacter.spell_slots;
           const currentSpellSlots = character?.spellSlots || character?.spell_slots;
@@ -105,7 +119,10 @@ const CharacterSheet = () => {
             
           if (spellSlotsChanged) {
             updateData.spell_slots = newSpellSlots;
-            console.log('Spell slots changed:', newSpellSlots);
+            console.log('Spell slots changed:', {
+              old: currentSpellSlots,
+              new: newSpellSlots
+            });
           }
         }
 
@@ -120,7 +137,8 @@ const CharacterSheet = () => {
         
         // Only update if there are actual changes
         if (Object.keys(updateData).length > 0) {
-          console.log('Sending update to database:', updateData);
+          console.log('=== SENDING TO DATABASE ===');
+          console.log('Update payload:', updateData);
           await updateCharacter(id, updateData);
           console.log('Database update successful');
         } else {

@@ -127,6 +127,10 @@ export const useCharacters = () => {
 
   const updateCharacter = async (characterId: string, updates: Partial<Character>) => {
     try {
+      console.log('=== DATABASE UPDATE START ===');
+      console.log('Character ID:', characterId);
+      console.log('Updates to apply:', updates);
+      
       // Prepare the database updates with explicit mapping
       const dbUpdates: any = {
         updated_at: new Date().toISOString()
@@ -154,7 +158,7 @@ export const useCharacters = () => {
       
       if ('spells' in updates) {
         dbUpdates.spells = updates.spells;
-        console.log('Updating spells to:', updates.spells?.length, 'spells');
+        console.log('Updating spells to:', updates.spells?.length, 'spells:', updates.spells);
       }
       
       // Handle both spell_slots and spellSlots property names
@@ -187,7 +191,7 @@ export const useCharacters = () => {
         throw error;
       }
 
-      console.log('Database update successful:', data);
+      console.log('Database update successful. Returned data:', data);
 
       // Update local state to reflect the changes
       setCharacters(prev => prev.map(char => 
@@ -195,6 +199,8 @@ export const useCharacters = () => {
           ? { ...char, ...dbUpdates }
           : char
       ));
+      
+      console.log('=== DATABASE UPDATE COMPLETE ===');
     } catch (error) {
       console.error('Error updating character:', error);
       toast({

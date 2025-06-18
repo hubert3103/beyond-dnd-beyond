@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -300,7 +301,10 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
   const handleConfirm = () => {
     if (!levelUpChanges) return;
 
-    console.log('Confirming level up with improvements:', abilityImprovements, 'and spells:', newSpells);
+    console.log('=== LEVEL UP CONFIRM ===');
+    console.log('Ability improvements to apply:', abilityImprovements);
+    console.log('New spells to add:', newSpells);
+    console.log('Original character:', character);
 
     let updatedCharacter;
 
@@ -353,11 +357,16 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
         spells: limitedSpells
       };
     } else {
+      // LEVEL UP - Apply improvements
       const updatedAbilities = { ...character.abilities };
       
+      // Apply ability score improvements
       Object.entries(abilityImprovements).forEach(([ability, improvement]) => {
         if (improvement > 0) {
-          const newScore = updatedAbilities[ability].score + improvement;
+          const currentScore = updatedAbilities[ability]?.score || 10;
+          const newScore = currentScore + improvement;
+          console.log(`Updating ${ability}: ${currentScore} -> ${newScore} (+${improvement})`);
+          
           updatedAbilities[ability] = {
             ...updatedAbilities[ability],
             score: newScore,
@@ -366,13 +375,21 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
         }
       });
 
+      console.log('Updated abilities after improvements:', updatedAbilities);
+
       const newMaxHP = (character.hit_points?.max || character.maxHP || 0) + levelUpChanges.totalHitPointIncrease;
       const newCurrentHP = (character.hit_points?.current !== undefined ? character.hit_points.current : character.currentHP || 0) + levelUpChanges.totalHitPointIncrease;
 
+      // Update spell slots
       const updatedSpellSlots = { ...character.spellSlots };
       Object.entries(levelUpChanges.spellSlotsIncrease).forEach(([key, increase]) => {
-        updatedSpellSlots[key] = (character.spellSlots?.[key] || 0) + (increase as number);
+        const levelNum = parseInt(key.split('_')[1]);
+        updatedSpellSlots[`level_${levelNum}`] = (character.spellSlots?.[`level_${levelNum}`] || 0) + (increase as number);
       });
+
+      // Add new spells to existing spells
+      const updatedSpells = [...(character.spells || []), ...newSpells];
+      console.log('Updated spells after adding new ones:', updatedSpells);
 
       updatedCharacter = {
         ...character,
@@ -388,12 +405,18 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
         currentHP: newCurrentHP,
         proficiencyBonus: Math.ceil(newLevel / 4) + 1,
         spellSlots: updatedSpellSlots,
-        spells: [...(character.spells || []), ...newSpells]
+        spells: updatedSpells
       };
     }
 
-    console.log('Final updated character:', updatedCharacter);
+    console.log('Final updated character being sent to onConfirm:', updatedCharacter);
+    
+    // Call onConfirm with the updated character data
     onConfirm(updatedCharacter);
+    
+    // Reset state and close modal
+    setAbilityImprovements({});
+    setNewSpells([]);
     onClose();
   };
 
@@ -546,7 +569,7 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
                   </div>
                   {Object.keys(abilityImprovements).length > 0 && (
                     <div className="text-xs text-green-600 mt-1">
-                      ✓ Ability improvements selected
+                      ✓ Ability improvements selected: {Object.entries(abilityImprovements).filter(([_, val]) => val > 0).map(([ability, val]) => `${ability.charAt(0).toUpperCase() + ability.slice(1)} +${val}`).join(', ')}
                     </div>
                   )}
                 </div>
@@ -562,7 +585,7 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
                   </div>
                   {newSpells.length > 0 && (
                     <div className="text-xs text-green-600 mt-1">
-                      ✓ {newSpells.length} spell{newSpells.length > 1 ? 's' : ''} selected
+                      ✓ {newSpells.length} spell{newSpells.length > 1 ? 's' : ''} selected: {newSpells.map(spell => spell.name).join(', ')}
                     </div>
                   )}
                 </div>
