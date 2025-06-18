@@ -30,6 +30,9 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
 
   function getSpellsToLearn() {
     const className = character.class_name?.toLowerCase();
+    const currentLevel = character.level;
+    
+    console.log('Calculating spells to learn for:', className, 'from level', currentLevel, 'to', newLevel);
     
     // Calculate spells known based on class and level
     const spellsKnownProgression: { [key: string]: { [key: number]: number } } = {
@@ -42,19 +45,29 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
 
     if (className === 'wizard') {
       // Wizards learn 2 spells per level after 1st level
-      if (newLevel > character.level) {
-        const levelsGained = newLevel - character.level;
-        return levelsGained * 2; // 2 spells per level
+      if (newLevel > currentLevel) {
+        const levelsGained = newLevel - currentLevel;
+        const spellsToLearn = levelsGained * 2;
+        console.log('Wizard should learn', spellsToLearn, 'spells for', levelsGained, 'levels gained');
+        return spellsToLearn;
       }
       return 0;
     }
 
     if (spellsKnownProgression[className]) {
-      const currentKnown = character.spells?.length || 0;
-      const shouldKnow = spellsKnownProgression[className][newLevel] || 0;
-      return Math.max(0, shouldKnow - currentKnown);
+      const currentLevelSpells = spellsKnownProgression[className][currentLevel] || 0;
+      const newLevelSpells = spellsKnownProgression[className][newLevel] || 0;
+      const spellsToLearn = newLevelSpells - currentLevelSpells;
+      
+      console.log('Class:', className);
+      console.log('Current level spells should be:', currentLevelSpells);
+      console.log('New level spells should be:', newLevelSpells);
+      console.log('Spells to learn:', spellsToLearn);
+      
+      return Math.max(0, spellsToLearn);
     }
 
+    console.log('No progression found for class:', className);
     return 0;
   }
 
@@ -169,6 +182,9 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
             <div className="text-sm text-gray-600">
               Selected: {selectedSpells.length} / {spellsToLearn}
             </div>
+            <div className="text-xs text-gray-500 mt-1">
+              Debug: Level {character.level} → {newLevel}, Class: {character.class_name}
+            </div>
           </div>
 
           <Separator />
@@ -177,6 +193,7 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
             {availableSpells.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <p>No spells available to learn at your level</p>
+                <p className="text-xs mt-2">Loading spells... ({spells?.length || 0} total spells loaded)</p>
               </div>
             ) : (
               availableSpells.map((spell) => {
