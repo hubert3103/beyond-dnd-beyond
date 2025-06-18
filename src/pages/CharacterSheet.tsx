@@ -49,36 +49,61 @@ const CharacterSheet = () => {
         // Always update level if it changed
         if (updatedCharacter.level !== character?.level) {
           updateData.level = updatedCharacter.level;
-          console.log('Updating level to:', updatedCharacter.level);
+          console.log('Level changed, updating to:', updatedCharacter.level);
         }
 
-        // Always update abilities if they exist
+        // Always update abilities if they exist and check if they actually changed
         if (updatedCharacter.abilities) {
-          updateData.abilities = updatedCharacter.abilities;
-          console.log('Updating abilities to:', updatedCharacter.abilities);
+          const abilitiesChanged = !character?.abilities || 
+            JSON.stringify(updatedCharacter.abilities) !== JSON.stringify(character.abilities);
+          
+          if (abilitiesChanged) {
+            updateData.abilities = updatedCharacter.abilities;
+            console.log('Abilities changed, updating to:', updatedCharacter.abilities);
+          }
         }
         
-        // Always update hit points if they exist
+        // Always update hit points if they exist and changed
         if (updatedCharacter.hit_points) {
-          updateData.hit_points = updatedCharacter.hit_points;
-          console.log('Updating hit_points to:', updatedCharacter.hit_points);
+          const hitPointsChanged = !character?.hit_points ||
+            JSON.stringify(updatedCharacter.hit_points) !== JSON.stringify(character.hit_points);
+            
+          if (hitPointsChanged) {
+            updateData.hit_points = updatedCharacter.hit_points;
+            console.log('Hit points changed, updating to:', updatedCharacter.hit_points);
+          }
         }
         
-        // Update equipment if it exists
+        // Update equipment if it exists and changed
         if (updatedCharacter.equipment) {
-          updateData.equipment = updatedCharacter.equipment;
+          const equipmentChanged = !character?.equipment ||
+            JSON.stringify(updatedCharacter.equipment) !== JSON.stringify(character.equipment);
+            
+          if (equipmentChanged) {
+            updateData.equipment = updatedCharacter.equipment;
+          }
         }
         
-        // Update spells if they exist
+        // Update spells if they exist and changed
         if (updatedCharacter.spells) {
-          updateData.spells = updatedCharacter.spells;
-          console.log('Updating spells to:', updatedCharacter.spells);
+          const spellsChanged = !character?.spells ||
+            JSON.stringify(updatedCharacter.spells) !== JSON.stringify(character.spells);
+            
+          if (spellsChanged) {
+            updateData.spells = updatedCharacter.spells;
+            console.log('Spells changed, updating to:', updatedCharacter.spells.length, 'spells');
+          }
         }
         
-        // Update spell slots if they exist
+        // Update spell slots if they exist and changed
         if (updatedCharacter.spellSlots) {
-          updateData.spell_slots = updatedCharacter.spellSlots;
-          console.log('Updating spell_slots to:', updatedCharacter.spellSlots);
+          const spellSlotsChanged = !character?.spellSlots ||
+            JSON.stringify(updatedCharacter.spellSlots) !== JSON.stringify(character.spellSlots);
+            
+          if (spellSlotsChanged) {
+            updateData.spell_slots = updatedCharacter.spellSlots;
+            console.log('Spell slots changed, updating to:', updatedCharacter.spellSlots);
+          }
         }
 
         // Handle inspiration separately - it's stored in abilities
@@ -87,15 +112,17 @@ const CharacterSheet = () => {
             ...updatedCharacter.abilities,
             inspiration: updatedCharacter.inspiration
           };
+          console.log('Inspiration changed, updating abilities with inspiration:', updatedCharacter.inspiration);
         }
         
-        console.log('Updating character in database with data:', updateData);
-        
-        await updateCharacter(id, updateData);
-        console.log('Character updated successfully in database');
-        
-        // Refresh the character data from the database to ensure consistency
-        await refreshCharacterData();
+        // Only update if there are actual changes
+        if (Object.keys(updateData).length > 0) {
+          console.log('Updating character in database with data:', updateData);
+          await updateCharacter(id, updateData);
+          console.log('Character updated successfully in database');
+        } else {
+          console.log('No changes detected, skipping database update');
+        }
         
       } catch (error) {
         console.error('Failed to update character in database:', error);

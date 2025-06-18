@@ -127,52 +127,74 @@ export const useCharacters = () => {
 
   const updateCharacter = async (characterId: string, updates: Partial<Character>) => {
     try {
-      // Prepare the database updates
-      const dbUpdates: any = {};
+      // Prepare the database updates with explicit mapping
+      const dbUpdates: any = {
+        updated_at: new Date().toISOString()
+      };
       
       // Always update these fields if they exist in updates
       if ('level' in updates) {
         dbUpdates.level = updates.level;
+        console.log('Updating level to:', updates.level);
       }
       
-      if ('abilities' in updates) {
+      if ('abilities' in updates && updates.abilities) {
         dbUpdates.abilities = updates.abilities;
+        console.log('Updating abilities to:', JSON.stringify(updates.abilities, null, 2));
       }
       
-      if ('hit_points' in updates) {
+      if ('hit_points' in updates && updates.hit_points) {
         dbUpdates.hit_points = updates.hit_points;
+        console.log('Updating hit_points to:', JSON.stringify(updates.hit_points, null, 2));
       }
       
-      if ('equipment' in updates) {
+      if ('equipment' in updates && updates.equipment) {
         dbUpdates.equipment = updates.equipment;
       }
       
       if ('spells' in updates) {
         dbUpdates.spells = updates.spells;
+        console.log('Updating spells to:', updates.spells?.length, 'spells');
       }
       
+      // Handle both spell_slots and spellSlots property names
       if ('spell_slots' in updates || 'spellSlots' in updates) {
-        dbUpdates.spell_slots = updates.spell_slots || (updates as any).spellSlots;
+        const spellSlots = updates.spell_slots || (updates as any).spellSlots;
+        dbUpdates.spell_slots = spellSlots;
+        console.log('Updating spell_slots to:', JSON.stringify(spellSlots, null, 2));
       }
 
-      // Special handling for inspiration - make sure it's preserved in abilities
+      // Special handling for inspiration - make sure it's included in abilities
       if ('inspiration' in updates) {
-        dbUpdates.abilities = {
-          ...updates.abilities,
-          inspiration: updates.inspiration
-        };
+        if (!dbUpdates.abilities) {
+          dbUpdates.abilities = updates.abilities || {};
+        }
+        dbUpdates.abilities.inspiration = updates.inspiration;
+        console.log('Updating inspiration to:', updates.inspiration);
       }
 
-      console.log('Updating character in database with:', dbUpdates);
+      console.log('Final database update payload:', JSON.stringify(dbUpdates, null, 2));
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('characters')
         .update(dbUpdates)
-        .eq('id', characterId);
+        .eq('id', characterId)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database update error:', error);
+        throw error;
+      }
 
-      console.log('Character updated successfully');
+      console.log('Database update successful:', data);
+
+      // Update local state to reflect the changes
+      setCharacters(prev => prev.map(char => 
+        char.id === characterId 
+          ? { ...char, ...dbUpdates }
+          : char
+      ));
     } catch (error) {
       console.error('Error updating character:', error);
       toast({

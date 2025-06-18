@@ -50,7 +50,9 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
 
     if (changes.isLevelDown) {
       // For level downs, calculate what the character should have at the new level
-      changes.totalHitPointIncrease = calculateTotalHPAtLevel(newLevel) - (character.hit_points?.max || character.maxHP || 0);
+      const newTotalHP = calculateTotalHPAtLevel(newLevel);
+      const currentMaxHP = character.hit_points?.max || character.maxHP || 0;
+      changes.totalHitPointIncrease = newTotalHP - currentMaxHP;
       changes.proficiencyBonusIncrease = false; // Will be recalculated
       
       // No new features or improvements when leveling down
@@ -67,8 +69,12 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
           // Fixed HP: average of hit die + 1 + CON modifier
           const hpGain = Math.floor(hitDie / 2) + 1 + conModifier;
           changes.totalHitPointIncrease += hpGain;
+        } else if (character.hit_point_type === 'rolled') {
+          // For rolled, use average for calculation (could be improved to track actual rolls)
+          const hpGain = Math.floor(hitDie / 2) + 1 + conModifier;
+          changes.totalHitPointIncrease += hpGain;
         } else {
-          // For rolled or manual entry, use average for now
+          // Default to average
           const hpGain = Math.floor(hitDie / 2) + 1 + conModifier;
           changes.totalHitPointIncrease += hpGain;
         }
@@ -91,7 +97,7 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
       changes.classFeatures = getClassFeatures(character.level + 1, newLevel);
 
       // Calculate spell slot increases for spellcasters
-      if (character.class_data?.spellcasting_ability || character.class_name?.toLowerCase() === 'sorcerer') {
+      if (isSpellcaster(character.class_name)) {
         const oldSpellSlots = calculateSpellSlots(character.level, character.class_name);
         const newSpellSlots = calculateSpellSlots(newLevel, character.class_name);
         
@@ -112,6 +118,11 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
     setLevelUpChanges(changes);
   };
 
+  const isSpellcaster = (className: string) => {
+    const spellcasterClasses = ['wizard', 'sorcerer', 'warlock', 'bard', 'cleric', 'druid', 'artificer', 'paladin', 'ranger'];
+    return spellcasterClasses.includes(className?.toLowerCase() || '');
+  };
+
   const calculateTotalHPAtLevel = (level: number) => {
     const conModifier = Math.floor((character.abilities.constitution.score - 10) / 2);
     const hitDie = character.class_data?.hit_die || 8;
@@ -123,12 +134,16 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
     for (let i = 2; i <= level; i++) {
       if (character.hit_point_type === 'fixed') {
         totalHP += Math.floor(hitDie / 2) + 1 + conModifier;
+      } else if (character.hit_point_type === 'rolled') {
+        // For rolled, use average for calculation (could be improved to track actual rolls)
+        totalHP += Math.floor(hitDie / 2) + 1 + conModifier;
       } else {
+        // Default to average
         totalHP += Math.floor(hitDie / 2) + 1 + conModifier;
       }
     }
     
-    return totalHP;
+    return Math.max(1, totalHP); // Minimum 1 HP
   };
 
   const getClassFeatures = (fromLevel: number, toLevel: number) => {
@@ -235,7 +250,9 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
   };
 
   const handleNext = () => {
-    console.log('Handle next - ASI:', levelUpChanges.abilityScoreImprovements, 'Spells:', levelUpChanges.spellsKnownIncrease);
+    console.log('Handle next - ASI:', levelUpChanges?.abilityScoreImprovements, 'Spells:', levelUpChanges?.spellsKnownIncrease);
+    
+    if (!levelUpChanges) return;
     
     // Check if we need ASI and haven't selected them yet
     if (!levelUpChanges.isLevelDown && levelUpChanges.abilityScoreImprovements > 0 && Object.keys(abilityImprovements).length === 0) {
@@ -262,9 +279,11 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
     setShowASIModal(false);
     
     // After ASI, check if we still need spells
-    if (levelUpChanges.spellsKnownIncrease > 0 && newSpells.length === 0) {
+    if (levelUpChanges?.spellsKnownIncrease > 0 && newSpells.length === 0) {
+      console.log('After ASI, showing spell modal');
       setShowSpellModal(true);
     } else {
+      console.log('After ASI, confirming directly');
       handleConfirm();
     }
   };
@@ -273,7 +292,11 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
     console.log('Spells confirmed:', selectedSpells);
     setNewSpells(selectedSpells);
     setShowSpellModal(false);
-    handleConfirm();
+    
+    // After spells, go directly to confirm
+    setTimeout(() => {
+      handleConfirm();
+    }, 100);
   };
 
   const handleConfirm = () => {
@@ -284,23 +307,27 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
     let updatedCharacter;
 
     if (levelUpChanges.isLevelDown) {
-      // ... keep existing code (level down logic)
+      // Level down logic
       const newTotalHP = calculateTotalHPAtLevel(newLevel);
       const newProficiencyBonus = Math.ceil(newLevel / 4) + 1;
       
+      // Reset abilities to base values (remove ASI bonuses beyond new level)
       const resetAbilities = { ...character.abilities };
       
+      // Calculate allowed ASI levels and reset accordingly
       const asiLevels = [4, 8, 12, 16, 19];
       const allowedASILevels = asiLevels.filter(level => level <= newLevel);
       
-      const newSpellSlots = character.class_data?.spellcasting_ability 
+      const newSpellSlots = isSpellcaster(character.class_name) 
         ? calculateSpellSlots(newLevel, character.class_name)
         : {};
 
+      // Reset spells for spellcasters
       const spellsKnownProgression: { [key: string]: { [key: number]: number } } = {
         bard: { 1: 4, 2: 5, 3: 6, 4: 7, 5: 8, 6: 9, 7: 10, 8: 11, 9: 12, 10: 14 },
         sorcerer: { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10, 10: 11 },
-        warlock: { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10, 10: 10 }
+        warlock: { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10, 10: 10 },
+        wizard: { 1: 6, 2: 8, 3: 10, 4: 12, 5: 14, 6: 16, 7: 18, 8: 20, 9: 22, 10: 24 }
       };
       
       const progression = spellsKnownProgression[character.class_name?.toLowerCase()];
