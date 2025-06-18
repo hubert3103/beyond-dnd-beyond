@@ -24,12 +24,14 @@ import BackgroundAppearance from '../components/character-sheet/BackgroundAppear
 import { TabType } from './PlayerDashboard';
 import { useCharacters } from '@/hooks/useCharacters';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const CharacterSheet = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { getCharacter, deleteCharacter, updateCharacter } = useCharacters();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('characters');
   const [character, setCharacter] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -112,8 +114,8 @@ const CharacterSheet = () => {
       } catch (error) {
         console.error('Failed to update character in database:', error);
         toast({
-          title: "Error",
-          description: "Failed to save character changes. Please try again.",
+          title: t('error'),
+          description: t('failed_to_save'),
           variant: "destructive",
         });
         
@@ -327,8 +329,8 @@ const CharacterSheet = () => {
           setCharacter(formattedCharacter);
         } else {
           toast({
-            title: "Error",
-            description: "Character not found",
+            title: t('error'),
+            description: t('character_not_found'),
             variant: "destructive",
           });
           navigate('/player');
@@ -336,8 +338,8 @@ const CharacterSheet = () => {
       } catch (error) {
         console.error('Error loading character:', error);
         toast({
-          title: "Error",
-          description: "Failed to load character",
+          title: t('error'),
+          description: t('failed_to_load'),
           variant: "destructive",
         });
         navigate('/player');
@@ -347,7 +349,7 @@ const CharacterSheet = () => {
     };
 
     loadCharacter();
-  }, [id, getCharacter, navigate, toast]);
+  }, [id, getCharacter, navigate, toast, t]);
 
   const handleBack = () => {
     navigate('/player');
@@ -374,13 +376,12 @@ const CharacterSheet = () => {
     }
   };
 
-  
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#4a4a4a] flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-white mx-auto mb-4" />
-          <p className="text-white">Loading character...</p>
+          <p className="text-white">{t('loading_character')}</p>
         </div>
       </div>
     );
@@ -390,9 +391,9 @@ const CharacterSheet = () => {
     return (
       <div className="min-h-screen bg-[#4a4a4a] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-white mb-4">Character not found</p>
+          <p className="text-white mb-4">{t('character_not_found')}</p>
           <Button onClick={handleBack} variant="outline">
-            Go Back
+            {t('go_back')}
           </Button>
         </div>
       </div>
@@ -438,16 +439,16 @@ const CharacterSheet = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="bg-white">
             <DropdownMenuItem onClick={() => handleOverflowAction('edit')}>
-              Edit Character
+              {t('edit_character')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleOverflowAction('export')}>
-              Export PDF
+              {t('export_pdf')}
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => handleOverflowAction('delete')}
               className="text-red-600"
             >
-              Delete Character
+              {t('delete_character')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

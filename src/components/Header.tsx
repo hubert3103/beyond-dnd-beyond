@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
 import ProfileMenu from './ProfileMenu';
 import { TabType } from '../pages/PlayerDashboard';
 
@@ -9,19 +10,20 @@ interface HeaderProps {
 
 const Header = ({ activeTab }: HeaderProps) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const { t } = useTranslation();
 
   const getTabTitle = () => {
     switch (activeTab) {
       case 'characters':
-        return 'My characters';
+        return t('my_characters');
       case 'spells':
         return ''; // Remove "Spell list" title
       case 'items':
         return ''; // Remove "Items list" title
       case 'manuals':
-        return 'Manuals';
+        return t('manuals');
       default:
-        return 'My characters';
+        return t('my_characters');
     }
   };
 
