@@ -16,41 +16,67 @@ interface HitPointsHitDiceProps {
 const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Calculate hit points based on character creation choices
-  const calculateMaxHP = () => {
-    if (!character.class_data) return 1;
+  // Calculate correct max HP based on character data
+  const calculateCorrectMaxHP = () => {
+    if (!character.class_data && !character.class_name) return 1;
     
-    const classData = character.class_data;
-    const conModifier = Math.floor((character.abilities.constitution.score - 10) / 2);
+    const conModifier = Math.floor((character.abilities.constitution?.score - 10) / 2);
+    const hitDie = getHitDie();
     let maxHP = 0;
 
-    // Base HP at level 1
+    console.log('=== HP CALCULATION DEBUG ===');
+    console.log('Character level:', character.level);
+    console.log('Class:', character.class_name);
+    console.log('Hit die:', hitDie);
+    console.log('CON modifier:', conModifier);
+    console.log('Hit point type:', character.hit_point_type);
+
+    // Level 1 HP
     if (character.hit_point_type === 'fixed') {
-      maxHP = classData.hit_die + conModifier;
+      maxHP = hitDie + conModifier;
+      console.log('Level 1 HP (fixed):', maxHP);
     } else {
-      // For rolled or manual entry, use stored value or calculate average
-      maxHP = character.hit_points?.max || Math.floor(classData.hit_die / 2) + 1 + conModifier;
+      // For rolled or average, use average calculation
+      maxHP = Math.floor(hitDie / 2) + 1 + conModifier;
+      console.log('Level 1 HP (average):', maxHP);
     }
 
-    // Add HP for additional levels (if above level 1)
+    // Additional levels
     for (let level = 2; level <= character.level; level++) {
+      let levelHP;
       if (character.hit_point_type === 'fixed') {
-        maxHP += Math.floor(classData.hit_die / 2) + 1 + conModifier;
+        levelHP = Math.floor(hitDie / 2) + 1 + conModifier;
       } else {
-        // For other methods, use stored progression or calculate average
-        maxHP += Math.floor(classData.hit_die / 2) + 1 + conModifier;
+        levelHP = Math.floor(hitDie / 2) + 1 + conModifier;
       }
+      maxHP += levelHP;
+      console.log(`Level ${level} HP added:`, levelHP, 'Total:', maxHP);
     }
 
-    return Math.max(1, maxHP);
+    const finalHP = Math.max(1, maxHP);
+    console.log('Final calculated HP:', finalHP);
+    return finalHP;
   };
 
-  // Use the values from the character's hit_points object
-  const maxHP = character.hit_points?.max || character.maxHP || calculateMaxHP();
-  const currentHP = character.hit_points?.current !== undefined ? character.hit_points.current : character.currentHP !== undefined ? character.currentHP : maxHP;
+  // Use calculated HP if current stored HP seems wrong
+  const correctMaxHP = calculateCorrectMaxHP();
+  const storedMaxHP = character.hit_points?.max || character.maxHP || 0;
+  
+  // If stored HP is wildly different from calculated HP, use calculated
+  const shouldUseCalculated = Math.abs(storedMaxHP - correctMaxHP) > 10;
+  const maxHP = shouldUseCalculated ? correctMaxHP : storedMaxHP;
+  
+  console.log('=== HP VALUES COMPARISON ===');
+  console.log('Stored max HP:', storedMaxHP);
+  console.log('Calculated max HP:', correctMaxHP);
+  console.log('Using HP:', maxHP);
+  console.log('Should use calculated:', shouldUseCalculated);
+
+  const currentHP = character.hit_points?.current !== undefined ? 
+    Math.min(character.hit_points.current, maxHP) : maxHP;
   const tempHP = character.hit_points?.temporary || character.tempHP || 0;
 
-  // Get hit die information from class data with proper class mapping
+  // Get hit die information with correct class mapping
   const getHitDie = () => {
     // Try to get hit die from class data first
     if (character.class_data?.hit_die) {
@@ -73,8 +99,8 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
         'rogue': 8,
         'warlock': 8,
         'artificer': 8,
-        'sorcerer': 6,
-        'wizard': 6  // Fixed: Wizard should have d6 hit die
+        'sorcerer': 6,  // Sorcerer uses d6
+        'wizard': 6     // Wizard uses d6
       };
       
       const className = character.class_name.toLowerCase();
@@ -87,7 +113,8 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
   };
   
   const hitDie = getHitDie();
-  const hitDiceRemaining = character.hit_points?.hit_dice_remaining !== undefined ? character.hit_points.hit_dice_remaining : character.level;
+  const hitDiceRemaining = character.hit_points?.hit_dice_remaining !== undefined ? 
+    character.hit_points.hit_dice_remaining : character.level;
 
   const rollHitDie = () => {
     if (hitDiceRemaining > 0) {
@@ -102,12 +129,29 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
         hit_points: {
           ...character.hit_points,
           current: newHP,
+          max: maxHP, // Update max HP if we corrected it
           hit_dice_remaining: hitDiceRemaining - 1
         }
       };
       setCharacter(updatedCharacter);
     }
   };
+
+  // If we corrected the HP, update the character automatically
+  if (shouldUseCalculated && storedMaxHP !== correctMaxHP) {
+    const correctedCharacter = {
+      ...character,
+      hit_points: {
+        ...character.hit_points,
+        max: correctMaxHP,
+        current: Math.min(character.hit_points?.current || correctMaxHP, correctMaxHP)
+      },
+      maxHP: correctMaxHP
+    };
+    
+    // Update character with corrected HP
+    setTimeout(() => setCharacter(correctedCharacter), 100);
+  }
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -138,6 +182,15 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
               <div className="text-xl font-bold text-blue-600">{tempHP}</div>
             </div>
           </div>
+
+          {/* Debug Info (temporary - can be removed) */}
+          {shouldUseCalculated && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-xs">
+              <div className="text-yellow-800">
+                HP corrected: {storedMaxHP} → {correctMaxHP} (Level {character.level} {character.class_name} with d{hitDie})
+              </div>
+            </div>
+          )}
 
           {/* Hit Dice */}
           <div className="space-y-3">

@@ -34,13 +34,92 @@ const CharacterSummary = ({ character, setCharacter }: CharacterSummaryProps) =>
     setCharacter({ ...character, name: value });
   };
 
+  const calculateHPForLevel = (level: number) => {
+    const classData = character.class_data;
+    const conModifier = Math.floor((character.abilities.constitution?.score - 10) / 2);
+    let maxHP = 0;
+
+    // Base HP at level 1
+    if (character.hit_point_type === 'fixed') {
+      maxHP = (classData?.hit_die || 6) + conModifier; // Sorcerer has d6 hit die
+    } else {
+      maxHP = Math.floor((classData?.hit_die || 6) / 2) + 1 + conModifier;
+    }
+
+    // Add HP for additional levels
+    for (let currentLevel = 2; currentLevel <= level; currentLevel++) {
+      if (character.hit_point_type === 'fixed') {
+        maxHP += Math.floor((classData?.hit_die || 6) / 2) + 1 + conModifier;
+      } else {
+        maxHP += Math.floor((classData?.hit_die || 6) / 2) + 1 + conModifier;
+      }
+    }
+
+    return Math.max(1, maxHP);
+  };
+
   const handleLevelChange = (value: string) => {
     const newLevel = parseInt(value);
+    console.log('=== LEVEL CHANGE DETECTED ===');
+    console.log('Current level:', character.level);
+    console.log('New level:', newLevel);
+    
     if (newLevel > character.level) {
+      console.log('Level up detected, showing modal');
       setShowLevelUpModal(true);
     } else if (newLevel < character.level) {
-      // Handle level down (less common, but possible)
-      setCharacter({ ...character, level: newLevel });
+      console.log('Level down detected, reverting character');
+      
+      // Calculate what the character should be at the new level
+      const levelDifference = character.level - newLevel;
+      
+      // Revert ability scores if they were improved at levels we're going back from
+      const revertedAbilities = { ...character.abilities };
+      
+      // Check which levels had ability score improvements and revert them
+      for (let level = character.level; level > newLevel; level--) {
+        if ([4, 8, 12, 16, 19, 20].includes(level)) {
+          console.log(`Reverting ability improvements from level ${level}`);
+          // This is a simplified reversion - in a real app you'd track the specific improvements
+          // For now, we'll just revert to base scores if going below level 4
+          if (newLevel < 4) {
+            Object.keys(revertedAbilities).forEach(ability => {
+              if (ability !== 'inspiration' && revertedAbilities[ability]) {
+                // Reset to likely base scores - this is a simplification
+                const baseScore = 15; // This should ideally be tracked from character creation
+                revertedAbilities[ability] = {
+                  score: baseScore,
+                  modifier: Math.floor((baseScore - 10) / 2),
+                  proficient: revertedAbilities[ability].proficient || false
+                };
+              }
+            });
+          }
+        }
+      }
+      
+      // Calculate new max HP for the lower level
+      const newMaxHP = calculateHPForLevel(newLevel);
+      const newCurrentHP = Math.min(character.hit_points?.current || character.currentHP || newMaxHP, newMaxHP);
+      
+      // Create updated character
+      const updatedCharacter = {
+        ...character,
+        level: newLevel,
+        abilities: revertedAbilities,
+        hit_points: {
+          ...character.hit_points,
+          max: newMaxHP,
+          current: newCurrentHP,
+          hit_dice_remaining: newLevel
+        },
+        maxHP: newMaxHP,
+        currentHP: newCurrentHP,
+        proficiencyBonus: Math.ceil(newLevel / 4) + 1
+      };
+      
+      console.log('Updated character for level down:', JSON.stringify(updatedCharacter, null, 2));
+      setCharacter(updatedCharacter);
     }
   };
 
