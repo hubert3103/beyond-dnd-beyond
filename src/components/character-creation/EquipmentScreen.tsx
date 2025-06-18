@@ -33,12 +33,9 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
   const getCharacterProficiencies = () => {
     const proficiencies = new Set<string>();
     
-    console.log('Getting proficiencies for:', { species: data.species?.name, class: data.class?.name });
-    
     // Add species proficiencies
     if (data.species?.proficiencies) {
       const speciesProficiencies = data.species.proficiencies.toLowerCase();
-      console.log('Species proficiencies:', speciesProficiencies);
       
       // Check for weapon proficiencies
       if (speciesProficiencies.includes('simple weapon') || speciesProficiencies.includes('simple-weapon')) {
@@ -81,7 +78,6 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
       proficiencies.add('shield');
     } else if (data.class?.prof_weapons) {
       const classProficiencies = data.class.prof_weapons.toLowerCase();
-      console.log('Class weapon proficiencies:', classProficiencies);
       
       if (classProficiencies.includes('simple weapon') || classProficiencies.includes('simple-weapon')) {
         proficiencies.add('simple');
@@ -93,7 +89,6 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
     
     if (data.class?.prof_armor) {
       const armorProficiencies = data.class.prof_armor.toLowerCase();
-      console.log('Class armor proficiencies:', armorProficiencies);
       
       if (armorProficiencies.includes('light armor') || armorProficiencies.includes('light-armor')) {
         proficiencies.add('light-armor');
@@ -109,7 +104,6 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
       }
     }
     
-    console.log('Final character proficiencies:', Array.from(proficiencies));
     return proficiencies;
   };
 
@@ -134,7 +128,6 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
     ];
     
     const weapons = equipment.filter(item => item.type === 'weapon');
-    console.log('All weapons found:', weapons.length);
     
     const availableWeapons = weapons.filter(weapon => {
       const weaponSlug = weapon.slug.toLowerCase();
@@ -161,7 +154,6 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
       return false;
     });
     
-    console.log('Available weapons after filtering:', availableWeapons.length);
     return availableWeapons;
   }, [equipment, data.species, data.class]);
 
@@ -174,7 +166,6 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
     const armor = equipment.filter(item => 
       item.type.includes('armor') || item.type === 'shield' || item.name.toLowerCase().includes('armor') || item.name.toLowerCase().includes('shield')
     );
-    console.log('All armor found:', armor.length);
     
     const availableArmor = armor.filter(armorItem => {
       const itemName = armorItem.name.toLowerCase();
@@ -191,7 +182,6 @@ const EquipmentScreen = ({ data, onUpdate }: EquipmentScreenProps) => {
       return false;
     });
     
-    console.log('Available armor after filtering:', availableArmor.length);
     return availableArmor;
   }, [equipment, data.species, data.class]);
 
