@@ -318,11 +318,11 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
 
       // Calculate maximum spells allowed at this level
       const className = character.class_name?.toLowerCase();
-      let maxSpellsAtLevel = 0;
+      let maxSpellsAllowed = 0;
       
       if (className === 'wizard') {
         // Wizards start with 6 spells at level 1, then gain 2 per level
-        maxSpellsAtLevel = 6 + ((newLevel - 1) * 2);
+        maxSpellsAllowed = 6 + ((newLevel - 1) * 2);
       } else {
         // Other spellcasters use the spells known progression
         const spellsKnownProgression: { [key: string]: { [key: number]: number } } = {
@@ -332,10 +332,10 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
         };
         
         const progression = spellsKnownProgression[className];
-        maxSpellsAtLevel = progression?.[newLevel] || 0;
+        maxSpellsAllowed = progression?.[newLevel] || 0;
       }
 
-      const limitedSpells = character.spells ? character.spells.slice(0, maxSpellsAtLevel) : [];
+      const limitedSpells = character.spells ? character.spells.slice(0, maxSpellsAllowed) : [];
       
       updatedCharacter = {
         ...character,
