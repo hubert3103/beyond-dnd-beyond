@@ -16,10 +16,10 @@ const StandardArraySelector = ({ abilities, onUpdate }: StandardArraySelectorPro
   useEffect(() => {
     const initialAssignments: Record<string, number> = {};
     
-    // Check if any of the base scores match standard array values
+    // Check if any of the base scores match standard array values and are not the default unassigned value (8)
     Object.entries(abilities).forEach(([key, abilityData]: [string, any]) => {
       const baseScore = abilityData.base;
-      if (STANDARD_ARRAY_VALUES.includes(baseScore)) {
+      if (STANDARD_ARRAY_VALUES.includes(baseScore) && baseScore !== 8) {
         initialAssignments[key] = baseScore;
       }
     });

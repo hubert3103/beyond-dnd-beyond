@@ -33,12 +33,12 @@ const CharacterCreation = () => {
     species: null,
     class: null,
     abilities: {
-      str: { base: 10, bonus: 0, total: 10 },
-      dex: { base: 10, bonus: 0, total: 10 },
-      con: { base: 10, bonus: 0, total: 10 },
-      int: { base: 10, bonus: 0, total: 10 },
-      wis: { base: 10, bonus: 0, total: 10 },
-      cha: { base: 10, bonus: 0, total: 10 }
+      str: { base: 8, bonus: 0, total: 8 },
+      dex: { base: 8, bonus: 0, total: 8 },
+      con: { base: 8, bonus: 0, total: 8 },
+      int: { base: 8, bonus: 0, total: 8 },
+      wis: { base: 8, bonus: 0, total: 8 },
+      cha: { base: 8, bonus: 0, total: 8 }
     },
     background: null,
     equipment: { startingEquipment: [], inventory: [], currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 } },
@@ -64,12 +64,12 @@ const CharacterCreation = () => {
             species: existingCharacter.species_data,
             class: existingCharacter.class_data,
             abilities: existingCharacter.abilities || {
-              str: { base: 10, bonus: 0, total: 10 },
-              dex: { base: 10, bonus: 0, total: 10 },
-              con: { base: 10, bonus: 0, total: 10 },
-              int: { base: 10, bonus: 0, total: 10 },
-              wis: { base: 10, bonus: 0, total: 10 },
-              cha: { base: 10, bonus: 0, total: 10 }
+              str: { base: 8, bonus: 0, total: 8 },
+              dex: { base: 8, bonus: 0, total: 8 },
+              con: { base: 8, bonus: 0, total: 8 },
+              int: { base: 8, bonus: 0, total: 8 },
+              wis: { base: 8, bonus: 0, total: 8 },
+              cha: { base: 8, bonus: 0, total: 8 }
             },
             background: existingCharacter.background_data,
             equipment: existingCharacter.equipment || { startingEquipment: [], inventory: [], currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 } },

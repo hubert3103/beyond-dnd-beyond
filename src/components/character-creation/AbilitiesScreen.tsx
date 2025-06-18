@@ -19,7 +19,7 @@ const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
 
   // Ensure abilities data structure is properly initialized
   const initializeAbilities = () => {
-    const defaultAbility = { base: 10, bonus: 0, total: 10 };
+    const defaultAbility = { base: 8, bonus: 0, total: 8 };
     return {
       str: data.abilities?.str || defaultAbility,
       dex: data.abilities?.dex || defaultAbility,
@@ -45,9 +45,9 @@ const AbilitiesScreen = ({ data, onUpdate }: AbilitiesScreenProps) => {
         if (!updatedAbilities[key] || typeof updatedAbilities[key].total === 'undefined') {
           console.log(`Fixing missing ability data for ${key}`);
           updatedAbilities[key] = {
-            base: updatedAbilities[key]?.base || 10,
+            base: updatedAbilities[key]?.base || 8,
             bonus: updatedAbilities[key]?.bonus || 0,
-            total: updatedAbilities[key]?.total || (updatedAbilities[key]?.base || 10) + (updatedAbilities[key]?.bonus || 0)
+            total: updatedAbilities[key]?.total || (updatedAbilities[key]?.base || 8) + (updatedAbilities[key]?.bonus || 0)
           };
           needsUpdate = true;
         }
