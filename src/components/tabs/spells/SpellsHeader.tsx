@@ -30,7 +30,13 @@ const SpellsHeader = ({
 }: SpellsHeaderProps) => {
   // Get unique values for filters - memoized for performance
   const filterOptions = useMemo(() => {
-    const levels = [...new Set(spells.map(s => s.level))].sort((a, b) => parseInt(a) - parseInt(b));
+    // Sort levels with cantrips (0) first, then 1-9
+    const levels = [...new Set(spells.map(s => s.level))].sort((a, b) => {
+      const numA = parseInt(a);
+      const numB = parseInt(b);
+      return numA - numB;
+    });
+    
     const schools = [...new Set(spells.map(s => s.school).filter(Boolean))].sort();
     const classSet = new Set<string>();
     
@@ -45,6 +51,7 @@ const SpellsHeader = ({
     });
     const classes = [...classSet].sort();
 
+    console.log('Filter options:', { levels, schools, classes });
     return { levels, schools, classes };
   }, [spells]);
 
