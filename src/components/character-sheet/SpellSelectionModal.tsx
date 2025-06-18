@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,8 +32,6 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
     const className = character.class_name?.toLowerCase();
     const currentLevel = character.level;
     
-    console.log('Calculating spells to learn for:', className, 'from level', currentLevel, 'to', newLevel);
-    
     // Calculate spells known based on class and level
     const spellsKnownProgression: { [key: string]: { [key: number]: number } } = {
       bard: { 1: 4, 2: 5, 3: 6, 4: 7, 5: 8, 6: 9, 7: 10, 8: 11, 9: 12, 10: 14 },
@@ -47,7 +46,6 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
       if (newLevel > currentLevel) {
         const levelsGained = newLevel - currentLevel;
         const spellsToLearn = levelsGained * 2;
-        console.log('Wizard should learn', spellsToLearn, 'spells for', levelsGained, 'levels gained');
         return spellsToLearn;
       }
       return 0;
@@ -58,15 +56,9 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
       const newLevelSpells = spellsKnownProgression[className][newLevel] || 0;
       const spellsToLearn = newLevelSpells - currentLevelSpells;
       
-      console.log('Class:', className);
-      console.log('Current level spells should be:', currentLevelSpells);
-      console.log('New level spells should be:', newLevelSpells);
-      console.log('Spells to learn:', spellsToLearn);
-      
       return Math.max(0, spellsToLearn);
     }
 
-    console.log('No progression found for class:', className);
     return 0;
   }
 
@@ -186,7 +178,6 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
   };
 
   const handleConfirm = () => {
-    console.log('Confirming spell selection:', selectedSpells);
     onConfirm(selectedSpells);
     setSelectedSpells([]);
     onClose();
@@ -213,9 +204,6 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
             </div>
             <div className="text-sm text-gray-600">
               Selected: {selectedSpells.length} / {spellsToLearn}
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              Debug: Level {character.level} → {newLevel}, Class: {character.class_name}
             </div>
           </div>
 

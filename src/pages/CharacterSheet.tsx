@@ -36,8 +36,6 @@ const CharacterSheet = () => {
 
   // Function to handle character updates and sync with database
   const handleCharacterUpdate = async (updatedCharacter: any) => {
-    console.log('Handling character update:', updatedCharacter);
-    
     // Update local state immediately for responsive UI
     setCharacter(updatedCharacter);
     
@@ -49,7 +47,6 @@ const CharacterSheet = () => {
         // Always update level if it changed
         if (updatedCharacter.level !== character?.level) {
           updateData.level = updatedCharacter.level;
-          console.log('Level changed, updating to:', updatedCharacter.level);
         }
 
         // Always update abilities if they exist and check if they actually changed
@@ -59,7 +56,6 @@ const CharacterSheet = () => {
           
           if (abilitiesChanged) {
             updateData.abilities = updatedCharacter.abilities;
-            console.log('Abilities changed, updating to:', updatedCharacter.abilities);
           }
         }
         
@@ -70,7 +66,6 @@ const CharacterSheet = () => {
             
           if (hitPointsChanged) {
             updateData.hit_points = updatedCharacter.hit_points;
-            console.log('Hit points changed, updating to:', updatedCharacter.hit_points);
           }
         }
         
@@ -91,7 +86,6 @@ const CharacterSheet = () => {
             
           if (spellsChanged) {
             updateData.spells = updatedCharacter.spells;
-            console.log('Spells changed, updating to:', updatedCharacter.spells.length, 'spells');
           }
         }
         
@@ -102,7 +96,6 @@ const CharacterSheet = () => {
             
           if (spellSlotsChanged) {
             updateData.spell_slots = updatedCharacter.spellSlots;
-            console.log('Spell slots changed, updating to:', updatedCharacter.spellSlots);
           }
         }
 
@@ -112,16 +105,11 @@ const CharacterSheet = () => {
             ...updatedCharacter.abilities,
             inspiration: updatedCharacter.inspiration
           };
-          console.log('Inspiration changed, updating abilities with inspiration:', updatedCharacter.inspiration);
         }
         
         // Only update if there are actual changes
         if (Object.keys(updateData).length > 0) {
-          console.log('Updating character in database with data:', updateData);
           await updateCharacter(id, updateData);
-          console.log('Character updated successfully in database');
-        } else {
-          console.log('No changes detected, skipping database update');
         }
         
       } catch (error) {
@@ -149,7 +137,6 @@ const CharacterSheet = () => {
       if (characterData) {
         const formattedCharacter = formatCharacterData(characterData);
         setCharacter(formattedCharacter);
-        console.log('Character data refreshed:', formattedCharacter);
       }
     } catch (error) {
       console.error('Error refreshing character data:', error);
@@ -158,7 +145,6 @@ const CharacterSheet = () => {
 
   // Helper function to format character data
   const formatCharacterData = (characterData: any) => {
-    // ... keep existing code (formatAbilities, calculateInitialHP, calculateArmorClass, calculateSpeed functions)
     
     const formatAbilities = (abilities: any) => {
       const defaultAbilities = {
@@ -235,8 +221,6 @@ const CharacterSheet = () => {
       const dexModifier = formattedAbilities.dexterity.modifier;
       let baseAC = 10 + dexModifier;
       
-      console.log('Calculating AC with equipment:', characterData.equipment);
-      
       let equippedArmor = null;
       
       if (characterData.equipment?.starting_equipment) {
@@ -251,8 +235,6 @@ const CharacterSheet = () => {
         );
       }
       
-      console.log('Found equipped armor:', equippedArmor);
-      
       if (equippedArmor && equippedArmor.ac) {
         if (equippedArmor.dex_bonus !== false) {
           const maxDexBonus = equippedArmor.max_dex_bonus || 999;
@@ -260,29 +242,23 @@ const CharacterSheet = () => {
         } else {
           baseAC = equippedArmor.ac;
         }
-        console.log('Calculated AC with armor:', baseAC);
       }
       
       return baseAC;
     };
 
     const calculateSpeed = (characterData: any) => {
-      console.log('Calculating speed for character:', characterData);
-      
       let speed = 30;
       
       if (characterData.species?.speed) {
-        console.log('Found speed in species:', characterData.species.speed);
         speed = characterData.species.speed;
       } else if (characterData.species_data?.speed) {
-        console.log('Found speed in species_data:', characterData.species_data.speed);
         if (typeof characterData.species_data.speed === 'object' && characterData.species_data.speed.walk) {
           speed = characterData.species_data.speed.walk;
         } else {
           speed = characterData.species_data.speed;
         }
       } else if (characterData.species?.apiData?.speed) {
-        console.log('Found speed in species apiData:', characterData.species.apiData.speed);
         if (typeof characterData.species.apiData.speed === 'object' && characterData.species.apiData.speed.walk) {
           speed = characterData.species.apiData.speed.walk;
         } else {
@@ -290,17 +266,14 @@ const CharacterSheet = () => {
         }
       }
       
-      console.log('Final calculated speed:', speed);
       return speed;
     };
 
     // Format abilities first
     const formattedAbilities = formatAbilities(characterData.abilities);
-    console.log('Formatted abilities:', formattedAbilities);
 
     // Calculate speed
     const calculatedSpeed = calculateSpeed(characterData);
-    console.log('Calculated speed:', calculatedSpeed);
 
     // Calculate max HP if not stored
     const maxHP = characterData.hit_points?.max || calculateInitialHP(characterData, formattedAbilities);
@@ -308,7 +281,6 @@ const CharacterSheet = () => {
 
     // Calculate armor class with equipment
     const calculatedAC = calculateArmorClass(characterData, formattedAbilities);
-    console.log('Final calculated AC:', calculatedAC);
 
     // Convert database character to the format expected by the character sheet
     const formattedCharacter = {
@@ -353,20 +325,14 @@ const CharacterSheet = () => {
         navigate('/player');
         return;
       }
-
-      console.log('Loading character with ID:', id);
       
       try {
         const characterData = await getCharacter(id);
         
         if (characterData) {
-          console.log('Character data loaded:', characterData);
           const formattedCharacter = formatCharacterData(characterData);
-          console.log('Final formatted character with spell slots:', formattedCharacter.spellSlots);
           setCharacter(formattedCharacter);
-          console.log('Character formatted and set:', formattedCharacter);
         } else {
-          console.log('Character not found');
           toast({
             title: "Error",
             description: "Character not found",
@@ -415,6 +381,7 @@ const CharacterSheet = () => {
     }
   };
 
+  
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#4a4a4a] flex items-center justify-center">
