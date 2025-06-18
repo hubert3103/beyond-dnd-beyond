@@ -52,15 +52,10 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
 
   // Get hit die information from class data with proper class mapping
   const getHitDie = () => {
-    console.log('Character class data:', character.class_data);
-    console.log('Character class name:', character.class_name);
-    
     // Try to get hit die from class data first
     if (character.class_data?.hit_die) {
-      console.log('Got hit die from class_data.hit_die:', character.class_data.hit_die);
       return character.class_data.hit_die;
     } else if (character.class_data?.hitDie) {
-      console.log('Got hit die from class_data.hitDie:', character.class_data.hitDie);
       return character.class_data.hitDie;
     }
     
@@ -84,18 +79,14 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
       
       const className = character.class_name.toLowerCase();
       const hitDie = classHitDice[className] || 8;
-      console.log(`Using fallback hit die for ${character.class_name}:`, hitDie);
       return hitDie;
     }
     
     // Default fallback
-    console.log('Using default hit die: 8');
     return 8;
   };
   
   const hitDie = getHitDie();
-  console.log('Final hit die value:', hitDie);
-  
   const hitDiceRemaining = character.hit_points?.hit_dice_remaining !== undefined ? character.hit_points.hit_dice_remaining : character.level;
 
   const rollHitDie = () => {
@@ -115,8 +106,6 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
         }
       };
       setCharacter(updatedCharacter);
-      
-      console.log(`Rolled ${roll} on d${hitDie} + ${conModifier} CON = ${healing} healing`);
     }
   };
 
