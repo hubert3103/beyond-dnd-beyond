@@ -16,6 +16,42 @@ interface HitPointsHitDiceProps {
 const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
+  // Define getHitDie function first to avoid hoisting issues
+  const getHitDie = () => {
+    // Try to get hit die from class data first
+    if (character.class_data?.hit_die) {
+      return character.class_data.hit_die;
+    } else if (character.class_data?.hitDie) {
+      return character.class_data.hitDie;
+    }
+    
+    // Fallback to class name mapping with correct hit dice
+    if (character.class_name) {
+      const classHitDice: { [key: string]: number } = {
+        'barbarian': 12,
+        'fighter': 10,
+        'paladin': 10,
+        'ranger': 10,
+        'bard': 8,
+        'cleric': 8,
+        'druid': 8,
+        'monk': 8,
+        'rogue': 8,
+        'warlock': 8,
+        'artificer': 8,
+        'sorcerer': 6,  // Sorcerer uses d6
+        'wizard': 6     // Wizard uses d6
+      };
+      
+      const className = character.class_name.toLowerCase();
+      const hitDie = classHitDice[className] || 8;
+      return hitDie;
+    }
+    
+    // Default fallback
+    return 8;
+  };
+
   // Calculate correct max HP based on character data
   const calculateCorrectMaxHP = () => {
     if (!character.class_data && !character.class_name) return 1;
@@ -76,42 +112,6 @@ const HitPointsHitDice = ({ character, setCharacter }: HitPointsHitDiceProps) =>
     Math.min(character.hit_points.current, maxHP) : maxHP;
   const tempHP = character.hit_points?.temporary || character.tempHP || 0;
 
-  // Get hit die information with correct class mapping
-  const getHitDie = () => {
-    // Try to get hit die from class data first
-    if (character.class_data?.hit_die) {
-      return character.class_data.hit_die;
-    } else if (character.class_data?.hitDie) {
-      return character.class_data.hitDie;
-    }
-    
-    // Fallback to class name mapping with correct hit dice
-    if (character.class_name) {
-      const classHitDice = {
-        'barbarian': 12,
-        'fighter': 10,
-        'paladin': 10,
-        'ranger': 10,
-        'bard': 8,
-        'cleric': 8,
-        'druid': 8,
-        'monk': 8,
-        'rogue': 8,
-        'warlock': 8,
-        'artificer': 8,
-        'sorcerer': 6,  // Sorcerer uses d6
-        'wizard': 6     // Wizard uses d6
-      };
-      
-      const className = character.class_name.toLowerCase();
-      const hitDie = classHitDice[className] || 8;
-      return hitDie;
-    }
-    
-    // Default fallback
-    return 8;
-  };
-  
   const hitDie = getHitDie();
   const hitDiceRemaining = character.hit_points?.hit_dice_remaining !== undefined ? 
     character.hit_points.hit_dice_remaining : character.level;
