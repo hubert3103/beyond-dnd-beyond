@@ -237,16 +237,23 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
   const handleNext = () => {
     console.log('Handle next - ASI:', levelUpChanges.abilityScoreImprovements, 'Spells:', levelUpChanges.spellsKnownIncrease);
     
+    // Check if we need ASI and haven't selected them yet
     if (!levelUpChanges.isLevelDown && levelUpChanges.abilityScoreImprovements > 0 && Object.keys(abilityImprovements).length === 0) {
       console.log('Showing ASI modal');
       setShowASIModal(true);
-    } else if (!levelUpChanges.isLevelDown && levelUpChanges.spellsKnownIncrease > 0 && newSpells.length === 0) {
+      return;
+    }
+    
+    // Check if we need spells and haven't selected them yet
+    if (!levelUpChanges.isLevelDown && levelUpChanges.spellsKnownIncrease > 0 && newSpells.length === 0) {
       console.log('Showing spell modal');
       setShowSpellModal(true);
-    } else {
-      console.log('Proceeding to confirm');
-      handleConfirm();
+      return;
     }
+    
+    // Otherwise proceed to confirm
+    console.log('Proceeding to confirm');
+    handleConfirm();
   };
 
   const handleASIConfirm = (improvements: { [key: string]: number }) => {
@@ -254,7 +261,8 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
     setAbilityImprovements(improvements);
     setShowASIModal(false);
     
-    if (levelUpChanges.spellsKnownIncrease > 0) {
+    // After ASI, check if we still need spells
+    if (levelUpChanges.spellsKnownIncrease > 0 && newSpells.length === 0) {
       setShowSpellModal(true);
     } else {
       handleConfirm();
@@ -363,6 +371,59 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
     onClose();
   };
 
+  // Check if we can proceed based on current state
+  const canProceed = () => {
+    if (!levelUpChanges) return false;
+    
+    const isLevelDown = levelUpChanges.isLevelDown;
+    
+    // For level downs, always allow proceeding
+    if (isLevelDown) return true;
+    
+    // For level ups, check requirements
+    const needsASI = levelUpChanges.abilityScoreImprovements > 0;
+    const needsSpells = levelUpChanges.spellsKnownIncrease > 0;
+    
+    // If we need ASI and haven't selected them, we need to show ASI modal first
+    if (needsASI && Object.keys(abilityImprovements).length === 0) {
+      return true; // Can proceed to ASI modal
+    }
+    
+    // If we need spells and haven't selected them, we need to show spell modal
+    if (needsSpells && newSpells.length === 0) {
+      return true; // Can proceed to spell modal
+    }
+    
+    // Otherwise we can proceed to final confirmation
+    return true;
+  };
+
+  const getButtonText = () => {
+    if (!levelUpChanges) return 'Continue';
+    
+    const isLevelDown = levelUpChanges.isLevelDown;
+    
+    if (isLevelDown) {
+      return 'Confirm Level Down';
+    }
+    
+    const needsASI = levelUpChanges.abilityScoreImprovements > 0;
+    const needsSpells = levelUpChanges.spellsKnownIncrease > 0;
+    
+    // If we need ASI and haven't selected them
+    if (needsASI && Object.keys(abilityImprovements).length === 0) {
+      return 'Choose Ability Scores';
+    }
+    
+    // If we need spells and haven't selected them
+    if (needsSpells && newSpells.length === 0) {
+      return 'Choose Spells';
+    }
+    
+    // Otherwise final level up
+    return 'Level Up!';
+  };
+
   if (!levelUpChanges) return null;
 
   const isLevelDown = levelUpChanges.isLevelDown;
@@ -462,6 +523,11 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
                   <div className="text-xs text-yellow-600 mt-1">
                     You can increase abilities by a total of {levelUpChanges.abilityScoreImprovements * 2} points
                   </div>
+                  {Object.keys(abilityImprovements).length > 0 && (
+                    <div className="text-xs text-green-600 mt-1">
+                      ✓ Ability improvements selected
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -473,6 +539,11 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
                   <div className="text-xs text-purple-600 mt-1">
                     Choose new spells for your spellbook
                   </div>
+                  {newSpells.length > 0 && (
+                    <div className="text-xs text-green-600 mt-1">
+                      ✓ {newSpells.length} spell{newSpells.length > 1 ? 's' : ''} selected
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -486,9 +557,9 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
               <Button 
                 onClick={handleNext} 
                 className={`flex-1 ${isLevelDown ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+                disabled={!canProceed()}
               >
-                {isLevelDown ? 'Confirm Level Down' : 
-                 (levelUpChanges.abilityScoreImprovements > 0 || levelUpChanges.spellsKnownIncrease > 0 ? 'Continue' : 'Level Up!')}
+                {getButtonText()}
               </Button>
             </div>
           </div>
