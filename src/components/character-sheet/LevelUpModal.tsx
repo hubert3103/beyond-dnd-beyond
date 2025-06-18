@@ -105,7 +105,7 @@ const LevelUpModal = ({ character, newLevel, isOpen, onClose, onConfirm }: Level
       }
     }
 
-    console.log('Calculated level up changes:', changes);
+   
     setLevelUpChanges(changes);
   };
 
