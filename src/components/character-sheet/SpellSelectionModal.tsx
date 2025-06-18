@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -75,28 +74,43 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
     if (isOpen && spells) {
       const className = character.class_name?.toLowerCase();
       
-      // Create class mapping for spell filtering
-      const classSpellMapping: { [key: string]: string[] } = {
-        wizard: ['wizard'],
-        sorcerer: ['sorcerer'],
-        warlock: ['warlock'],
-        bard: ['bard'],
-        cleric: ['cleric'],
-        druid: ['druid'],
-        paladin: ['paladin'],
-        ranger: ['ranger'],
-        artificer: ['artificer']
-      };
+      console.log('Filtering spells for class:', className);
+      console.log('Total spells available:', spells.length);
       
-      // Filter spells available to this class
+      // Filter spells available to this class with more flexible matching
       const classSpells = spells.filter((spell: any) => {
-        if (!spell.classes || !Array.isArray(spell.classes)) return false;
+        if (!spell.classes || !Array.isArray(spell.classes)) {
+          console.log('Spell has no classes array:', spell.name);
+          return false;
+        }
         
-        const validClasses = classSpellMapping[className] || [];
-        return spell.classes.some((spellClass: string) => {
-          const normalizedSpellClass = spellClass.toLowerCase();
-          return validClasses.some(validClass => normalizedSpellClass.includes(validClass));
+        // More flexible class matching
+        const spellClasses = spell.classes.map((c: string) => c.toLowerCase());
+        console.log('Checking spell:', spell.name, 'classes:', spellClasses);
+        
+        const isClassMatch = spellClasses.some((spellClass: string) => {
+          // Direct match
+          if (spellClass === className) return true;
+          
+          // Partial match for class names that might have variations
+          if (className === 'sorcerer' && spellClass.includes('sorcerer')) return true;
+          if (className === 'wizard' && spellClass.includes('wizard')) return true;
+          if (className === 'warlock' && spellClass.includes('warlock')) return true;
+          if (className === 'bard' && spellClass.includes('bard')) return true;
+          if (className === 'cleric' && spellClass.includes('cleric')) return true;
+          if (className === 'druid' && spellClass.includes('druid')) return true;
+          if (className === 'paladin' && spellClass.includes('paladin')) return true;
+          if (className === 'ranger' && spellClass.includes('ranger')) return true;
+          if (className === 'artificer' && spellClass.includes('artificer')) return true;
+          
+          return false;
         });
+        
+        if (isClassMatch) {
+          console.log('✓ Spell matches class:', spell.name);
+        }
+        
+        return isClassMatch;
       });
 
       console.log(`Found ${classSpells.length} spells for ${className}`);
@@ -107,14 +121,32 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
         !knownSpellNames.includes(spell.name)
       );
 
+      console.log(`After filtering known spells: ${unknownSpells.length} unknown spells`);
+
       // Get spells of appropriate level
       const maxSpellLevel = getMaxSpellLevel(newLevel, className);
       const levelAppropriateSpells = unknownSpells.filter((spell: any) => {
         const spellLevel = parseInt(spell.level) || 0;
-        return spellLevel <= maxSpellLevel;
+        const isAppropriate = spellLevel <= maxSpellLevel;
+        if (!isAppropriate) {
+          console.log('Spell too high level:', spell.name, 'level', spellLevel, 'max allowed', maxSpellLevel);
+        }
+        return isAppropriate;
       });
 
       console.log(`Filtered to ${levelAppropriateSpells.length} available spells at level ${maxSpellLevel} and below`);
+      
+      // Debug: show some example spells
+      if (levelAppropriateSpells.length > 0) {
+        console.log('Example available spells:', levelAppropriateSpells.slice(0, 5).map(s => s.name));
+      } else {
+        console.log('No spells found - checking some example spells from database...');
+        const sampleSpells = spells.slice(0, 5);
+        sampleSpells.forEach(spell => {
+          console.log('Sample spell:', spell.name, 'classes:', spell.classes, 'level:', spell.level);
+        });
+      }
+      
       setAvailableSpells(levelAppropriateSpells);
     }
   }, [isOpen, spells, character, newLevel]);
@@ -194,6 +226,7 @@ const SpellSelectionModal = ({ character, newLevel, isOpen, onClose, onConfirm }
               <div className="text-center py-8 text-gray-500">
                 <p>No spells available to learn at your level</p>
                 <p className="text-xs mt-2">Loading spells... ({spells?.length || 0} total spells loaded)</p>
+                <p className="text-xs mt-1">Check console for filtering details</p>
               </div>
             ) : (
               availableSpells.map((spell) => {
