@@ -2,6 +2,7 @@
 # D&D 5e Character Manager
 
 A comprehensive web application for creating, managing, and playing D&D 5th Edition characters. Built with modern web technologies and integrated with official D&D 5e data through the Open5e API.
+![image](https://github.com/user-attachments/assets/8f7174ea-2c7e-42f1-8db8-332082e1e49c)
 
 ## 🎲 Features
 
@@ -33,13 +34,11 @@ A comprehensive web application for creating, managing, and playing D&D 5th Edit
 - **Rule references** and quick lookup tools
 
 ### User Experience
-- **Multilingual support** (English, Dutch, Polish)
+- **Multilingual support** (English, Dutch, Polish) (Still in development)
 - **Responsive design** optimized for desktop and mobile devices
 - **Dark/light theme** support
-- **Offline functionality** for character sheets
-- **Data export/import** capabilities
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **Frontend**: React 18 with TypeScript
 - **Build Tool**: Vite for fast development and optimized builds
@@ -134,7 +133,7 @@ src/
 ### State Management
 
 - **Authentication Context** - Global user authentication state
-- **Language Context** - Internationalization and language preferences
+- **Language Context** - Internationalization and language preferences (in progress)
 - **Custom Hooks** - Data fetching and character management logic
 - **Local State** - Component-specific state management
 
@@ -145,7 +144,7 @@ src/
 3. **Real-time Updates** - Supabase subscriptions for live character updates
 4. **Caching Strategy** - Intelligent caching for API responses and user data
 
-## 🎮 Usage Guide
+## Usage Guide
 
 ### Creating a Character
 
@@ -215,25 +214,9 @@ The application integrates with the Open5e API to provide official D&D 5e conten
 
 - **Hybrid Approach** - Combines local data with API responses
 - **Intelligent Caching** - Reduces API calls and improves performance
-- **Offline Support** - Core functionality works without internet
 - **Real-time Sync** - Character data synchronized across devices
 
-## 🌐 Internationalization
-
-The application supports multiple languages:
-
-- **English** - Primary language with complete translation
-- **Dutch** - Full localization for Dutch-speaking users
-- **Polish** - Complete Polish language support
-
-### Adding New Languages
-
-1. Add language data to `src/data/translations.ts`
-2. Include language flag in `public/` directory
-3. Update language selector component
-4. Test all UI elements for proper translation
-
-## 🔐 Security
+## Security
 
 - **Authentication** - Secure user authentication with Supabase
 - **Authorization** - Row-level security for data access
@@ -241,14 +224,14 @@ The application supports multiple languages:
 - **HTTPS** - Secure connections for all data transfer
 - **Session Management** - Automatic token refresh and secure storage
 
-## 📱 Mobile Support
+## Mobile Support
 
 - **Responsive Design** - Optimized for mobile devices
 - **Touch Interface** - Mobile-friendly interactions
 - **Offline Mode** - Core features work without internet
 - **Progressive Web App** - Can be installed on mobile devices
 
-## 🚧 Roadmap
+## Roadmap
 
 ### Planned Features
 
@@ -268,11 +251,11 @@ The application supports multiple languages:
 - **Better Error Handling** - Improved user experience during errors
 - **Advanced Analytics** - Usage tracking and optimization insights
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🤝 Acknowledgments
+## Acknowledgments
 
 - **Wizards of the Coast** for creating D&D 5th Edition
 - **Open5e** for providing the API and open-source D&D content
@@ -280,14 +263,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - **shadcn/ui** for the beautiful component library
 - **Tailwind CSS** for the utility-first CSS framework
 
-## 📞 Support
-
-For questions, bug reports, or feature requests:
-
-1. Check the existing issues on GitHub
-2. Create a new issue with detailed information
-3. Join our Discord community for discussions
-4. Read the documentation for detailed guides
 
 ---
 
